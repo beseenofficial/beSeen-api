@@ -9,6 +9,7 @@ const broadcastInput = () => ({
   audienceSnapshotCount: 12,
   encryptionVersion: 1,
   creatorKeyVersion: 1,
+  creatorSigningPublicKey: Buffer.alloc(32, 2).toString('base64'),
   creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
 });
 
@@ -33,5 +34,22 @@ describe('Broadcast model', () => {
   it('throws instead of silently storing plaintext or private-key fields', () => {
     expect(() => new Broadcast({ ...broadcastInput(), plaintext: 'secret' })).toThrow();
     expect(() => new Broadcast({ ...broadcastInput(), privateKey: 'secret' })).toThrow();
+  });
+
+  it('requires a complete encrypted envelope when published', async () => {
+    const incomplete = new Broadcast({ ...broadcastInput(), status: 'published' });
+    const complete = new Broadcast({
+      ...broadcastInput(),
+      status: 'published',
+      contentCiphertext: Buffer.alloc(32, 3).toString('base64'),
+      contentNonce: Buffer.alloc(24, 4).toString('base64'),
+      creatorEncryptedBroadcastKey: Buffer.alloc(80, 5).toString('base64'),
+      recipientKeysDigest: 'a'.repeat(64),
+      signature: Buffer.alloc(64, 6).toString('base64'),
+      publishedAt: new Date(),
+    });
+
+    await expect(incomplete.validate()).rejects.toBeDefined();
+    await expect(complete.validate()).resolves.toBeUndefined();
   });
 });

@@ -22,6 +22,7 @@ describe('uploadBroadcastRecipientKeys', () => {
       audienceSnapshotCount: 3,
       encryptionVersion: 1,
       creatorKeyVersion: 1,
+      creatorSigningPublicKey: Buffer.alloc(32, 3).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
     const rows = [1, 2].map(
@@ -87,6 +88,7 @@ describe('uploadBroadcastRecipientKeys', () => {
       audienceSnapshotCount: 1,
       encryptionVersion: 1,
       creatorKeyVersion: 1,
+      creatorSigningPublicKey: Buffer.alloc(32, 3).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
     const row = new BroadcastRecipient({
