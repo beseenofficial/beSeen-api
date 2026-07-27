@@ -3,8 +3,8 @@ import type { HydratedDocument } from 'mongoose';
 
 import { USER_ACCOUNT_TYPES, USER_ROLES, USER_STATUSES } from '../constant/user';
 import type { UserAccountType, UserRole, UserStatus } from '../constant/user';
+import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
 
-const STELLAR_G_ADDRESS_PATTERN = /^G[A-Z2-7]{55}$/;
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 
 interface IUser {
@@ -30,7 +30,10 @@ const userSchema = new Schema<IUser>(
       required: true,
       trim: true,
       uppercase: true,
-      match: [STELLAR_G_ADDRESS_PATTERN, 'Wallet address must be a Stellar G address'],
+      validate: {
+        validator: isValidStellarGAddress,
+        message: 'Wallet address must be a valid Stellar G address',
+      },
     },
     username: {
       type: String,
@@ -96,5 +99,5 @@ userSchema.index({ accountType: 1, status: 1 }, { name: 'users_account_type_stat
 const User = model<IUser>('User', userSchema);
 
 export default User;
-export { STELLAR_G_ADDRESS_PATTERN, USERNAME_PATTERN };
+export { USERNAME_PATTERN };
 export type { IUser, UserDocument };
