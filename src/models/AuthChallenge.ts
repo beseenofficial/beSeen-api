@@ -5,6 +5,7 @@ import {
   AUTH_CHALLENGE_PURPOSES,
   AUTH_NONCE_PATTERN,
   KEY_DERIVATION_VERSION,
+  MAX_AUTH_CHALLENGE_ATTEMPTS,
 } from '../constant/auth';
 import type { AuthChallengePurpose } from '../constant/auth';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
@@ -19,8 +20,12 @@ interface IAuthChallenge {
   encryptionPublicKey: string | null;
   derivationVersion: number | null;
   expiresAt: Date;
+  purgeAt: Date;
   usedAt: Date | null;
   attempts: number;
+  registrationTokenHash: string | null;
+  registrationTokenExpiresAt: Date | null;
+  registrationTokenUsedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +84,10 @@ const authChallengeSchema = new Schema<IAuthChallenge>(
       type: Date,
       required: true,
     },
+    purgeAt: {
+      type: Date,
+      required: true,
+    },
     usedAt: {
       type: Date,
       default: null,
@@ -86,9 +95,23 @@ const authChallengeSchema = new Schema<IAuthChallenge>(
     attempts: {
       type: Number,
       min: 0,
-      max: 5,
+      max: MAX_AUTH_CHALLENGE_ATTEMPTS,
       default: 0,
       required: true,
+    },
+    registrationTokenHash: {
+      type: String,
+      match: [/^[a-f0-9]{64}$/, 'Registration token hash must be a SHA-256 hex value'],
+      default: null,
+      select: false,
+    },
+    registrationTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    registrationTokenUsedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -120,8 +143,16 @@ authChallengeSchema.pre('validate', function validateRegistrationKeyBinding() {
 
 authChallengeSchema.index({ nonce: 1 }, { unique: true, name: 'auth_challenges_nonce_unique' });
 authChallengeSchema.index(
-  { expiresAt: 1 },
-  { expireAfterSeconds: 0, name: 'auth_challenges_expiration_ttl' },
+  { purgeAt: 1 },
+  { expireAfterSeconds: 0, name: 'auth_challenges_purge_ttl' },
+);
+authChallengeSchema.index(
+  { registrationTokenHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { registrationTokenHash: { $type: 'string' } },
+    name: 'auth_challenges_registration_token_hash_unique',
+  },
 );
 authChallengeSchema.index(
   { walletAddress: 1, purpose: 1, usedAt: 1 },
