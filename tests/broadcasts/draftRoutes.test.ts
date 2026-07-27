@@ -65,6 +65,7 @@ describe('broadcast draft routes', () => {
           hasMore: false,
         },
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
+        expiresAt: new Date('2026-08-03T12:00:00.000Z'),
       },
     });
 
@@ -107,6 +108,7 @@ describe('broadcast draft routes', () => {
         audienceType: 'all_active_users',
         audienceCount: 1,
         progress: { uploadedCount: 0, remainingCount: 1, complete: false },
+        expiresAt: new Date('2026-08-03T12:00:00.000Z'),
       },
       recipients: {
         items: [],

@@ -64,6 +64,7 @@ describe('createBroadcastDraft', () => {
         audienceType: 'all_active_users',
         audienceCount: 1,
         progress: { uploadedCount: 0, remainingCount: 1, complete: false },
+        expiresAt: new Date('2026-08-03T12:00:00.000Z'),
       },
       recipients: {
         items: [

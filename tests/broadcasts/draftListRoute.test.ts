@@ -53,6 +53,7 @@ describe('GET /v1/broadcasts/drafts', () => {
               encryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
             },
             createdAt: new Date('2026-07-27T12:00:00.000Z'),
+            expiresAt: new Date('2026-08-03T12:00:00.000Z'),
           },
         ],
         nextCursor: null,
