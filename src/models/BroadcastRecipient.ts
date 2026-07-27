@@ -1,7 +1,9 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
+import { BROADCAST_WRAPPED_KEY_BYTES } from '../constant/broadcast';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
+import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 
 interface IBroadcastRecipient {
   broadcast: Types.ObjectId;
@@ -50,6 +52,15 @@ const broadcastRecipientSchema = new Schema<IBroadcastRecipient>(
     encryptedBroadcastKey: {
       type: String,
       default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null ||
+          isCanonicalBase64(value, {
+            minBytes: BROADCAST_WRAPPED_KEY_BYTES,
+            maxBytes: BROADCAST_WRAPPED_KEY_BYTES,
+          }),
+        message: 'Encrypted broadcast key must be a canonical base64 sealed-box ciphertext',
+      },
     },
   },
   {
