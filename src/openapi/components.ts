@@ -211,7 +211,14 @@ const openApiComponents = {
     BroadcastRecipientPublicKey: {
       type: 'object',
       additionalProperties: false,
-      required: ['userId', 'username', 'keyVersion', 'encryptionPublicKey'],
+      required: [
+        'userId',
+        'username',
+        'keyVersion',
+        'encryptionPublicKey',
+        'keyUploaded',
+        'encryptedBroadcastKey',
+      ],
       properties: {
         userId: objectIdSchema,
         username: { type: 'string' },
@@ -220,6 +227,12 @@ const openApiComponents = {
           type: 'string',
           format: 'byte',
           description: 'Canonical base64 X25519 public key. This is never a private key.',
+        },
+        keyUploaded: { type: 'boolean' },
+        encryptedBroadcastKey: {
+          oneOf: [{ type: 'string', format: 'byte' }, { type: 'null' }],
+          description:
+            'The previously uploaded wrapped ciphertext, or null. Returned only to the draft owner so an interrupted upload can resume exactly.',
         },
       },
     },
@@ -273,6 +286,7 @@ const openApiComponents = {
         'audience',
         'encryption',
         'creatorKey',
+        'progress',
         'recipients',
         'createdAt',
       ],
@@ -311,7 +325,67 @@ const openApiComponents = {
             encryptionPublicKey: { type: 'string', format: 'byte' },
           },
         },
+        progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
         recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    BroadcastDraftProgress: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['uploadedCount', 'remainingCount', 'complete'],
+      properties: {
+        uploadedCount: { type: 'integer', minimum: 0 },
+        remainingCount: { type: 'integer', minimum: 0 },
+        complete: { type: 'boolean' },
+      },
+    },
+    BroadcastDraftListItem: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'clientBroadcastId',
+        'status',
+        'audience',
+        'progress',
+        'encryption',
+        'creatorKey',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        clientBroadcastId: { type: 'string', format: 'uuid' },
+        status: { type: 'string', const: 'draft' },
+        audience: {
+          type: 'object',
+          required: ['type', 'count'],
+          properties: {
+            type: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+            count: { type: 'integer', minimum: 0 },
+          },
+        },
+        progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
+        encryption: {
+          type: 'object',
+          required: ['version', 'contentSuite', 'keyWrapSuite'],
+          properties: {
+            version: { type: 'integer', const: 1 },
+            contentSuite: { type: 'string', const: 'XCHACHA20-POLY1305-IETF' },
+            keyWrapSuite: {
+              type: 'string',
+              const: 'X25519-XSALSA20-POLY1305-SEALEDBOX',
+            },
+          },
+        },
+        creatorKey: {
+          type: 'object',
+          required: ['keyVersion', 'encryptionPublicKey'],
+          properties: {
+            keyVersion: { type: 'integer', minimum: 1 },
+            encryptionPublicKey: { type: 'string', format: 'byte' },
+          },
+        },
         createdAt: { type: 'string', format: 'date-time' },
       },
     },

@@ -485,6 +485,53 @@ const openApiPaths = {
     },
   },
   '/v1/broadcasts/drafts': {
+    get: {
+      tags: ['Broadcasts'],
+      summary: 'List unfinished broadcast drafts for resuming client work',
+      description:
+        'Returns only drafts owned by the authenticated user, including aggregate wrapped-key upload progress. Use the recipient pages to recover the exact previously uploaded ciphertexts.',
+      operationId: 'getBroadcastDrafts',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Broadcast drafts retrieved.', {
+          type: 'object',
+          required: ['drafts'],
+          properties: {
+            drafts: {
+              type: 'object',
+              required: ['items', 'nextCursor', 'hasMore'],
+              properties: {
+                items: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/BroadcastDraftListItem' },
+                },
+                nextCursor: {
+                  oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+                },
+                hasMore: { type: 'boolean' },
+              },
+            },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '429': rateLimited,
+      },
+    },
     post: {
       tags: ['Broadcasts'],
       summary: 'Create an encrypted broadcast draft and freeze its audience',
@@ -528,7 +575,7 @@ const openApiPaths = {
       tags: ['Broadcasts'],
       summary: 'Get a frozen page of recipient public encryption keys',
       description:
-        'Only the creator that owns the draft can access this snapshot. Pass nextCursor from the previous page until hasMore is false.',
+        'Only the creator that owns the draft can access this snapshot. Pass nextCursor from the previous page until hasMore is false. Each item includes upload status and the exact previously stored wrapped ciphertext so interrupted clients can resume.',
       operationId: 'getBroadcastDraftRecipients',
       security: [{ bearerAuth: [] }],
       parameters: [
@@ -558,13 +605,21 @@ const openApiPaths = {
           properties: {
             draft: {
               type: 'object',
-              required: ['id', 'clientBroadcastId', 'status', 'audienceType', 'audienceCount'],
+              required: [
+                'id',
+                'clientBroadcastId',
+                'status',
+                'audienceType',
+                'audienceCount',
+                'progress',
+              ],
               properties: {
                 id: { $ref: '#/components/schemas/ObjectId' },
                 clientBroadcastId: { type: 'string', format: 'uuid' },
                 status: { type: 'string', const: 'draft' },
                 audienceType: { type: 'string', enum: ['all_active_users', 'token_holders'] },
                 audienceCount: { type: 'integer', minimum: 0 },
+                progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
               },
             },
             recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
