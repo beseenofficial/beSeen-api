@@ -16,6 +16,31 @@ const registrationErrors: Record<RegistrationFailureReason, RegistrationErrorRes
     code: 'REGISTRATION_TOKEN_INVALID',
     message: 'Registration token is invalid, expired, or already used',
   },
+  challenge_not_found: {
+    statusCode: 404,
+    code: 'CHALLENGE_NOT_FOUND',
+    message: 'Registration challenge was not found',
+  },
+  challenge_expired: {
+    statusCode: 410,
+    code: 'CHALLENGE_EXPIRED',
+    message: 'Registration challenge has expired',
+  },
+  challenge_already_used: {
+    statusCode: 409,
+    code: 'CHALLENGE_ALREADY_USED',
+    message: 'Registration challenge has already been used',
+  },
+  attempts_exceeded: {
+    statusCode: 429,
+    code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
+    message: 'Registration challenge verification attempts have been exceeded',
+  },
+  invalid_signature: {
+    statusCode: 401,
+    code: 'INVALID_STELLAR_SIGNATURE',
+    message: 'Stellar signature is invalid',
+  },
   username_taken: {
     statusCode: 409,
     code: 'USERNAME_TAKEN',
@@ -60,6 +85,9 @@ const registerRoute: RequestHandler = async (req, res) => {
       message: error.message,
       result: {
         code: error.code,
+        ...(result.attemptsRemaining === undefined
+          ? {}
+          : { attemptsRemaining: result.attemptsRemaining }),
       },
     });
   }
@@ -71,6 +99,10 @@ const registerRoute: RequestHandler = async (req, res) => {
       user: {
         ...result.user,
         createdAt: result.user.createdAt.toISOString(),
+      },
+      auth: {
+        ...result.auth,
+        refreshTokenExpiresAt: result.auth.refreshTokenExpiresAt.toISOString(),
       },
     },
   });

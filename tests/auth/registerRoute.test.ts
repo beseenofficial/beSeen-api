@@ -10,6 +10,14 @@ vi.mock('../../src/utils/auth/registerUser', () => ({
 
 const registerUserMock = vi.mocked(registerUser);
 
+const authResult = () => ({
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  tokenType: 'Bearer' as const,
+  expiresIn: 900,
+  refreshTokenExpiresAt: new Date('2026-08-26T12:00:00.000Z'),
+});
+
 const regularBody = () => ({
   registrationToken: 't'.repeat(43),
   profile: {
@@ -45,6 +53,7 @@ describe('POST /v1/auth/register', () => {
   it('creates a regular user with normalized profile data', async () => {
     registerUserMock.mockResolvedValue({
       ok: true,
+      auth: authResult(),
       user: {
         id: '507f1f77bcf86cd799439011',
         walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
@@ -67,6 +76,13 @@ describe('POST /v1/auth/register', () => {
       creatorProfile: null,
       createdAt: '2026-07-27T12:00:00.000Z',
     });
+    expect(response.body.result.auth).toEqual({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresIn: 900,
+      refreshTokenExpiresAt: '2026-08-26T12:00:00.000Z',
+    });
     expect(registerUserMock).toHaveBeenCalledWith(
       expect.objectContaining({
         profile: expect.objectContaining({ username: 'new_user', bio: 'BeSeen member' }),
@@ -77,6 +93,7 @@ describe('POST /v1/auth/register', () => {
   it('normalizes and forwards creator-only profile data', async () => {
     registerUserMock.mockResolvedValue({
       ok: true,
+      auth: authResult(),
       user: {
         id: '507f1f77bcf86cd799439012',
         walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
@@ -107,6 +124,42 @@ describe('POST /v1/auth/register', () => {
             skills: ['editing'],
           }),
         }),
+      }),
+    );
+  });
+
+  it('supports the recommended direct challenge and signature flow', async () => {
+    registerUserMock.mockResolvedValue({
+      ok: true,
+      auth: authResult(),
+      user: {
+        id: '507f1f77bcf86cd799439013',
+        walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
+        username: 'new_user',
+        displayName: 'New User',
+        bio: '',
+        avatarUrl: null,
+        accountType: 'regular',
+        creatorProfile: null,
+        createdAt: new Date('2026-07-27T12:00:00.000Z'),
+      },
+    });
+    const body = regularBody();
+    Reflect.deleteProperty(body, 'registrationToken');
+
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .send({
+        ...body,
+        challengeId: '507f1f77bcf86cd799439099',
+        signature: Buffer.alloc(64, 3).toString('base64'),
+      });
+
+    expect(response.status).toBe(201);
+    expect(registerUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        challengeId: '507f1f77bcf86cd799439099',
+        signature: Buffer.alloc(64, 3).toString('base64'),
       }),
     );
   });

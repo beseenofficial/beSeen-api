@@ -6,14 +6,27 @@ import AuthChallenge from '../../src/models/AuthChallenge';
 import CreatorProfile from '../../src/models/CreatorProfile';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
+import createAuthSession from '../../src/utils/auth/createAuthSession';
 import registerUser from '../../src/utils/auth/registerUser';
 import { hashRegistrationToken } from '../../src/utils/auth/registrationToken';
+import verifySep53Signature from '../../src/utils/stellar/verifySep53Signature';
 import registerBodySchema from '../../src/validation/auth/register';
+
+vi.mock('../../src/utils/auth/createAuthSession', () => ({
+  default: vi.fn(),
+}));
+vi.mock('../../src/utils/stellar/verifySep53Signature', () => ({
+  default: vi.fn(),
+}));
+
+const createAuthSessionMock = vi.mocked(createAuthSession);
+const verifySep53SignatureMock = vi.mocked(verifySep53Signature);
 
 const REGISTRATION_TOKEN = 'r'.repeat(43);
 const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 const SIGNING_PUBLIC_KEY = Buffer.alloc(32, 1).toString('base64');
 const ENCRYPTION_PUBLIC_KEY = Buffer.alloc(32, 2).toString('base64');
+const STELLAR_SIGNATURE = Buffer.alloc(64, 3).toString('base64');
 const session = {} as ClientSession;
 
 const regularBody = registerBodySchema.parse({
@@ -38,6 +51,16 @@ const creatorBody = registerBodySchema.parse({
       websiteUrl: 'https://creator.example',
       isAvailableForWork: true,
     },
+  },
+});
+
+const directBody = registerBodySchema.parse({
+  challengeId: new Types.ObjectId().toString(),
+  signature: STELLAR_SIGNATURE,
+  profile: {
+    username: 'direct_user',
+    displayName: 'Direct User',
+    accountType: 'regular',
   },
 });
 
@@ -91,6 +114,14 @@ describe('registerUser', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-27T12:01:00.000Z'));
     mockTransaction();
+    verifySep53SignatureMock.mockReturnValue(true);
+    createAuthSessionMock.mockResolvedValue({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresIn: 900,
+      refreshTokenExpiresAt: new Date('2026-08-26T12:01:00.000Z'),
+    });
   });
 
   afterEach(() => {
@@ -118,6 +149,10 @@ describe('registerUser', () => {
 
     expect(result).toMatchObject({
       ok: true,
+      auth: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
       user: {
         walletAddress: WALLET_ADDRESS,
         username: 'regular_user',
@@ -136,6 +171,10 @@ describe('registerUser', () => {
     expect(userSaveSpy).toHaveBeenCalledWith({ session });
     expect(userKeySaveSpy).toHaveBeenCalledWith({ session });
     expect(creatorSaveSpy).not.toHaveBeenCalled();
+    expect(createAuthSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ accountType: 'regular', role: 'user' }),
+      session,
+    );
     expect(consumeSpy.mock.invocationCallOrder[0]).toBeLessThan(
       userSaveSpy.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
     );
@@ -171,6 +210,38 @@ describe('registerUser', () => {
       },
     });
     expect(creatorSaveSpy).toHaveBeenCalledWith({ session });
+  });
+
+  it('verifies and consumes a signed challenge without a temporary registration token', async () => {
+    const challenge = createChallenge();
+    challenge.usedAt = null;
+    challenge.expiresAt = new Date('2026-07-27T12:05:00.000Z');
+    const consumeSpy = mockAvailableRegistration(challenge);
+    vi.spyOn(User.prototype, 'save').mockImplementation(async function saveUser() {
+      this.createdAt = new Date('2026-07-27T12:01:00.000Z');
+      return this;
+    });
+    vi.spyOn(UserKey.prototype, 'save').mockImplementation(async function saveUserKey() {
+      return this;
+    });
+
+    const result = await registerUser({ ...directBody, challengeId: challenge._id.toString() });
+
+    expect(result.ok).toBe(true);
+    expect(verifySep53SignatureMock).toHaveBeenCalledWith(
+      WALLET_ADDRESS,
+      challenge.message,
+      STELLAR_SIGNATURE,
+    );
+    expect(consumeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: challenge._id,
+        purpose: 'registration',
+        usedAt: null,
+      }),
+      { $set: { usedAt: new Date('2026-07-27T12:01:00.000Z') } },
+      { new: true, session },
+    );
   });
 
   it('rejects invalid tokens before checking profile conflicts', async () => {
