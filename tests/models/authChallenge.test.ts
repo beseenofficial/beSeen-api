@@ -15,6 +15,7 @@ const registrationChallengeInput = () => ({
   encryptionPublicKey: ENCRYPTION_PUBLIC_KEY,
   derivationVersion: 1,
   expiresAt: new Date(Date.now() + 300_000),
+  purgeAt: new Date(Date.now() + 300_000),
 });
 
 describe('AuthChallenge model', () => {
@@ -49,6 +50,7 @@ describe('AuthChallenge model', () => {
       nonce: 'l'.repeat(43),
       message: 'Canonical login message',
       expiresAt: new Date(Date.now() + 300_000),
+      purgeAt: new Date(Date.now() + 300_000),
     });
 
     await expect(challenge.validate()).resolves.toBeUndefined();
@@ -64,10 +66,10 @@ describe('AuthChallenge model', () => {
           expect.objectContaining({ unique: true, name: 'auth_challenges_nonce_unique' }),
         ],
         [
-          { expiresAt: 1 },
+          { purgeAt: 1 },
           expect.objectContaining({
             expireAfterSeconds: 0,
-            name: 'auth_challenges_expiration_ttl',
+            name: 'auth_challenges_purge_ttl',
           }),
         ],
       ]),

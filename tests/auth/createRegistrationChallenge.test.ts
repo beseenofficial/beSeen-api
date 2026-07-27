@@ -63,6 +63,7 @@ describe('createRegistrationChallenge', () => {
         encryptionPublicKey: ENCRYPTION_PUBLIC_KEY,
         derivationVersion: 1,
         expiresAt: new Date('2026-07-27T12:05:00.000Z'),
+        purgeAt: new Date('2026-07-27T12:05:00.000Z'),
       }),
     );
 
