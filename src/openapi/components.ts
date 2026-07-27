@@ -208,6 +208,110 @@ const openApiComponents = {
         expiresAt: { type: 'string', format: 'date-time' },
       },
     },
+    BroadcastRecipientPublicKey: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['userId', 'username', 'keyVersion', 'encryptionPublicKey'],
+      properties: {
+        userId: objectIdSchema,
+        username: { type: 'string' },
+        keyVersion: { type: 'integer', minimum: 1, example: 1 },
+        encryptionPublicKey: {
+          type: 'string',
+          format: 'byte',
+          description: 'Canonical base64 X25519 public key. This is never a private key.',
+        },
+      },
+    },
+    BroadcastRecipientPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextCursor', 'hasMore'],
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/BroadcastRecipientPublicKey' },
+        },
+        nextCursor: { oneOf: [objectIdSchema, { type: 'null' }] },
+        hasMore: { type: 'boolean' },
+      },
+    },
+    BroadcastDraft: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'clientBroadcastId',
+        'status',
+        'audience',
+        'encryption',
+        'creatorKey',
+        'recipients',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        clientBroadcastId: { type: 'string', format: 'uuid' },
+        status: { type: 'string', const: 'draft' },
+        audience: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type', 'count'],
+          properties: {
+            type: { type: 'string', const: 'all_active_users' },
+            count: { type: 'integer', minimum: 0 },
+          },
+        },
+        encryption: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['version', 'contentSuite', 'keyWrapSuite'],
+          properties: {
+            version: { type: 'integer', const: 1 },
+            contentSuite: { type: 'string', const: 'XCHACHA20-POLY1305-IETF' },
+            keyWrapSuite: {
+              type: 'string',
+              const: 'X25519-XSALSA20-POLY1305-SEALEDBOX',
+            },
+          },
+        },
+        creatorKey: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['keyVersion', 'encryptionPublicKey'],
+          properties: {
+            keyVersion: { type: 'integer', minimum: 1 },
+            encryptionPublicKey: { type: 'string', format: 'byte' },
+          },
+        },
+        recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    PublicUserKeys: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['derivationVersion', 'signing', 'encryption'],
+      properties: {
+        derivationVersion: { type: 'integer', minimum: 1 },
+        signing: {
+          type: 'object',
+          required: ['algorithm', 'publicKey'],
+          properties: {
+            algorithm: { type: 'string', const: 'Ed25519' },
+            publicKey: { type: 'string', format: 'byte' },
+          },
+        },
+        encryption: {
+          type: 'object',
+          required: ['algorithm', 'publicKey'],
+          properties: {
+            algorithm: { type: 'string', const: 'X25519' },
+            publicKey: { type: 'string', format: 'byte' },
+          },
+        },
+      },
+    },
   },
   responses: {
     ValidationError: {

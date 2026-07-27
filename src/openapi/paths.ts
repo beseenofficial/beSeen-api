@@ -373,6 +373,47 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/{username}/keys': {
+    get: {
+      tags: ['Profiles'],
+      summary: 'Get a user’s active public encryption and signing keys',
+      description:
+        'Returns public keys only. Wallet addresses, private keys, and key-derivation signatures are never returned.',
+      operationId: 'getPublicUserKeys',
+      parameters: [
+        {
+          in: 'path',
+          name: 'username',
+          required: true,
+          schema: {
+            type: 'string',
+            minLength: 3,
+            maxLength: 30,
+            pattern: '^[a-zA-Z0-9_]+$',
+          },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Active public keys retrieved.', {
+          type: 'object',
+          required: ['user', 'keys'],
+          properties: {
+            user: {
+              type: 'object',
+              required: ['id', 'username'],
+              properties: {
+                id: { $ref: '#/components/schemas/ObjectId' },
+                username: { type: 'string' },
+              },
+            },
+            keys: { $ref: '#/components/schemas/PublicUserKeys' },
+          },
+        }),
+        '400': validationError,
+        '404': genericError,
+      },
+    },
+  },
   '/v1/users/{username}': {
     get: {
       tags: ['Profiles'],
@@ -399,6 +440,98 @@ const openApiPaths = {
           properties: { user: { $ref: '#/components/schemas/PublicUser' } },
         }),
         '400': validationError,
+        '404': genericError,
+      },
+    },
+  },
+  '/v1/broadcasts/drafts': {
+    post: {
+      tags: ['Broadcasts'],
+      summary: 'Create an encrypted broadcast draft and freeze its audience',
+      description:
+        'Creator-only. Currently snapshots every other active user that has an active encryption key. Returns the creator key and first recipient page so small audiences need no additional key-list request. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
+      operationId: 'createBroadcastDraft',
+      security: [{ bearerAuth: [] }],
+      requestBody: jsonBody({
+        type: 'object',
+        additionalProperties: false,
+        required: ['clientBroadcastId'],
+        properties: {
+          clientBroadcastId: {
+            type: 'string',
+            format: 'uuid',
+            description: 'Client-generated idempotency ID for safe retries.',
+          },
+        },
+      }),
+      responses: {
+        '201': jsonResponse('Broadcast draft created.', {
+          type: 'object',
+          required: ['draft'],
+          properties: { draft: { $ref: '#/components/schemas/BroadcastDraft' } },
+        }),
+        '200': jsonResponse('The idempotent broadcast draft already exists.', {
+          type: 'object',
+          required: ['draft'],
+          properties: { draft: { $ref: '#/components/schemas/BroadcastDraft' } },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '403': genericError,
+        '409': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
+  '/v1/broadcasts/drafts/{draftId}/recipients': {
+    get: {
+      tags: ['Broadcasts'],
+      summary: 'Get a frozen page of recipient public encryption keys',
+      description:
+        'Only the creator that owns the draft can access this snapshot. Pass nextCursor from the previous page until hasMore is false.',
+      operationId: 'getBroadcastDraftRecipients',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'draftId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 250, default: 100 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Recipient public keys retrieved.', {
+          type: 'object',
+          required: ['draft', 'recipients'],
+          properties: {
+            draft: {
+              type: 'object',
+              required: ['id', 'clientBroadcastId', 'status', 'audienceType', 'audienceCount'],
+              properties: {
+                id: { $ref: '#/components/schemas/ObjectId' },
+                clientBroadcastId: { type: 'string', format: 'uuid' },
+                status: { type: 'string', const: 'draft' },
+                audienceType: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+                audienceCount: { type: 'integer', minimum: 0 },
+              },
+            },
+            recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
         '404': genericError,
       },
     },
