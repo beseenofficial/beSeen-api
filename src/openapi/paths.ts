@@ -581,6 +581,68 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/broadcasts/drafts/{draftId}/finalize': {
+    post: {
+      tags: ['Broadcasts'],
+      summary: 'Verify and publish a complete encrypted broadcast',
+      description:
+        'Requires every frozen recipient key to be uploaded. The server computes the deterministic recipient manifest digest and verifies the Ed25519 signature using the creator signing public key frozen at draft creation. Identical retries are safe; different finalization payloads conflict.',
+      operationId: 'finalizeBroadcast',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'draftId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: jsonBody({
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'contentCiphertext',
+          'contentNonce',
+          'creatorEncryptedBroadcastKey',
+          'signature',
+        ],
+        properties: {
+          contentCiphertext: {
+            type: 'string',
+            format: 'byte',
+            description: 'XChaCha20-Poly1305 ciphertext generated once in the client.',
+          },
+          contentNonce: {
+            type: 'string',
+            format: 'byte',
+            description: 'Canonical base64 24-byte XChaCha20 nonce.',
+          },
+          creatorEncryptedBroadcastKey: {
+            type: 'string',
+            format: 'byte',
+            description: 'Canonical base64 80-byte content key wrapped for the creator.',
+          },
+          signature: {
+            type: 'string',
+            format: 'byte',
+            description: 'Canonical base64 64-byte Ed25519 signature of the documented manifest.',
+          },
+        },
+      }),
+      responses: {
+        '200': jsonResponse('Broadcast published or identical finalization replayed.', {
+          type: 'object',
+          required: ['broadcast'],
+          properties: { broadcast: { $ref: '#/components/schemas/PublishedBroadcast' } },
+        }),
+        '400': validationError,
+        '401': genericError,
+        '404': genericError,
+        '409': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
 };
 
 export default openApiPaths;
