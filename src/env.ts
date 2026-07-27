@@ -7,7 +7,10 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().max(65_535).default(5000),
-    DB_URI: z.string().min(1).default('mongodb://127.0.0.1:27017'),
+    DB_URI: z
+      .string()
+      .min(1)
+      .default('mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true'),
     DB_NAME: z.string().min(1).default('beseen'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5000'),
     STELLAR_NETWORK: z.enum(['public', 'testnet']).default('public'),

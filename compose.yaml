@@ -2,25 +2,16 @@ services:
   mongo:
     image: mongo:8.0
     restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: ${DB_NAME:-beseen}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-beseen_root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}
-      MONGO_REPLICA_SET_KEY: ${MONGO_REPLICA_SET_KEY:?MONGO_REPLICA_SET_KEY must be set}
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        umask 077
-        printf '%s' "$$MONGO_REPLICA_SET_KEY" > /tmp/mongodb-keyfile
-        chown mongodb:mongodb /tmp/mongodb-keyfile
-        exec /usr/local/bin/docker-entrypoint.sh mongod \
-          --replSet rs0 \
-          --keyFile /tmp/mongodb-keyfile \
-          --bind_ip_all
+    command:
+      - mongod
+      - --replSet
+      - rs0
+      - --bind_ip_all
     volumes:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
+    ports:
+      - '127.0.0.1:27017:27017'
     networks:
       - backend
     healthcheck:
@@ -28,50 +19,12 @@ services:
         - CMD-SHELL
         - >-
           mongosh --quiet --host 127.0.0.1
-          --username "$$MONGO_INITDB_ROOT_USERNAME"
-          --password "$$MONGO_INITDB_ROOT_PASSWORD"
-          --authenticationDatabase admin
           --eval "try { if (db.hello().isWritablePrimary) { quit(0) }; rs.status(); quit(2) } catch (error) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}); quit(2) }"
       interval: 5s
       timeout: 5s
       retries: 30
       start_period: 15s
     stop_grace_period: 30s
-
-  mongo-init:
-    image: mongo:8.0
-    restart: 'no'
-    depends_on:
-      mongo:
-        condition: service_healthy
-    environment:
-      MONGO_INITDB_DATABASE: ${DB_NAME:-beseen}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-beseen_root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}
-      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:-beseen_app}
-      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set}
-    entrypoint:
-      - /bin/bash
-      - -ec
-      - |
-        mongosh --quiet --host mongo \
-          --username "$$MONGO_INITDB_ROOT_USERNAME" \
-          --password "$$MONGO_INITDB_ROOT_PASSWORD" \
-          --authenticationDatabase admin \
-          --eval '
-            const databaseName = process.env.MONGO_INITDB_DATABASE;
-            const username = process.env.MONGO_APP_USERNAME;
-            const password = process.env.MONGO_APP_PASSWORD;
-            const applicationDatabase = db.getSiblingDB(databaseName);
-            const roles = [{ role: "readWrite", db: databaseName }];
-            if (applicationDatabase.getUser(username)) {
-              applicationDatabase.updateUser(username, { pwd: password, roles });
-            } else {
-              applicationDatabase.createUser({ user: username, pwd: password, roles });
-            }
-          '
-    networks:
-      - backend
 
   api:
     build:
@@ -84,12 +37,10 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-      mongo-init:
-        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       PORT: 5000
-      DB_URI: mongodb://${MONGO_APP_USERNAME:-beseen_app}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set}@mongo:27017/?replicaSet=rs0&authSource=${DB_NAME:-beseen}
+      DB_URI: mongodb://mongo:27017/?replicaSet=rs0
       DB_NAME: ${DB_NAME:-beseen}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
