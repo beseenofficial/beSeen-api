@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import User from '../../src/models/User';
 
-const VALID_STELLAR_ADDRESS = `G${'A'.repeat(55)}`;
+const VALID_STELLAR_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 const validUserInput = () => ({
   walletAddress: VALID_STELLAR_ADDRESS,
