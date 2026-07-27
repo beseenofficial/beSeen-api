@@ -68,6 +68,7 @@ const createRegistrationChallenge = async (
     encryptionPublicKey: keys.encryption.publicKey,
     derivationVersion: keys.derivationVersion,
     expiresAt,
+    purgeAt: expiresAt,
   });
 
   return {
