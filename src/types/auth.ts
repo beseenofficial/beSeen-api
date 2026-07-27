@@ -18,4 +18,12 @@ interface AuthenticatedUser {
   createdAt: Date;
 }
 
-export type { AuthenticatedCreatorProfile, AuthenticatedUser };
+interface AuthRequestContext {
+  userId: string;
+  sessionId: string;
+  role: UserRole;
+  accountType: UserAccountType;
+}
+
+export type { AuthenticatedCreatorProfile, AuthenticatedUser, AuthRequestContext };
+import type { UserAccountType, UserRole } from '../constant/user';
