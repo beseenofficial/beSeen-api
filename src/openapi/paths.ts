@@ -444,6 +444,46 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/broadcasts/feed': {
+    get: {
+      tags: ['Broadcasts'],
+      summary: 'Get received or sent encrypted broadcasts for the current user',
+      description:
+        'Defaults to received. Every item has the same shape, and viewerKey contains only the wrapped content key intended for the authenticated viewer. The signed manifest also contains the creator wrapped ciphertext required for signature verification; it is not decryptable by recipients. Plaintext and private keys are never returned.',
+      operationId: 'getBroadcastFeed',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'query',
+          name: 'view',
+          required: false,
+          schema: { type: 'string', enum: ['received', 'sent'], default: 'received' },
+        },
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Broadcast feed retrieved.', {
+          type: 'object',
+          required: ['feed'],
+          properties: { feed: { $ref: '#/components/schemas/BroadcastFeedPage' } },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '429': rateLimited,
+      },
+    },
+  },
   '/v1/broadcasts/drafts': {
     post: {
       tags: ['Broadcasts'],
