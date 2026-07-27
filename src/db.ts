@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import type { ClientSession } from 'mongoose';
 
 import env from './env';
 import log from './logger';
@@ -16,4 +17,10 @@ const disconnectDatabase = async (): Promise<void> => {
   log.info('Database disconnected');
 };
 
-export { connectDatabase, disconnectDatabase };
+const withDatabaseTransaction = async <T>(
+  operation: (session: ClientSession) => Promise<T>,
+): Promise<T> => {
+  return mongoose.connection.transaction(operation);
+};
+
+export { connectDatabase, disconnectDatabase, withDatabaseTransaction };

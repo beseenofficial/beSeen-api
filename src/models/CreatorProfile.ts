@@ -1,25 +1,14 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
-const MAX_CREATOR_CATEGORIES = 5;
-const MAX_CREATOR_SKILLS = 20;
-
-const normalizeStringList = (values: string[]): string[] => {
-  return [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
-};
-
-const isHttpUrl = (value: string | null): boolean => {
-  if (value === null) {
-    return true;
-  }
-
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
+import {
+  MAX_CREATOR_CATEGORIES,
+  MAX_CREATOR_CATEGORY_LENGTH,
+  MAX_CREATOR_SKILLS,
+  MAX_CREATOR_SKILL_LENGTH,
+} from '../constant/profile';
+import isHttpUrl from '../utils/profile/isHttpUrl';
+import normalizeStringList from '../utils/profile/normalizeStringList';
 
 interface ICreatorProfile {
   user: Types.ObjectId;
@@ -52,8 +41,10 @@ const creatorProfileSchema = new Schema<ICreatorProfile>(
       default: [],
       set: normalizeStringList,
       validate: {
-        validator: (values: string[]) => values.length <= MAX_CREATOR_CATEGORIES,
-        message: `A creator can have at most ${MAX_CREATOR_CATEGORIES} categories`,
+        validator: (values: string[]) =>
+          values.length <= MAX_CREATOR_CATEGORIES &&
+          values.every((value) => value.length <= MAX_CREATOR_CATEGORY_LENGTH),
+        message: `Creator categories must contain at most ${MAX_CREATOR_CATEGORIES} values of ${MAX_CREATOR_CATEGORY_LENGTH} characters`,
       },
     },
     skills: {
@@ -61,8 +52,10 @@ const creatorProfileSchema = new Schema<ICreatorProfile>(
       default: [],
       set: normalizeStringList,
       validate: {
-        validator: (values: string[]) => values.length <= MAX_CREATOR_SKILLS,
-        message: `A creator can have at most ${MAX_CREATOR_SKILLS} skills`,
+        validator: (values: string[]) =>
+          values.length <= MAX_CREATOR_SKILLS &&
+          values.every((value) => value.length <= MAX_CREATOR_SKILL_LENGTH),
+        message: `Creator skills must contain at most ${MAX_CREATOR_SKILLS} values of ${MAX_CREATOR_SKILL_LENGTH} characters`,
       },
     },
     websiteUrl: {
@@ -96,5 +89,4 @@ creatorProfileSchema.index(
 const CreatorProfile = model<ICreatorProfile>('CreatorProfile', creatorProfileSchema);
 
 export default CreatorProfile;
-export { MAX_CREATOR_CATEGORIES, MAX_CREATOR_SKILLS, isHttpUrl, normalizeStringList };
 export type { CreatorProfileDocument, ICreatorProfile };
