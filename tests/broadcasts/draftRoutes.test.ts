@@ -49,6 +49,7 @@ describe('broadcast draft routes', () => {
           keyWrapSuite: 'X25519-XSALSA20-POLY1305-SEALEDBOX',
         },
         creatorKey: { keyVersion: 1, encryptionPublicKey },
+        progress: { uploadedCount: 0, remainingCount: 1, complete: false },
         recipients: {
           items: [
             {
@@ -56,6 +57,8 @@ describe('broadcast draft routes', () => {
               username: 'member_user',
               keyVersion: 1,
               encryptionPublicKey,
+              keyUploaded: false,
+              encryptedBroadcastKey: null,
             },
           ],
           nextCursor: null,
@@ -103,6 +106,7 @@ describe('broadcast draft routes', () => {
         status: 'draft',
         audienceType: 'all_active_users',
         audienceCount: 1,
+        progress: { uploadedCount: 0, remainingCount: 1, complete: false },
       },
       recipients: {
         items: [],

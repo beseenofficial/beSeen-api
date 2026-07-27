@@ -38,11 +38,15 @@ describe('getBroadcastDraftRecipients', () => {
           encryptionPublicKey: Buffer.alloc(32, value).toString('base64'),
         }),
     );
+    rows[0]!.encryptedBroadcastKey = Buffer.alloc(80, 9).toString('base64');
     vi.spyOn(Broadcast, 'findOne').mockReturnValue({
       exec: vi.fn().mockResolvedValue(draft),
     } as never);
     const recipientQuery = chainResult(rows);
     vi.spyOn(BroadcastRecipient, 'find').mockReturnValue(recipientQuery as never);
+    vi.spyOn(BroadcastRecipient, 'countDocuments').mockReturnValue({
+      exec: vi.fn().mockResolvedValue(1),
+    } as never);
 
     const result = await getBroadcastDraftRecipients(creatorId.toString(), draft._id.toString(), {
       limit: 1,
@@ -58,8 +62,13 @@ describe('getBroadcastDraftRecipients', () => {
             userId: rows[0]!.recipient.toString(),
             username: 'member_1',
             keyVersion: 1,
+            keyUploaded: true,
+            encryptedBroadcastKey: rows[0]!.encryptedBroadcastKey,
           },
         ],
+      },
+      draft: {
+        progress: { uploadedCount: 1, remainingCount: 1, complete: false },
       },
     });
     expect(result).not.toHaveProperty('recipients.items.0.privateKey');
@@ -71,6 +80,7 @@ describe('getBroadcastDraftRecipients', () => {
       exec: vi.fn().mockResolvedValue(null),
     } as never);
     const findRecipientsSpy = vi.spyOn(BroadcastRecipient, 'find');
+    const countRecipientsSpy = vi.spyOn(BroadcastRecipient, 'countDocuments');
 
     await expect(
       getBroadcastDraftRecipients(
@@ -82,5 +92,6 @@ describe('getBroadcastDraftRecipients', () => {
       ),
     ).resolves.toEqual({ ok: false, reason: 'draft_not_found' });
     expect(findRecipientsSpy).not.toHaveBeenCalled();
+    expect(countRecipientsSpy).not.toHaveBeenCalled();
   });
 });

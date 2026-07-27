@@ -63,6 +63,7 @@ describe('createBroadcastDraft', () => {
         status: 'draft',
         audienceType: 'all_active_users',
         audienceCount: 1,
+        progress: { uploadedCount: 0, remainingCount: 1, complete: false },
       },
       recipients: {
         items: [
@@ -71,6 +72,8 @@ describe('createBroadcastDraft', () => {
             username: audience[0]!.username,
             keyVersion: 1,
             encryptionPublicKey: audience[0]!.encryptionPublicKey,
+            keyUploaded: false,
+            encryptedBroadcastKey: null,
           },
         ],
         nextCursor: null,
@@ -95,6 +98,7 @@ describe('createBroadcastDraft', () => {
           contentSuite: 'XCHACHA20-POLY1305-IETF',
           keyWrapSuite: 'X25519-XSALSA20-POLY1305-SEALEDBOX',
         },
+        progress: { uploadedCount: 0, remainingCount: 1, complete: false },
       },
     });
     expect(insertManySpy).toHaveBeenCalledWith(
