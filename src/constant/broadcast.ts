@@ -18,7 +18,7 @@ const BROADCAST_FEED_DEFAULT_LIMIT = 20;
 const BROADCAST_FEED_MAX_LIMIT = 50;
 const BROADCAST_DRAFT_LIST_DEFAULT_LIMIT = 20;
 const BROADCAST_DRAFT_LIST_MAX_LIMIT = 50;
-const BROADCAST_STATUSES = ['draft', 'published'] as const;
+const BROADCAST_STATUSES = ['draft', 'published', 'canceled'] as const;
 const BROADCAST_AUDIENCE_TYPES = ['all_active_users', 'token_holders'] as const;
 
 type BroadcastStatus = (typeof BROADCAST_STATUSES)[number];

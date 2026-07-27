@@ -59,6 +59,11 @@ const finalizeBroadcastRoute: RequestHandler = async (req, res) => {
         code: 'BROADCAST_DRAFT_NOT_FOUND',
         message: 'Broadcast draft was not found',
       },
+      draft_expired: {
+        statusCode: 410,
+        code: 'BROADCAST_DRAFT_EXPIRED',
+        message: 'Broadcast draft has expired',
+      },
       audience_snapshot_mismatch: {
         statusCode: 409,
         code: 'AUDIENCE_SNAPSHOT_MISMATCH',

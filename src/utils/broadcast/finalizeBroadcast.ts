@@ -8,6 +8,7 @@ import buildBroadcastSignatureMessage from './buildBroadcastSignatureMessage';
 
 type FinalizeBroadcastFailure =
   | { reason: 'draft_not_found' }
+  | { reason: 'draft_expired' }
   | { reason: 'recipient_keys_incomplete'; remainingCount: number }
   | { reason: 'audience_snapshot_mismatch' }
   | { reason: 'invalid_signature' }
@@ -89,10 +90,18 @@ const finalizeBroadcast = async (
     return { ok: false, reason: 'draft_not_found' };
   }
 
+  if (draft.status === 'canceled') {
+    return { ok: false, reason: 'draft_not_found' };
+  }
+
   if (draft.status === 'published') {
     return hasSameFinalization(draft, body)
       ? { ok: true, broadcast: serializePublishedBroadcast(draft), publishedNow: false }
       : { ok: false, reason: 'finalization_conflict' };
+  }
+
+  if (draft.expiresAt <= new Date()) {
+    return { ok: false, reason: 'draft_expired' };
   }
 
   const recipients = await BroadcastRecipient.find({ broadcast: draft._id })

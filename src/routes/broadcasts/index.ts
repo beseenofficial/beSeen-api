@@ -1,11 +1,13 @@
 import { Router } from 'express';
 
 import authenticate from '../../middleware/authenticate';
+import broadcastCancelRateLimit from '../../middleware/broadcastCancelRateLimit';
 import broadcastCreateRateLimit from '../../middleware/broadcastCreateRateLimit';
 import broadcastDraftReadRateLimit from '../../middleware/broadcastDraftReadRateLimit';
 import broadcastFinalizeRateLimit from '../../middleware/broadcastFinalizeRateLimit';
 import broadcastFeedRateLimit from '../../middleware/broadcastFeedRateLimit';
 import broadcastKeyBatchRateLimit from '../../middleware/broadcastKeyBatchRateLimit';
+import cancelBroadcastDraftRoute from './cancelDraft';
 import createBroadcastDraftRoute from './createDraft';
 import getBroadcastDraftRecipientsRoute from './draftRecipients';
 import getBroadcastDraftsRoute from './drafts';
@@ -23,6 +25,12 @@ broadcastRoutes.get(
   authenticate,
   broadcastDraftReadRateLimit,
   getBroadcastDraftRecipientsRoute,
+);
+broadcastRoutes.delete(
+  '/drafts/:draftId',
+  authenticate,
+  broadcastCancelRateLimit,
+  cancelBroadcastDraftRoute,
 );
 broadcastRoutes.put(
   '/drafts/:draftId/recipient-keys',

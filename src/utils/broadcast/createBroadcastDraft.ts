@@ -41,6 +41,7 @@ interface CreatedBroadcastDraft {
   };
   recipients: BroadcastRecipientPage;
   createdAt: Date;
+  expiresAt: Date;
 }
 
 type CreateBroadcastDraftResult =
@@ -80,6 +81,7 @@ const serializeDraft = async (draft: BroadcastDocument): Promise<CreatedBroadcas
     progress: page.draft.progress,
     recipients: page.recipients,
     createdAt: draft.createdAt,
+    expiresAt: draft.expiresAt,
   };
 };
 
@@ -91,6 +93,7 @@ const findExistingDraft = async (
     creator: creatorId,
     clientBroadcastId,
     status: 'draft',
+    expiresAt: { $gt: new Date() },
   }).exec();
 
   if (!existing) {

@@ -32,6 +32,7 @@ interface BroadcastDraftListItem {
     encryptionPublicKey: string;
   };
   createdAt: Date;
+  expiresAt: Date;
 }
 
 interface BroadcastDraftListPage {
@@ -65,6 +66,7 @@ const getBroadcastDrafts = async (
   const draftFilter: Record<string, unknown> = {
     creator: creator._id,
     status: 'draft',
+    expiresAt: { $gt: new Date() },
   };
 
   if (query.cursor) {
@@ -116,6 +118,7 @@ const getBroadcastDrafts = async (
         encryptionPublicKey: draft.creatorEncryptionPublicKey,
       },
       createdAt: draft.createdAt,
+      expiresAt: draft.expiresAt,
     };
   });
   const lastItem = items.at(-1);

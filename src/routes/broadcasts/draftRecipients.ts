@@ -54,7 +54,10 @@ const getBroadcastDraftRecipientsRoute: RequestHandler = async (req, res) => {
   return res.status(200).j({
     status: 'success',
     message: 'Broadcast recipient public keys retrieved',
-    result: { draft: result.draft, recipients: result.recipients },
+    result: {
+      draft: { ...result.draft, expiresAt: result.draft.expiresAt.toISOString() },
+      recipients: result.recipients,
+    },
   });
 };
 

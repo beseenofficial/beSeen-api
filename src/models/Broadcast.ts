@@ -11,6 +11,7 @@ import {
   BROADCAST_WRAPPED_KEY_BYTES,
 } from '../constant/broadcast';
 import type { BroadcastAudienceType, BroadcastStatus } from '../constant/broadcast';
+import env from '../env';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
 import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 
@@ -30,6 +31,8 @@ interface IBroadcast {
   recipientKeysDigest: string | null;
   signature: string | null;
   publishedAt: Date | null;
+  canceledAt: Date | null;
+  expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +155,15 @@ const broadcastSchema = new Schema<IBroadcast>(
       type: Date,
       default: null,
     },
+    canceledAt: {
+      type: Date,
+      default: null,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      default: () => new Date(Date.now() + env.BROADCAST_DRAFT_TTL_SECONDS * 1_000),
+    },
   },
   {
     timestamps: true,
@@ -177,6 +189,10 @@ broadcastSchema.pre('validate', function validatePublishedEnvelope() {
       }
     }
   }
+
+  if (this.status === 'canceled' && !this.canceledAt) {
+    this.invalidate('canceledAt', 'canceledAt is required for a canceled broadcast draft');
+  }
 });
 
 broadcastSchema.index(
@@ -184,6 +200,7 @@ broadcastSchema.index(
   { unique: true, name: 'broadcasts_creator_client_id_unique' },
 );
 broadcastSchema.index({ creator: 1, status: 1, _id: -1 }, { name: 'broadcasts_creator_status' });
+broadcastSchema.index({ status: 1, expiresAt: 1 }, { name: 'broadcasts_status_expiration' });
 
 const Broadcast = model<IBroadcast>('Broadcast', broadcastSchema);
 

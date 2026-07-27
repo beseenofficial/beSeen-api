@@ -31,6 +31,7 @@ type GetBroadcastDraftRecipientsResult =
           remainingCount: number;
           complete: boolean;
         };
+        expiresAt: Date;
       };
       recipients: BroadcastRecipientPage;
     }
@@ -45,6 +46,7 @@ const getBroadcastDraftRecipients = async (
     _id: draftId,
     creator: creatorId,
     status: 'draft',
+    expiresAt: { $gt: new Date() },
   }).exec();
 
   if (!draft) {
@@ -84,6 +86,7 @@ const getBroadcastDraftRecipients = async (
         remainingCount: Math.max(0, draft.audienceSnapshotCount - uploadedCount),
         complete: uploadedCount === draft.audienceSnapshotCount,
       },
+      expiresAt: draft.expiresAt,
     },
     recipients: {
       items: visibleRows.map((row) => ({

@@ -69,6 +69,7 @@ const createBroadcastDraftRoute: RequestHandler = async (req, res) => {
       draft: {
         ...result.draft,
         createdAt: result.draft.createdAt.toISOString(),
+        expiresAt: result.draft.expiresAt.toISOString(),
       },
     },
   });

@@ -47,6 +47,7 @@ const getBroadcastDraftsRoute: RequestHandler = async (req, res) => {
         items: result.drafts.items.map((draft) => ({
           ...draft,
           createdAt: draft.createdAt.toISOString(),
+          expiresAt: draft.expiresAt.toISOString(),
         })),
       },
     },
