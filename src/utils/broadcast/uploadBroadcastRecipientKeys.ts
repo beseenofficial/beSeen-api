@@ -29,6 +29,7 @@ const uploadBroadcastRecipientKeys = async (
     _id: draftId,
     creator: creatorId,
     status: 'draft',
+    expiresAt: { $gt: new Date() },
   }).exec();
 
   if (!draft) {

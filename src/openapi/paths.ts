@@ -612,6 +612,7 @@ const openApiPaths = {
                 'audienceType',
                 'audienceCount',
                 'progress',
+                'expiresAt',
               ],
               properties: {
                 id: { $ref: '#/components/schemas/ObjectId' },
@@ -620,6 +621,7 @@ const openApiPaths = {
                 audienceType: { type: 'string', enum: ['all_active_users', 'token_holders'] },
                 audienceCount: { type: 'integer', minimum: 0 },
                 progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
+                expiresAt: { type: 'string', format: 'date-time' },
               },
             },
             recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
@@ -666,6 +668,48 @@ const openApiPaths = {
           required: ['progress'],
           properties: {
             progress: { $ref: '#/components/schemas/BroadcastKeyUploadProgress' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
+  '/v1/broadcasts/drafts/{draftId}': {
+    delete: {
+      tags: ['Broadcasts'],
+      summary: 'Cancel an unfinished broadcast draft',
+      description:
+        'Atomically changes an owned draft to canceled before removing its recipient snapshot. Published broadcasts cannot be canceled through this endpoint. Repeating the request while the canceled tombstone still exists is safe.',
+      operationId: 'cancelBroadcastDraft',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'draftId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Broadcast draft canceled or already canceled.', {
+          type: 'object',
+          required: ['draft'],
+          properties: {
+            draft: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['id', 'status', 'canceledAt', 'removedRecipientCount'],
+              properties: {
+                id: { $ref: '#/components/schemas/ObjectId' },
+                status: { type: 'string', const: 'canceled' },
+                canceledAt: { type: 'string', format: 'date-time' },
+                removedRecipientCount: { type: 'integer', minimum: 0 },
+              },
+            },
           },
         }),
         '400': validationError,
@@ -734,6 +778,7 @@ const openApiPaths = {
         '401': genericError,
         '404': genericError,
         '409': genericError,
+        '410': genericError,
         '429': rateLimited,
       },
     },

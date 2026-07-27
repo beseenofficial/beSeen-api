@@ -289,6 +289,7 @@ const openApiComponents = {
         'progress',
         'recipients',
         'createdAt',
+        'expiresAt',
       ],
       properties: {
         id: objectIdSchema,
@@ -328,6 +329,7 @@ const openApiComponents = {
         progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
         recipients: { $ref: '#/components/schemas/BroadcastRecipientPage' },
         createdAt: { type: 'string', format: 'date-time' },
+        expiresAt: { type: 'string', format: 'date-time' },
       },
     },
     BroadcastDraftProgress: {
@@ -352,6 +354,7 @@ const openApiComponents = {
         'encryption',
         'creatorKey',
         'createdAt',
+        'expiresAt',
       ],
       properties: {
         id: objectIdSchema,
@@ -387,6 +390,7 @@ const openApiComponents = {
           },
         },
         createdAt: { type: 'string', format: 'date-time' },
+        expiresAt: { type: 'string', format: 'date-time' },
       },
     },
     PublishedBroadcast: {
