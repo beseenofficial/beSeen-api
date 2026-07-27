@@ -22,7 +22,10 @@ describe('OpenAPI contract', () => {
         '/v1/auth/logout',
         '/v1/users/me',
         '/v1/users/username/availability',
+        '/v1/users/{username}/keys',
         '/v1/users/{username}',
+        '/v1/broadcasts/drafts',
+        '/v1/broadcasts/drafts/{draftId}/recipients',
       ]),
     );
     expect(openApiDocument.paths['/v1/auth/registration/verify'].post.deprecated).toBe(true);
