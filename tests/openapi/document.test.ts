@@ -24,6 +24,7 @@ describe('OpenAPI contract', () => {
         '/v1/users/username/availability',
         '/v1/users/{username}/keys',
         '/v1/users/{username}',
+        '/v1/broadcasts/feed',
         '/v1/broadcasts/drafts',
         '/v1/broadcasts/drafts/{draftId}/recipients',
         '/v1/broadcasts/drafts/{draftId}/recipient-keys',
