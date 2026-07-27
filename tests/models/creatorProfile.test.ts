@@ -1,10 +1,8 @@
 import { Types } from 'mongoose';
 import { describe, expect, it } from 'vitest';
 
-import CreatorProfile, {
-  MAX_CREATOR_CATEGORIES,
-  MAX_CREATOR_SKILLS,
-} from '../../src/models/CreatorProfile';
+import { MAX_CREATOR_CATEGORIES, MAX_CREATOR_SKILLS } from '../../src/constant/profile';
+import CreatorProfile from '../../src/models/CreatorProfile';
 
 describe('CreatorProfile model', () => {
   it('normalizes categories and skills and applies defaults', async () => {
