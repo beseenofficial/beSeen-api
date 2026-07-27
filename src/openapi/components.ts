@@ -236,6 +236,33 @@ const openApiComponents = {
         hasMore: { type: 'boolean' },
       },
     },
+    EncryptedBroadcastRecipientKey: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['recipientId', 'keyVersion', 'encryptedBroadcastKey'],
+      properties: {
+        recipientId: objectIdSchema,
+        keyVersion: { type: 'integer', minimum: 1 },
+        encryptedBroadcastKey: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 80-byte sealed-box ciphertext containing the random 32-byte broadcast content key.',
+        },
+      },
+    },
+    BroadcastKeyUploadProgress: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['acceptedCount', 'uploadedCount', 'audienceCount', 'remainingCount', 'complete'],
+      properties: {
+        acceptedCount: { type: 'integer', minimum: 1, maximum: 250 },
+        uploadedCount: { type: 'integer', minimum: 0 },
+        audienceCount: { type: 'integer', minimum: 0 },
+        remainingCount: { type: 'integer', minimum: 0 },
+        complete: { type: 'boolean' },
+      },
+    },
     BroadcastDraft: {
       type: 'object',
       additionalProperties: false,

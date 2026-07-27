@@ -536,6 +536,51 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/broadcasts/drafts/{draftId}/recipient-keys': {
+    put: {
+      tags: ['Broadcasts'],
+      summary: 'Upload a batch of recipient-wrapped broadcast keys',
+      description:
+        'Each item is the same random 32-byte content key wrapped locally for one frozen recipient public key. A batch may be retried with identical ciphertexts. A different ciphertext for an already stored recipient is rejected. Plaintext, raw content keys, and private keys are never accepted.',
+      operationId: 'uploadBroadcastRecipientKeys',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'draftId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: jsonBody({
+        type: 'object',
+        additionalProperties: false,
+        required: ['keys'],
+        properties: {
+          keys: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 250,
+            items: { $ref: '#/components/schemas/EncryptedBroadcastRecipientKey' },
+          },
+        },
+      }),
+      responses: {
+        '200': jsonResponse('Encrypted broadcast keys stored.', {
+          type: 'object',
+          required: ['progress'],
+          properties: {
+            progress: { $ref: '#/components/schemas/BroadcastKeyUploadProgress' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
 };
 
 export default openApiPaths;
