@@ -6,6 +6,7 @@ const RESERVED_USERNAMES = [
   'administrator',
   'api',
   'beseen',
+  'me',
   'moderator',
   'root',
   'support',
