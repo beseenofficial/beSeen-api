@@ -7,6 +7,7 @@ import type { AuthChallengeDocument } from '../../models/AuthChallenge';
 import CreatorProfile from '../../models/CreatorProfile';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import type { AuthenticatedCreatorProfile, AuthenticatedUser } from '../../types/auth';
 import type { RegisterBody } from '../../validation/auth/register';
 import createAuthSession from './createAuthSession';
 import type { AuthTokens } from './createAuthSession';
@@ -24,25 +25,8 @@ type RegistrationFailureReason =
   | 'wallet_already_registered'
   | 'public_key_already_registered';
 
-interface RegisteredCreatorProfile {
-  headline: string;
-  categories: string[];
-  skills: string[];
-  websiteUrl: string | null;
-  isAvailableForWork: boolean;
-}
-
-interface RegisteredUser {
-  id: string;
-  walletAddress: string;
-  username: string;
-  displayName: string;
-  bio: string;
-  avatarUrl: string | null;
-  accountType: 'regular' | 'creator';
-  creatorProfile: RegisteredCreatorProfile | null;
-  createdAt: Date;
-}
+type RegisteredCreatorProfile = AuthenticatedCreatorProfile;
+type RegisteredUser = AuthenticatedUser;
 
 interface SuccessfulRegistration {
   ok: true;
