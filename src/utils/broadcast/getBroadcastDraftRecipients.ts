@@ -7,6 +7,8 @@ interface BroadcastRecipientPublicKey {
   username: string;
   keyVersion: number;
   encryptionPublicKey: string;
+  keyUploaded: boolean;
+  encryptedBroadcastKey: string | null;
 }
 
 interface BroadcastRecipientPage {
@@ -24,6 +26,11 @@ type GetBroadcastDraftRecipientsResult =
         status: 'draft';
         audienceType: 'all_active_users' | 'token_holders';
         audienceCount: number;
+        progress: {
+          uploadedCount: number;
+          remainingCount: number;
+          complete: boolean;
+        };
       };
       recipients: BroadcastRecipientPage;
     }
@@ -50,10 +57,16 @@ const getBroadcastDraftRecipients = async (
     recipientFilter.recipient = { $gt: page.cursor };
   }
 
-  const rows = await BroadcastRecipient.find(recipientFilter)
-    .sort({ recipient: 1 })
-    .limit(page.limit + 1)
-    .exec();
+  const [rows, uploadedCount] = await Promise.all([
+    BroadcastRecipient.find(recipientFilter)
+      .sort({ recipient: 1 })
+      .limit(page.limit + 1)
+      .exec(),
+    BroadcastRecipient.countDocuments({
+      broadcast: draft._id,
+      encryptedBroadcastKey: { $ne: null },
+    }).exec(),
+  ]);
   const hasMore = rows.length > page.limit;
   const visibleRows = hasMore ? rows.slice(0, page.limit) : rows;
   const lastRow = visibleRows.at(-1);
@@ -66,6 +79,11 @@ const getBroadcastDraftRecipients = async (
       status: 'draft',
       audienceType: draft.audienceType,
       audienceCount: draft.audienceSnapshotCount,
+      progress: {
+        uploadedCount,
+        remainingCount: Math.max(0, draft.audienceSnapshotCount - uploadedCount),
+        complete: uploadedCount === draft.audienceSnapshotCount,
+      },
     },
     recipients: {
       items: visibleRows.map((row) => ({
@@ -73,6 +91,8 @@ const getBroadcastDraftRecipients = async (
         username: row.username,
         keyVersion: row.keyVersion,
         encryptionPublicKey: row.encryptionPublicKey,
+        keyUploaded: row.encryptedBroadcastKey !== null,
+        encryptedBroadcastKey: row.encryptedBroadcastKey,
       })),
       nextCursor: hasMore && lastRow ? lastRow.recipient.toString() : null,
       hasMore,

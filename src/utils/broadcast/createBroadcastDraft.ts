@@ -34,6 +34,11 @@ interface CreatedBroadcastDraft {
     keyVersion: number;
     encryptionPublicKey: string;
   };
+  progress: {
+    uploadedCount: number;
+    remainingCount: number;
+    complete: boolean;
+  };
   recipients: BroadcastRecipientPage;
   createdAt: Date;
 }
@@ -72,6 +77,7 @@ const serializeDraft = async (draft: BroadcastDocument): Promise<CreatedBroadcas
       keyVersion: draft.creatorKeyVersion,
       encryptionPublicKey: draft.creatorEncryptionPublicKey,
     },
+    progress: page.draft.progress,
     recipients: page.recipients,
     createdAt: draft.createdAt,
   };
