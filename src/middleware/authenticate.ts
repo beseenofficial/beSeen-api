@@ -66,6 +66,7 @@ const authenticate: RequestHandler = async (req, res, next) => {
       role: payload.data.role,
       accountType: payload.data.accountType,
     };
+    res.setHeader('Cache-Control', 'no-store');
 
     return next();
   } catch (error: unknown) {

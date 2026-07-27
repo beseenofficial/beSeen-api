@@ -25,5 +25,12 @@ interface AuthRequestContext {
   accountType: UserAccountType;
 }
 
-export type { AuthenticatedCreatorProfile, AuthenticatedUser, AuthRequestContext };
+type PublicUserProfile = Omit<AuthenticatedUser, 'walletAddress'>;
+
+export type {
+  AuthenticatedCreatorProfile,
+  AuthenticatedUser,
+  AuthRequestContext,
+  PublicUserProfile,
+};
 import type { UserAccountType, UserRole } from '../constant/user';
