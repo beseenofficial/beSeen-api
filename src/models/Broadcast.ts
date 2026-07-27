@@ -3,11 +3,16 @@ import type { HydratedDocument, Types } from 'mongoose';
 
 import {
   BROADCAST_AUDIENCE_TYPES,
+  BROADCAST_CONTENT_NONCE_BYTES,
   BROADCAST_ENCRYPTION_VERSION,
+  BROADCAST_MAX_CIPHERTEXT_BYTES,
+  BROADCAST_MIN_CIPHERTEXT_BYTES,
   BROADCAST_STATUSES,
+  BROADCAST_WRAPPED_KEY_BYTES,
 } from '../constant/broadcast';
 import type { BroadcastAudienceType, BroadcastStatus } from '../constant/broadcast';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
+import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 
 interface IBroadcast {
   clientBroadcastId: string;
@@ -17,7 +22,14 @@ interface IBroadcast {
   audienceSnapshotCount: number;
   encryptionVersion: number;
   creatorKeyVersion: number;
+  creatorSigningPublicKey: string;
   creatorEncryptionPublicKey: string;
+  contentCiphertext: string | null;
+  contentNonce: string | null;
+  creatorEncryptedBroadcastKey: string | null;
+  recipientKeysDigest: string | null;
+  signature: string | null;
+  publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +79,14 @@ const broadcastSchema = new Schema<IBroadcast>(
       min: 1,
       required: true,
     },
+    creatorSigningPublicKey: {
+      type: String,
+      required: true,
+      validate: {
+        validator: isBase64PublicKey,
+        message: 'Creator signing public key must be a canonical base64-encoded 32-byte key',
+      },
+    },
     creatorEncryptionPublicKey: {
       type: String,
       required: true,
@@ -75,6 +95,63 @@ const broadcastSchema = new Schema<IBroadcast>(
         message: 'Creator encryption public key must be a canonical base64-encoded 32-byte key',
       },
     },
+    contentCiphertext: {
+      type: String,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null ||
+          isCanonicalBase64(value, {
+            minBytes: BROADCAST_MIN_CIPHERTEXT_BYTES,
+            maxBytes: BROADCAST_MAX_CIPHERTEXT_BYTES,
+          }),
+        message: 'Content ciphertext must be canonical base64 within the payload size limit',
+      },
+    },
+    contentNonce: {
+      type: String,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null ||
+          isCanonicalBase64(value, {
+            minBytes: BROADCAST_CONTENT_NONCE_BYTES,
+            maxBytes: BROADCAST_CONTENT_NONCE_BYTES,
+          }),
+        message: 'Content nonce must be canonical base64 containing exactly 24 bytes',
+      },
+    },
+    creatorEncryptedBroadcastKey: {
+      type: String,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null ||
+          isCanonicalBase64(value, {
+            minBytes: BROADCAST_WRAPPED_KEY_BYTES,
+            maxBytes: BROADCAST_WRAPPED_KEY_BYTES,
+          }),
+        message: 'Creator encrypted broadcast key must be a canonical base64 sealed-box ciphertext',
+      },
+    },
+    recipientKeysDigest: {
+      type: String,
+      default: null,
+      match: [/^[a-f\d]{64}$/, 'Recipient keys digest must be a lowercase SHA-256 hex digest'],
+    },
+    signature: {
+      type: String,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null || isCanonicalBase64(value, { minBytes: 64, maxBytes: 64 }),
+        message: 'Signature must be a canonical base64 Ed25519 signature',
+      },
+    },
+    publishedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -82,6 +159,25 @@ const broadcastSchema = new Schema<IBroadcast>(
     strict: 'throw',
   },
 );
+
+broadcastSchema.pre('validate', function validatePublishedEnvelope() {
+  const encryptedFields = [
+    'contentCiphertext',
+    'contentNonce',
+    'creatorEncryptedBroadcastKey',
+    'recipientKeysDigest',
+    'signature',
+    'publishedAt',
+  ] as const;
+
+  if (this.status === 'published') {
+    for (const field of encryptedFields) {
+      if (this[field] === null || this[field] === undefined) {
+        this.invalidate(field, `${field} is required for a published broadcast`);
+      }
+    }
+  }
+});
 
 broadcastSchema.index(
   { creator: 1, clientBroadcastId: 1 },

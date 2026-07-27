@@ -137,6 +137,7 @@ const createBroadcastDraft = async (
     audienceSnapshotCount: audience.length,
     encryptionVersion: BROADCAST_ENCRYPTION_VERSION,
     creatorKeyVersion: creatorKey.derivationVersion,
+    creatorSigningPublicKey: creatorKey.signingPublicKey,
     creatorEncryptionPublicKey: creatorKey.encryptionPublicKey,
   });
 
