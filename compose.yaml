@@ -88,10 +88,10 @@ services:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 5000
       DB_URI: mongodb://${MONGO_APP_USERNAME:-beseen_app}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set}@mongo:27017/?replicaSet=rs0&authSource=${DB_NAME:-beseen}
       DB_NAME: ${DB_NAME:-beseen}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       STELLAR_NETWORK: ${STELLAR_NETWORK:-public}
       AUTH_DOMAIN: ${AUTH_DOMAIN:-beseen.app}
@@ -103,7 +103,7 @@ services:
       BROADCAST_DRAFT_TTL_SECONDS: ${BROADCAST_DRAFT_TTL_SECONDS:-604800}
       BROADCAST_CLEANUP_INTERVAL_SECONDS: ${BROADCAST_CLEANUP_INTERVAL_SECONDS:-300}
     ports:
-      - '${API_PORT:-3000}:3000'
+      - '127.0.0.1:5000:5000'
     networks:
       - backend
     healthcheck:
@@ -112,7 +112,7 @@ services:
         - node
         - -e
         - >-
-          fetch('http://127.0.0.1:3000/v1/health')
+          fetch('http://127.0.0.1:5000/v1/health')
           .then((response) => process.exit(response.ok ? 0 : 1))
           .catch(() => process.exit(1))
       interval: 10s
