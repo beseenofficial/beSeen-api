@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import buildKeyDerivationMessage from '../../src/utils/auth/buildKeyDerivationMessage';
+import buildLoginMessage from '../../src/utils/auth/buildLoginMessage';
 import buildRegistrationMessage from '../../src/utils/auth/buildRegistrationMessage';
 import generateAuthNonce from '../../src/utils/auth/generateAuthNonce';
 import isBase64PublicKey from '../../src/utils/auth/isBase64PublicKey';
@@ -54,6 +55,30 @@ describe('authentication messages', () => {
         'Key Derivation Version: 1',
         `Signing Public Key (Ed25519): ${SIGNING_PUBLIC_KEY}`,
         `Encryption Public Key (X25519): ${ENCRYPTION_PUBLIC_KEY}`,
+        `Nonce: ${NONCE}`,
+        'Issued At: 2026-07-27T12:00:00.000Z',
+        'Expiration Time: 2026-07-27T12:05:00.000Z',
+      ].join('\n'),
+    );
+  });
+
+  it('builds a canonical replay-resistant login message', () => {
+    const message = buildLoginMessage({
+      domain: 'BESEEN.APP',
+      network: 'public',
+      walletAddress: WALLET_ADDRESS.toLowerCase(),
+      nonce: NONCE,
+      issuedAt: new Date('2026-07-27T12:00:00.000Z'),
+      expiresAt: new Date('2026-07-27T12:05:00.000Z'),
+    });
+
+    expect(message).toBe(
+      [
+        'BeSeen Login',
+        'Version: 1',
+        'Domain: beseen.app',
+        'Network: PUBLIC',
+        `Account: ${WALLET_ADDRESS}`,
         `Nonce: ${NONCE}`,
         'Issued At: 2026-07-27T12:00:00.000Z',
         'Expiration Time: 2026-07-27T12:05:00.000Z',
