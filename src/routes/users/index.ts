@@ -4,6 +4,7 @@ import authenticate from '../../middleware/authenticate';
 import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
 import getMeRoute from './me';
 import getPublicProfileRoute from './publicProfile';
+import getPublicUserKeysRoute from './publicKeys';
 import updateMeRoute from './updateMe';
 import getUsernameAvailabilityRoute from './usernameAvailability';
 
@@ -16,6 +17,7 @@ userRoutes.get(
   usernameAvailabilityRateLimit,
   getUsernameAvailabilityRoute,
 );
+userRoutes.get('/:username/keys', getPublicUserKeysRoute);
 userRoutes.get('/:username', getPublicProfileRoute);
 
 export default userRoutes;
