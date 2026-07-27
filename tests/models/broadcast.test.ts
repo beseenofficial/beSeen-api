@@ -20,12 +20,17 @@ describe('Broadcast model', () => {
     await broadcast.validate();
 
     expect(broadcast.status).toBe('draft');
+    expect(broadcast.expiresAt).toBeInstanceOf(Date);
     expect(broadcast.audienceType).toBe('all_active_users');
     expect(Broadcast.schema.indexes()).toEqual(
       expect.arrayContaining([
         [
           { creator: 1, clientBroadcastId: 1 },
           expect.objectContaining({ unique: true, name: 'broadcasts_creator_client_id_unique' }),
+        ],
+        [
+          { status: 1, expiresAt: 1 },
+          expect.objectContaining({ name: 'broadcasts_status_expiration' }),
         ],
       ]),
     );
