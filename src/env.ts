@@ -22,6 +22,8 @@ const envSchema = z
       .min(86_400)
       .max(7_776_000)
       .default(2_592_000),
+    BROADCAST_DRAFT_TTL_SECONDS: z.coerce.number().int().min(3_600).max(2_592_000).default(604_800),
+    BROADCAST_CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(30).max(3_600).default(300),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),

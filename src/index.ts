@@ -4,11 +4,16 @@ import app from './app';
 import { connectDatabase, disconnectDatabase } from './db';
 import env from './env';
 import log from './logger';
+import {
+  startBroadcastDraftCleanup,
+  stopBroadcastDraftCleanup,
+} from './utils/broadcast/broadcastDraftCleanupScheduler';
 
 let server: Server | undefined;
 
 const shutdown = (signal: NodeJS.Signals): void => {
   log.info({ signal }, 'Shutdown started');
+  stopBroadcastDraftCleanup();
 
   if (!server) {
     void disconnectDatabase().finally(() => process.exit(0));
@@ -27,6 +32,7 @@ const shutdown = (signal: NodeJS.Signals): void => {
 
 const bootstrap = async (): Promise<void> => {
   await connectDatabase();
+  startBroadcastDraftCleanup();
 
   server = app.listen(env.PORT, () => {
     log.info({ port: env.PORT }, 'BeSeen API started');
