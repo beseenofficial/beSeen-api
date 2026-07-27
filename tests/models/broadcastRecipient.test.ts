@@ -41,4 +41,27 @@ describe('BroadcastRecipient model', () => {
     expect(() => new BroadcastRecipient({ ...base, plaintext: 'secret' })).toThrow();
     expect(() => new BroadcastRecipient({ ...base, privateKey: 'secret' })).toThrow();
   });
+
+  it('accepts only an 80-byte canonical sealed-box wrapped key', async () => {
+    const base = {
+      broadcast: new Types.ObjectId(),
+      recipient: new Types.ObjectId(),
+      username: 'member_user',
+      keyVersion: 1,
+      encryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
+    };
+    const valid = new BroadcastRecipient({
+      ...base,
+      encryptedBroadcastKey: Buffer.alloc(80, 2).toString('base64'),
+    });
+    const invalid = new BroadcastRecipient({
+      ...base,
+      encryptedBroadcastKey: Buffer.alloc(79, 2).toString('base64'),
+    });
+
+    await expect(valid.validate()).resolves.toBeUndefined();
+    await expect(invalid.validate()).rejects.toMatchObject({
+      errors: { encryptedBroadcastKey: expect.anything() },
+    });
+  });
 });
