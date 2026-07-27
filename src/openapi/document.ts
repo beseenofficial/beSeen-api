@@ -7,7 +7,7 @@ const openApiDocument = {
     title: 'BeSeen API',
     version: '0.1.0',
     description:
-      'Client contract for Stellar wallet registration, authentication, sessions, and BeSeen profiles.',
+      'Client contract for Stellar wallet registration, authentication, sessions, profiles, and end-to-end encrypted broadcasts.',
   },
   servers: [{ url: '/', description: 'Current API origin' }],
   tags: [

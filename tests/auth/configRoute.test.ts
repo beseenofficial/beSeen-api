@@ -25,6 +25,15 @@ describe('GET /v1/auth/config', () => {
       keyDerivation: {
         version: 1,
         domain: 'beseen.app',
+        kdf: {
+          name: 'HKDF-SHA-256',
+          input: 'SEP-53-SIGNATURE',
+          inputEncoding: 'base64',
+          salt: 'beseen.app/key-derivation/v1',
+          seedLengthBytes: 32,
+          signingInfo: 'beseen.app/ed25519-signing-key/v1',
+          encryptionInfo: 'beseen.app/x25519-encryption-key/v1',
+        },
         signingAlgorithm: 'Ed25519',
         encryptionAlgorithm: 'X25519',
       },

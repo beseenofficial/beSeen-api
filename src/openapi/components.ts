@@ -6,6 +6,7 @@ const objectIdSchema = {
 
 const nullableUrlSchema = {
   oneOf: [{ type: 'string', format: 'uri', maxLength: 2048 }, { type: 'null' }],
+  description: 'An absolute http/https URL, or null.',
   example: 'https://cdn.example/avatar.webp',
 };
 
@@ -20,7 +21,7 @@ const creatorProfileSchema = {
       minItems: 1,
       maxItems: 5,
       uniqueItems: true,
-      items: { type: 'string', minLength: 1, maxLength: 50 },
+      items: { type: 'string', minLength: 1, maxLength: 32 },
     },
     skills: {
       type: 'array',
@@ -66,6 +67,18 @@ const profileInputProperties = {
   creatorProfile: { $ref: '#/components/schemas/CreatorProfileInput' },
 };
 
+const creatorProfileInputSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['headline', 'categories'],
+  properties: {
+    ...creatorProfileSchema.properties,
+    skills: { ...creatorProfileSchema.properties.skills, default: [] },
+    websiteUrl: { ...nullableUrlSchema, default: null },
+    isAvailableForWork: { type: 'boolean', default: false },
+  },
+};
+
 const openApiComponents = {
   securitySchemes: {
     bearerAuth: {
@@ -107,7 +120,7 @@ const openApiComponents = {
       },
     },
     CreatorProfile: creatorProfileSchema,
-    CreatorProfileInput: creatorProfileSchema,
+    CreatorProfileInput: creatorProfileInputSchema,
     CreatorProfileUpdate: {
       type: 'object',
       minProperties: 1,

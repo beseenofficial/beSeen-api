@@ -100,11 +100,46 @@ const openApiPaths = {
             },
             keyDerivation: {
               type: 'object',
-              required: ['version', 'domain', 'message', 'signingAlgorithm', 'encryptionAlgorithm'],
+              required: [
+                'version',
+                'domain',
+                'message',
+                'kdf',
+                'signingAlgorithm',
+                'encryptionAlgorithm',
+              ],
               properties: {
                 version: { type: 'integer' },
                 domain: { type: 'string' },
                 message: { type: 'string' },
+                kdf: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: [
+                    'name',
+                    'input',
+                    'inputEncoding',
+                    'salt',
+                    'seedLengthBytes',
+                    'signingInfo',
+                    'encryptionInfo',
+                  ],
+                  properties: {
+                    name: { type: 'string', const: 'HKDF-SHA-256' },
+                    input: { type: 'string', const: 'SEP-53-SIGNATURE' },
+                    inputEncoding: { type: 'string', const: 'base64' },
+                    salt: { type: 'string', const: 'beseen.app/key-derivation/v1' },
+                    seedLengthBytes: { type: 'integer', const: 32 },
+                    signingInfo: {
+                      type: 'string',
+                      const: 'beseen.app/ed25519-signing-key/v1',
+                    },
+                    encryptionInfo: {
+                      type: 'string',
+                      const: 'beseen.app/x25519-encryption-key/v1',
+                    },
+                  },
+                },
                 signingAlgorithm: { type: 'string', const: 'Ed25519' },
                 encryptionAlgorithm: { type: 'string', const: 'X25519' },
               },
