@@ -5,12 +5,18 @@ import AuthChallenge from '../../src/models/AuthChallenge';
 const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 const SIGNING_PUBLIC_KEY = Buffer.alloc(32, 1).toString('base64');
 const ENCRYPTION_PUBLIC_KEY = Buffer.alloc(32, 2).toString('base64');
+const SEP10_FIELDS = {
+  transactionXdr: 'AAAA',
+  serverSigningPublicKey: WALLET_ADDRESS,
+  stellarNetwork: 'testnet' as const,
+  authDomain: 'beseen.app',
+};
 
 const registrationChallengeInput = () => ({
   purpose: 'registration' as const,
   walletAddress: WALLET_ADDRESS,
   nonce: 'n'.repeat(43),
-  message: 'Canonical registration message',
+  ...SEP10_FIELDS,
   signingPublicKey: SIGNING_PUBLIC_KEY,
   encryptionPublicKey: ENCRYPTION_PUBLIC_KEY,
   derivationVersion: 1,
@@ -48,7 +54,7 @@ describe('AuthChallenge model', () => {
       purpose: 'login',
       walletAddress: WALLET_ADDRESS,
       nonce: 'l'.repeat(43),
-      message: 'Canonical login message',
+      ...SEP10_FIELDS,
       expiresAt: new Date(Date.now() + 300_000),
       purgeAt: new Date(Date.now() + 300_000),
     });

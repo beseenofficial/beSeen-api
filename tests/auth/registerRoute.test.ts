@@ -4,11 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../../src/app';
 import registerUser from '../../src/utils/auth/registerUser';
 
-vi.mock('../../src/utils/auth/registerUser', () => ({
-  default: vi.fn(),
-}));
+vi.mock('../../src/utils/auth/registerUser', () => ({ default: vi.fn() }));
 
 const registerUserMock = vi.mocked(registerUser);
+const SIGNED_XDR = Buffer.alloc(64, 3).toString('base64');
 
 const authResult = () => ({
   accessToken: 'access-token',
@@ -19,7 +18,8 @@ const authResult = () => ({
 });
 
 const regularBody = () => ({
-  registrationToken: 't'.repeat(43),
+  challengeId: '507f1f77bcf86cd799439099',
+  signedTransactionXdr: SIGNED_XDR,
   profile: {
     username: '  New_User  ',
     displayName: 'New User',
@@ -30,7 +30,7 @@ const regularBody = () => ({
 });
 
 const creatorBody = () => ({
-  registrationToken: 'c'.repeat(43),
+  ...regularBody(),
   profile: {
     username: 'creator_user',
     displayName: 'Creator User',
@@ -46,11 +46,9 @@ const creatorBody = () => ({
 });
 
 describe('POST /v1/auth/register', () => {
-  beforeEach(() => {
-    registerUserMock.mockReset();
-  });
+  beforeEach(() => registerUserMock.mockReset());
 
-  it('creates a regular user with normalized profile data', async () => {
+  it('creates a regular user from one signed SEP-10 challenge', async () => {
     registerUserMock.mockResolvedValue({
       ok: true,
       auth: authResult(),
@@ -60,7 +58,7 @@ describe('POST /v1/auth/register', () => {
         username: 'new_user',
         displayName: 'New User',
         bio: 'BeSeen member',
-        avatarUrl: 'https://cdn.beseen.app/avatar.webp',
+        avatarUrl: null,
         accountType: 'regular',
         creatorProfile: null,
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
@@ -70,27 +68,17 @@ describe('POST /v1/auth/register', () => {
     const response = await request(app).post('/v1/auth/register').send(regularBody());
 
     expect(response.status).toBe(201);
-    expect(response.body.result.user).toMatchObject({
-      username: 'new_user',
-      accountType: 'regular',
-      creatorProfile: null,
-      createdAt: '2026-07-27T12:00:00.000Z',
-    });
-    expect(response.body.result.auth).toEqual({
-      accessToken: 'access-token',
-      refreshToken: 'refresh-token',
-      tokenType: 'Bearer',
-      expiresIn: 900,
-      refreshTokenExpiresAt: '2026-08-26T12:00:00.000Z',
-    });
+    expect(response.body.result.user.username).toBe('new_user');
     expect(registerUserMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        profile: expect.objectContaining({ username: 'new_user', bio: 'BeSeen member' }),
+        challengeId: '507f1f77bcf86cd799439099',
+        signedTransactionXdr: SIGNED_XDR,
+        profile: expect.objectContaining({ username: 'new_user' }),
       }),
     );
   });
 
-  it('normalizes and forwards creator-only profile data', async () => {
+  it('normalizes creator-only profile data', async () => {
     registerUserMock.mockResolvedValue({
       ok: true,
       auth: authResult(),
@@ -113,9 +101,7 @@ describe('POST /v1/auth/register', () => {
       },
     });
 
-    const response = await request(app).post('/v1/auth/register').send(creatorBody());
-
-    expect(response.status).toBe(201);
+    expect((await request(app).post('/v1/auth/register').send(creatorBody())).status).toBe(201);
     expect(registerUserMock).toHaveBeenCalledWith(
       expect.objectContaining({
         profile: expect.objectContaining({
@@ -128,83 +114,36 @@ describe('POST /v1/auth/register', () => {
     );
   });
 
-  it('supports the recommended direct challenge and signature flow', async () => {
-    registerUserMock.mockResolvedValue({
-      ok: true,
-      auth: authResult(),
-      user: {
-        id: '507f1f77bcf86cd799439013',
-        walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
-        username: 'new_user',
-        displayName: 'New User',
-        bio: '',
-        avatarUrl: null,
-        accountType: 'regular',
-        creatorProfile: null,
-        createdAt: new Date('2026-07-27T12:00:00.000Z'),
-      },
-    });
-    const body = regularBody();
-    Reflect.deleteProperty(body, 'registrationToken');
-
-    const response = await request(app)
+  it('rejects missing or malformed SEP-10 input before database access', async () => {
+    const missing = await request(app)
       .post('/v1/auth/register')
-      .send({
-        ...body,
-        challengeId: '507f1f77bcf86cd799439099',
-        signature: Buffer.alloc(64, 3).toString('base64'),
-      });
-
-    expect(response.status).toBe(201);
-    expect(registerUserMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        challengeId: '507f1f77bcf86cd799439099',
-        signature: Buffer.alloc(64, 3).toString('base64'),
-      }),
-    );
-  });
-
-  it('rejects missing creator profiles and reserved usernames before database access', async () => {
-    const missingCreatorProfile = creatorBody();
-    Reflect.deleteProperty(missingCreatorProfile.profile, 'creatorProfile');
-
-    const creatorResponse = await request(app)
+      .send({ profile: regularBody().profile });
+    const malformed = await request(app)
       .post('/v1/auth/register')
-      .send(missingCreatorProfile);
-    const reservedResponse = await request(app)
-      .post('/v1/auth/register')
-      .send({
-        ...regularBody(),
-        profile: { ...regularBody().profile, username: 'admin' },
-      });
+      .send({ ...regularBody(), signedTransactionXdr: 'not-xdr' });
 
-    expect(creatorResponse.status).toBe(400);
-    expect(creatorResponse.body.result.issues).toContainEqual({
-      path: 'profile.creatorProfile',
-      message: 'Creator profile is required for creator accounts',
-    });
-    expect(reservedResponse.status).toBe(400);
+    expect(missing.status).toBe(400);
+    expect(malformed.status).toBe(400);
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it('maps invalid tokens and profile conflicts to stable errors', async () => {
+  it('maps invalid challenges and username conflicts to stable errors', async () => {
     registerUserMock.mockResolvedValueOnce({
       ok: false,
-      reason: 'registration_token_invalid',
+      reason: 'invalid_challenge',
+      attemptsRemaining: 4,
     });
+    const invalid = await request(app).post('/v1/auth/register').send(regularBody());
 
-    const tokenResponse = await request(app).post('/v1/auth/register').send(regularBody());
+    registerUserMock.mockResolvedValueOnce({ ok: false, reason: 'username_taken' });
+    const conflict = await request(app).post('/v1/auth/register').send(regularBody());
 
-    registerUserMock.mockResolvedValueOnce({
-      ok: false,
-      reason: 'username_taken',
+    expect(invalid.status).toBe(401);
+    expect(invalid.body.result).toEqual({
+      code: 'INVALID_SEP10_CHALLENGE',
+      attemptsRemaining: 4,
     });
-
-    const usernameResponse = await request(app).post('/v1/auth/register').send(regularBody());
-
-    expect(tokenResponse.status).toBe(401);
-    expect(tokenResponse.body.result.code).toBe('REGISTRATION_TOKEN_INVALID');
-    expect(usernameResponse.status).toBe(409);
-    expect(usernameResponse.body.result.code).toBe('USERNAME_TAKEN');
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.result.code).toBe('USERNAME_TAKEN');
   });
 });

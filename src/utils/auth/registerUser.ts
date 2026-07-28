@@ -11,16 +11,14 @@ import type { AuthenticatedCreatorProfile, AuthenticatedUser } from '../../types
 import type { RegisterBody } from '../../validation/auth/register';
 import createAuthSession from './createAuthSession';
 import type { AuthTokens } from './createAuthSession';
-import { hashRegistrationToken } from './registrationToken';
-import verifySep53Signature from '../stellar/verifySep53Signature';
+import { verifySep10Challenge } from '../stellar/sep10Challenge';
 
 type RegistrationFailureReason =
-  | 'registration_token_invalid'
   | 'challenge_not_found'
   | 'challenge_expired'
   | 'challenge_already_used'
   | 'attempts_exceeded'
-  | 'invalid_signature'
+  | 'invalid_challenge'
   | 'username_taken'
   | 'wallet_already_registered'
   | 'public_key_already_registered';
@@ -66,36 +64,13 @@ const duplicateKeyReason = (error: MongoDuplicateKeyError): RegistrationFailureR
 };
 
 type ChallengeResolution =
-  | { ok: true; challenge: AuthChallengeDocument; now: Date; registrationTokenHash?: string }
-  | RejectedRegistration;
+  { ok: true; challenge: AuthChallengeDocument; now: Date } | RejectedRegistration;
 
 const resolveChallenge = async (
   body: RegisterBody,
   session: ClientSession,
 ): Promise<ChallengeResolution> => {
   const now = new Date();
-
-  if (body.registrationToken) {
-    const registrationTokenHash = hashRegistrationToken(body.registrationToken);
-    const challenge = await AuthChallenge.findOne({
-      purpose: 'registration',
-      registrationTokenHash,
-      registrationTokenExpiresAt: { $gt: now },
-      registrationTokenUsedAt: null,
-      usedAt: { $ne: null },
-    })
-      .select('+registrationTokenHash')
-      .session(session)
-      .exec();
-
-    return challenge
-      ? { ok: true, challenge, now, registrationTokenHash }
-      : { ok: false, reason: 'registration_token_invalid' };
-  }
-
-  if (!body.challengeId || !body.signature) {
-    return { ok: false, reason: 'challenge_not_found' };
-  }
 
   const challenge = await AuthChallenge.findOne({
     _id: body.challengeId,
@@ -120,7 +95,16 @@ const resolveChallenge = async (
     return { ok: false, reason: 'attempts_exceeded' };
   }
 
-  if (!verifySep53Signature(challenge.walletAddress, challenge.message, body.signature)) {
+  if (
+    !verifySep10Challenge({
+      signedTransactionXdr: body.signedTransactionXdr,
+      storedTransactionXdr: challenge.transactionXdr,
+      walletAddress: challenge.walletAddress,
+      serverSigningPublicKey: challenge.serverSigningPublicKey,
+      stellarNetwork: challenge.stellarNetwork,
+      homeDomain: challenge.authDomain,
+    })
+  ) {
     await AuthChallenge.updateOne(
       {
         _id: challenge._id,
@@ -133,7 +117,7 @@ const resolveChallenge = async (
 
     return {
       ok: false,
-      reason: 'invalid_signature',
+      reason: 'invalid_challenge',
       attemptsRemaining: Math.max(0, MAX_AUTH_CHALLENGE_ATTEMPTS - challenge.attempts - 1),
     };
   }
@@ -151,7 +135,7 @@ const registerUserInTransaction = async (
     return challengeResolution;
   }
 
-  const { challenge, now, registrationTokenHash } = challengeResolution;
+  const { challenge, now } = challengeResolution;
 
   if (
     !challenge ||
@@ -159,7 +143,7 @@ const registerUserInTransaction = async (
     !challenge.encryptionPublicKey ||
     !challenge.derivationVersion
   ) {
-    return { ok: false, reason: 'registration_token_invalid' };
+    return { ok: false, reason: 'challenge_not_found' };
   }
 
   const existingWallet = await User.exists({ walletAddress: challenge.walletAddress })
@@ -191,33 +175,22 @@ const registerUserInTransaction = async (
     return { ok: false, reason: 'public_key_already_registered' };
   }
 
-  const consumedChallenge = registrationTokenHash
-    ? await AuthChallenge.findOneAndUpdate(
-        {
-          _id: challenge._id,
-          registrationTokenHash,
-          registrationTokenExpiresAt: { $gt: now },
-          registrationTokenUsedAt: null,
-        },
-        { $set: { registrationTokenUsedAt: now } },
-        { new: true, session },
-      ).exec()
-    : await AuthChallenge.findOneAndUpdate(
-        {
-          _id: challenge._id,
-          purpose: 'registration',
-          usedAt: null,
-          expiresAt: { $gt: now },
-          attempts: { $lt: MAX_AUTH_CHALLENGE_ATTEMPTS },
-        },
-        { $set: { usedAt: now } },
-        { new: true, session },
-      ).exec();
+  const consumedChallenge = await AuthChallenge.findOneAndUpdate(
+    {
+      _id: challenge._id,
+      purpose: 'registration',
+      usedAt: null,
+      expiresAt: { $gt: now },
+      attempts: { $lt: MAX_AUTH_CHALLENGE_ATTEMPTS },
+    },
+    { $set: { usedAt: now } },
+    { new: true, session },
+  ).exec();
 
   if (!consumedChallenge) {
     return {
       ok: false,
-      reason: registrationTokenHash ? 'registration_token_invalid' : 'challenge_already_used',
+      reason: 'challenge_already_used',
     };
   }
 

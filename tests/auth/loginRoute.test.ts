@@ -11,7 +11,7 @@ vi.mock('../../src/utils/auth/loginUser', () => ({
 const loginUserMock = vi.mocked(loginUser);
 const validBody = () => ({
   challengeId: '507f1f77bcf86cd799439011',
-  signature: Buffer.alloc(64, 3).toString('base64'),
+  signedTransactionXdr: Buffer.alloc(64, 3).toString('base64'),
 });
 
 describe('POST /v1/auth/login', () => {
@@ -67,20 +67,20 @@ describe('POST /v1/auth/login', () => {
     });
   });
 
-  it('rejects malformed signatures before calling the login service', async () => {
+  it('rejects malformed transaction XDR before calling the login service', async () => {
     const response = await request(app)
       .post('/v1/auth/login')
-      .send({ ...validBody(), signature: 'invalid' });
+      .send({ ...validBody(), signedTransactionXdr: 'invalid' });
 
     expect(response.status).toBe(400);
     expect(response.body.result.code).toBe('VALIDATION_ERROR');
     expect(loginUserMock).not.toHaveBeenCalled();
   });
 
-  it('maps invalid signatures and exhausted attempts to stable errors', async () => {
+  it('maps invalid challenges and exhausted attempts to stable errors', async () => {
     loginUserMock.mockResolvedValueOnce({
       ok: false,
-      reason: 'invalid_signature',
+      reason: 'invalid_challenge',
       attemptsRemaining: 3,
     });
     const invalidResponse = await request(app).post('/v1/auth/login').send(validBody());
@@ -90,7 +90,7 @@ describe('POST /v1/auth/login', () => {
 
     expect(invalidResponse.status).toBe(401);
     expect(invalidResponse.body.result).toEqual({
-      code: 'INVALID_STELLAR_SIGNATURE',
+      code: 'INVALID_SEP10_CHALLENGE',
       attemptsRemaining: 3,
     });
     expect(attemptsResponse.status).toBe(429);

@@ -35,7 +35,12 @@ const createLoginChallengeRoute: RequestHandler = async (req, res) => {
     message: 'Login challenge created',
     result: {
       challengeId: result.challengeId,
-      message: result.message,
+      authenticationStandard: 'SEP-10',
+      transactionXdr: result.transactionXdr,
+      stellarNetwork: result.stellarNetwork,
+      networkPassphrase: result.networkPassphrase,
+      serverSigningPublicKey: result.serverSigningPublicKey,
+      homeDomain: result.homeDomain,
       expiresAt: result.expiresAt.toISOString(),
     },
   });

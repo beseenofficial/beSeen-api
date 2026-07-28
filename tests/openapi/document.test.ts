@@ -14,7 +14,6 @@ describe('OpenAPI contract', () => {
         '/v1/health',
         '/v1/auth/config',
         '/v1/auth/registration/challenge',
-        '/v1/auth/registration/verify',
         '/v1/auth/register',
         '/v1/auth/login/challenge',
         '/v1/auth/login',
@@ -32,7 +31,7 @@ describe('OpenAPI contract', () => {
         '/v1/broadcasts/drafts/{draftId}/finalize',
       ]),
     );
-    expect(openApiDocument.paths['/v1/auth/registration/verify'].post.deprecated).toBe(true);
+    expect(openApiDocument.paths).not.toHaveProperty('/v1/auth/registration/verify');
     expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
       'walletAddress',
     );

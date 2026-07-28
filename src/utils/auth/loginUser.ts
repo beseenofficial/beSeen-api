@@ -7,7 +7,7 @@ import CreatorProfile from '../../models/CreatorProfile';
 import User from '../../models/User';
 import type { AuthenticatedCreatorProfile, AuthenticatedUser } from '../../types/auth';
 import type { LoginBody } from '../../validation/auth/login';
-import verifySep53Signature from '../stellar/verifySep53Signature';
+import { verifySep10Challenge } from '../stellar/sep10Challenge';
 import createAuthSession from './createAuthSession';
 import type { AuthTokens } from './createAuthSession';
 
@@ -16,7 +16,7 @@ type LoginFailureReason =
   | 'challenge_expired'
   | 'challenge_already_used'
   | 'attempts_exceeded'
-  | 'invalid_signature'
+  | 'invalid_challenge'
   | 'account_unavailable';
 
 type LoginUserResult =
@@ -52,7 +52,16 @@ const loginUserInTransaction = async (
     return { ok: false, reason: 'attempts_exceeded' };
   }
 
-  if (!verifySep53Signature(challenge.walletAddress, challenge.message, body.signature)) {
+  if (
+    !verifySep10Challenge({
+      signedTransactionXdr: body.signedTransactionXdr,
+      storedTransactionXdr: challenge.transactionXdr,
+      walletAddress: challenge.walletAddress,
+      serverSigningPublicKey: challenge.serverSigningPublicKey,
+      stellarNetwork: challenge.stellarNetwork,
+      homeDomain: challenge.authDomain,
+    })
+  ) {
     await AuthChallenge.updateOne(
       {
         _id: challenge._id,
@@ -65,7 +74,7 @@ const loginUserInTransaction = async (
 
     return {
       ok: false,
-      reason: 'invalid_signature',
+      reason: 'invalid_challenge',
       attemptsRemaining: Math.max(0, MAX_AUTH_CHALLENGE_ATTEMPTS - challenge.attempts - 1),
     };
   }

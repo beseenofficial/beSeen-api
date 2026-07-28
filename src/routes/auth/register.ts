@@ -11,11 +11,6 @@ interface RegistrationErrorResponse {
 }
 
 const registrationErrors: Record<RegistrationFailureReason, RegistrationErrorResponse> = {
-  registration_token_invalid: {
-    statusCode: 401,
-    code: 'REGISTRATION_TOKEN_INVALID',
-    message: 'Registration token is invalid, expired, or already used',
-  },
   challenge_not_found: {
     statusCode: 404,
     code: 'CHALLENGE_NOT_FOUND',
@@ -36,10 +31,10 @@ const registrationErrors: Record<RegistrationFailureReason, RegistrationErrorRes
     code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
     message: 'Registration challenge verification attempts have been exceeded',
   },
-  invalid_signature: {
+  invalid_challenge: {
     statusCode: 401,
-    code: 'INVALID_STELLAR_SIGNATURE',
-    message: 'Stellar signature is invalid',
+    code: 'INVALID_SEP10_CHALLENGE',
+    message: 'Signed SEP-10 challenge transaction is invalid',
   },
   username_taken: {
     statusCode: 409,

@@ -25,36 +25,31 @@ GET /v1/openapi.json
 Swagger UI supports Bearer authorization and can execute requests against the current API origin.
 The OpenAPI 3.1 document is validated by the automated test suite.
 
-The complete frontend handoff, including the exact wallet KDF, request flows, token rotation,
-browser-side encryption, canonical signatures, retries, and recovery rules, is available in
-[`docs/CLIENT_INTEGRATION_GUIDE.md`](docs/CLIENT_INTEGRATION_GUIDE.md).
-
 ## Client-first registration
 
-The recommended registration flow uses only two API requests. Private keys and the fixed key
-derivation signature always stay on the client.
+Registration uses SEP-10 transaction signing and only two API requests. The transaction is signed
+locally as proof of wallet ownership; it is never submitted to Stellar and therefore pays no fee.
 
-For the simplest integration, the client can first request the exact versioned key-derivation
-message instead of hardcoding it:
+The public authentication and local key-generation settings are available without a wallet
+parameter:
 
 ```http
-GET /v1/auth/config?walletAddress=<Stellar G address>
+GET /v1/auth/config
 ```
 
-The response includes the Stellar network, SEP-53 signature standard, protocol versions, token
-timings, key algorithms, and the exact `keyDerivation.message` to sign. This bootstrap call is
-optional for clients that already implement the frozen versioned message builder; the registration
-ownership flow itself remains two requests.
+The client generates a cryptographically random 32-byte master secret and derives its BeSeen
+Ed25519/X25519 key pairs locally using the returned HKDF settings. It stores or restores that master
+secret through the application's encrypted device-key backup. Wallet signatures are never used as
+encryption-key material.
 
-1. The client derives its BeSeen Ed25519/X25519 keys locally, then requests a short-lived Stellar
-   signing challenge:
+1. Send the wallet address and the two derived public keys:
 
 ```http
 POST /v1/auth/registration/challenge
 ```
 
-2. The client signs the returned `message` through the wallet and sends the signature with the
-   profile in one request:
+2. Sign the returned `transactionXdr` with Blux `signTransaction`, using the returned
+   `networkPassphrase`. Send the signed XDR with the profile:
 
 ```http
 POST /v1/auth/register
@@ -62,7 +57,7 @@ Content-Type: application/json
 
 {
   "challengeId": "507f1f77bcf86cd799439099",
-  "signature": "<base64 SEP-53 signature>",
+  "signedTransactionXdr": "<base64 signed Stellar transaction envelope XDR>",
   "profile": {
     "username": "new_user",
     "displayName": "New User",
@@ -88,7 +83,8 @@ Content-Type: application/json
 }
 ```
 
-Sign the returned `message` through the connected Stellar wallet, then send:
+Sign the returned `transactionXdr` through Blux `signTransaction`. Do not call any submit or send
+method. Then send:
 
 ```http
 POST /v1/auth/login
@@ -96,13 +92,13 @@ Content-Type: application/json
 
 {
   "challengeId": "507f1f77bcf86cd799439099",
-  "signature": "<base64 SEP-53 signature>"
+  "signedTransactionXdr": "<base64 signed Stellar transaction envelope XDR>"
 }
 ```
 
 Login returns the same `result.user` and `result.auth` shape as registration. This lets the client
-use one success handler for both flows. Login messages are short-lived and one-time-use, and failed
-signature attempts are limited.
+use one success handler for both flows. Challenges are short-lived and one-time-use, and failed
+verification attempts are limited.
 
 ## Authenticated requests
 
@@ -192,7 +188,7 @@ only to its owner through registration, login, and `/v1/users/me`.
 ## End-to-end encrypted broadcasts
 
 The broadcast flow is multi-recipient. The API never accepts broadcast plaintext, a private key, the
-random content-encryption key, decrypted content, or the fixed key-derivation signature.
+random content-encryption key, decrypted content, or the client-generated master secret.
 
 Version 1 uses hybrid encryption in the browser:
 
@@ -420,16 +416,6 @@ receives or returns plaintext, a raw content key, or a private key.
 `GET /v1/users/:username/keys` remains available for direct public-key discovery, but broadcast
 clients should use the server-created draft snapshot instead of assembling their own recipient list.
 
-The older three-request flow remains available for compatibility:
-
-```http
-POST /v1/auth/registration/verify
-POST /v1/auth/register
-```
-
-In that flow, `/registration/verify` returns a short-lived `registrationToken`, which can be sent to
-`/register` instead of `challengeId` and `signature`.
-
 Access tokens are short-lived. Refresh them with:
 
 ```http
@@ -450,8 +436,8 @@ Every account has a common `User` profile. Creator-only fields are stored in a o
 `CreatorProfile`, keeping regular user documents small and avoiding unrelated optional fields.
 
 Wallet ownership challenges are stored temporarily in `AuthChallenge`. BeSeen Ed25519 signing and
-X25519 encryption public keys are versioned separately in `UserKey`; private keys and the fixed key
-derivation signature never reach the API.
+X25519 encryption public keys are versioned separately in `UserKey`; private keys and the
+client-generated master secret never reach the API.
 
 ## Commands
 

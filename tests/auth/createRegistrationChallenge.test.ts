@@ -68,9 +68,10 @@ describe('createRegistrationChallenge', () => {
     );
 
     if (result.ok) {
-      expect(result.message).toContain('BeSeen Registration\nVersion: 1');
-      expect(result.message).toContain(`Account: ${WALLET_ADDRESS}`);
-      expect(result.message).toContain(`Signing Public Key (Ed25519): ${SIGNING_PUBLIC_KEY}`);
+      expect(result.transactionXdr).toMatch(/^[A-Za-z0-9+/]+=*$/);
+      expect(result.networkPassphrase).toBeTruthy();
+      expect(result.serverSigningPublicKey).toMatch(/^G[A-Z2-7]{55}$/);
+      expect(result.homeDomain).toBeTruthy();
     }
   });
 

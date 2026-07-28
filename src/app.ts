@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 
-import env from './env';
+import './env';
 import jsonResponse from './middleware/jsonResponse';
 import router from './routes';
 
