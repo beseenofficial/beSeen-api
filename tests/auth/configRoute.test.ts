@@ -16,7 +16,7 @@ describe('GET /v1/auth/config', () => {
     expect(response.body.result).toMatchObject({
       protocol: {
         signatureStandard: 'SEP-53',
-        stellarNetwork: 'public',
+        stellarNetwork: 'testnet',
         authDomain: 'beseen.app',
         authMessageVersion: 1,
         challengeTtlSeconds: 300,
