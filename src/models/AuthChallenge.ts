@@ -6,8 +6,9 @@ import {
   AUTH_NONCE_PATTERN,
   KEY_DERIVATION_VERSION,
   MAX_AUTH_CHALLENGE_ATTEMPTS,
+  STELLAR_NETWORKS,
 } from '../constant/auth';
-import type { AuthChallengePurpose } from '../constant/auth';
+import type { AuthChallengePurpose, StellarNetwork } from '../constant/auth';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
 import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
 
@@ -15,7 +16,10 @@ interface IAuthChallenge {
   purpose: AuthChallengePurpose;
   walletAddress: string;
   nonce: string;
-  message: string;
+  transactionXdr: string;
+  serverSigningPublicKey: string;
+  stellarNetwork: StellarNetwork;
+  authDomain: string;
   signingPublicKey: string | null;
   encryptionPublicKey: string | null;
   derivationVersion: number | null;
@@ -23,9 +27,6 @@ interface IAuthChallenge {
   purgeAt: Date;
   usedAt: Date | null;
   attempts: number;
-  registrationTokenHash: string | null;
-  registrationTokenExpiresAt: Date | null;
-  registrationTokenUsedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,11 +60,34 @@ const authChallengeSchema = new Schema<IAuthChallenge>(
       required: true,
       match: [AUTH_NONCE_PATTERN, 'Nonce must be a 32-byte base64url value'],
     },
-    message: {
+    transactionXdr: {
       type: String,
       required: true,
       minlength: 1,
-      maxlength: 2_048,
+      maxlength: 16_384,
+      immutable: true,
+    },
+    serverSigningPublicKey: {
+      type: String,
+      required: true,
+      immutable: true,
+      validate: {
+        validator: isValidStellarGAddress,
+        message: 'Server signing public key must be a valid Stellar G address',
+      },
+    },
+    stellarNetwork: {
+      type: String,
+      required: true,
+      immutable: true,
+      enum: STELLAR_NETWORKS,
+    },
+    authDomain: {
+      type: String,
+      required: true,
+      immutable: true,
+      minlength: 1,
+      maxlength: 253,
     },
     signingPublicKey: {
       type: String,
@@ -99,20 +123,6 @@ const authChallengeSchema = new Schema<IAuthChallenge>(
       default: 0,
       required: true,
     },
-    registrationTokenHash: {
-      type: String,
-      match: [/^[a-f0-9]{64}$/, 'Registration token hash must be a SHA-256 hex value'],
-      default: null,
-      select: false,
-    },
-    registrationTokenExpiresAt: {
-      type: Date,
-      default: null,
-    },
-    registrationTokenUsedAt: {
-      type: Date,
-      default: null,
-    },
   },
   {
     timestamps: true,
@@ -145,14 +155,6 @@ authChallengeSchema.index({ nonce: 1 }, { unique: true, name: 'auth_challenges_n
 authChallengeSchema.index(
   { purgeAt: 1 },
   { expireAfterSeconds: 0, name: 'auth_challenges_purge_ttl' },
-);
-authChallengeSchema.index(
-  { registrationTokenHash: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { registrationTokenHash: { $type: 'string' } },
-    name: 'auth_challenges_registration_token_hash_unique',
-  },
 );
 authChallengeSchema.index(
   { walletAddress: 1, purpose: 1, usedAt: 1 },

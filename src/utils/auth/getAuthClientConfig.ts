@@ -1,6 +1,4 @@
 import {
-  AUTH_MESSAGE_VERSION,
-  BESEEN_AUTH_DOMAIN,
   KEY_DERIVATION_ENCRYPTION_INFO,
   KEY_DERIVATION_INPUT,
   KEY_DERIVATION_INPUT_ENCODING,
@@ -11,25 +9,35 @@ import {
   KEY_DERIVATION_VERSION,
 } from '../../constant/auth';
 import env from '../../env';
-import buildKeyDerivationMessage from './buildKeyDerivationMessage';
+import { networkPassphraseFor } from '../stellar/sep10Challenge';
+import { createRequire } from 'node:module';
+
+interface StellarKeyApi {
+  Keypair: { fromSecret(secret: string): { publicKey(): string } };
+}
+
+const stellarSdk = createRequire(__filename)('@stellar/stellar-sdk') as StellarKeyApi;
 
 interface AuthClientConfig {
   protocol: {
-    signatureStandard: 'SEP-53';
+    authenticationStandard: 'SEP-10';
+    challengeFormat: 'stellar-transaction-xdr';
+    walletMethod: 'signTransaction';
     stellarNetwork: 'public' | 'testnet';
+    networkPassphrase: string;
     authDomain: string;
-    authMessageVersion: number;
+    serverSigningPublicKey: string;
+    transactionSubmissionRequired: false;
     challengeTtlSeconds: number;
     accessTokenTtlSeconds: number;
   };
   keyDerivation: {
     version: number;
-    domain: string;
-    message: string;
+    source: 'CLIENT_GENERATED';
     kdf: {
       name: 'HKDF-SHA-256';
-      input: 'SEP-53-SIGNATURE';
-      inputEncoding: 'base64';
+      input: 'CLIENT-RANDOM-32-BYTE-MASTER-SECRET';
+      inputEncoding: 'raw-bytes';
       salt: string;
       seedLengthBytes: number;
       signingInfo: string;
@@ -40,22 +48,22 @@ interface AuthClientConfig {
   };
 }
 
-const getAuthClientConfig = (walletAddress: string): AuthClientConfig => ({
+const getAuthClientConfig = (): AuthClientConfig => ({
   protocol: {
-    signatureStandard: 'SEP-53',
+    authenticationStandard: 'SEP-10',
+    challengeFormat: 'stellar-transaction-xdr',
+    walletMethod: 'signTransaction',
     stellarNetwork: env.STELLAR_NETWORK,
+    networkPassphrase: networkPassphraseFor(env.STELLAR_NETWORK),
     authDomain: env.AUTH_DOMAIN,
-    authMessageVersion: AUTH_MESSAGE_VERSION,
+    serverSigningPublicKey: stellarSdk.Keypair.fromSecret(env.AUTH_SIGNING_SECRET).publicKey(),
+    transactionSubmissionRequired: false,
     challengeTtlSeconds: env.AUTH_CHALLENGE_TTL_SECONDS,
     accessTokenTtlSeconds: env.ACCESS_TOKEN_TTL_SECONDS,
   },
   keyDerivation: {
     version: KEY_DERIVATION_VERSION,
-    domain: BESEEN_AUTH_DOMAIN,
-    message: buildKeyDerivationMessage({
-      walletAddress,
-      network: env.STELLAR_NETWORK,
-    }),
+    source: 'CLIENT_GENERATED',
     kdf: {
       name: KEY_DERIVATION_KDF,
       input: KEY_DERIVATION_INPUT,

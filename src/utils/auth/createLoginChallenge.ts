@@ -1,12 +1,20 @@
-import env from '../../env';
 import AuthChallenge from '../../models/AuthChallenge';
 import User from '../../models/User';
 import type { LoginChallengeBody } from '../../validation/auth/loginChallenge';
-import buildLoginMessage from './buildLoginMessage';
 import generateAuthNonce from './generateAuthNonce';
+import { buildSep10Challenge } from '../stellar/sep10Challenge';
 
 type CreateLoginChallengeResult =
-  | { ok: true; challengeId: string; message: string; expiresAt: Date }
+  | {
+      ok: true;
+      challengeId: string;
+      transactionXdr: string;
+      networkPassphrase: string;
+      stellarNetwork: 'public' | 'testnet';
+      serverSigningPublicKey: string;
+      homeDomain: string;
+      expiresAt: Date;
+    }
   | { ok: false; reason: 'account_unavailable' };
 
 const createLoginChallenge = async (
@@ -22,30 +30,28 @@ const createLoginChallenge = async (
     return { ok: false, reason: 'account_unavailable' };
   }
 
-  const issuedAt = new Date();
-  const expiresAt = new Date(issuedAt.getTime() + env.AUTH_CHALLENGE_TTL_SECONDS * 1_000);
   const nonce = generateAuthNonce();
-  const message = buildLoginMessage({
-    domain: env.AUTH_DOMAIN,
-    network: env.STELLAR_NETWORK,
-    walletAddress: body.walletAddress,
-    nonce,
-    issuedAt,
-    expiresAt,
-  });
+  const sep10 = buildSep10Challenge(body.walletAddress);
   const challenge = await AuthChallenge.create({
     purpose: 'login',
     walletAddress: body.walletAddress,
     nonce,
-    message,
-    expiresAt,
-    purgeAt: expiresAt,
+    transactionXdr: sep10.transactionXdr,
+    serverSigningPublicKey: sep10.serverSigningPublicKey,
+    stellarNetwork: sep10.stellarNetwork,
+    authDomain: sep10.homeDomain,
+    expiresAt: sep10.expiresAt,
+    purgeAt: sep10.expiresAt,
   });
 
   return {
     ok: true,
     challengeId: challenge._id.toString(),
-    message: challenge.message,
+    transactionXdr: challenge.transactionXdr,
+    networkPassphrase: sep10.networkPassphrase,
+    stellarNetwork: sep10.stellarNetwork,
+    serverSigningPublicKey: challenge.serverSigningPublicKey,
+    homeDomain: challenge.authDomain,
     expiresAt: challenge.expiresAt,
   };
 };

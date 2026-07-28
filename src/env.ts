@@ -1,7 +1,17 @@
 import 'dotenv/config';
+import { createRequire } from 'node:module';
 import { z } from 'zod';
 
+interface StellarStrKeyApi {
+  StrKey: {
+    isValidEd25519SecretSeed(value: string): boolean;
+  };
+}
+
+const stellarSdk = createRequire(__filename)('@stellar/stellar-sdk') as StellarStrKeyApi;
+
 const DEVELOPMENT_ACCESS_TOKEN_SECRET = 'development-only-change-this-access-token-secret';
+const DEVELOPMENT_AUTH_SIGNING_SECRET = 'SADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQP54X';
 
 const envSchema = z
   .object({
@@ -14,8 +24,14 @@ const envSchema = z
     DB_NAME: z.string().min(1).default('beseen'),
     STELLAR_NETWORK: z.enum(['public', 'testnet']).default('testnet'),
     AUTH_DOMAIN: z.string().min(1).default('beseen.app'),
+    AUTH_SIGNING_SECRET: z
+      .string()
+      .refine(
+        (value) => stellarSdk.StrKey.isValidEd25519SecretSeed(value),
+        'AUTH_SIGNING_SECRET must be a valid Stellar secret seed',
+      )
+      .default(DEVELOPMENT_AUTH_SIGNING_SECRET),
     AUTH_CHALLENGE_TTL_SECONDS: z.coerce.number().int().min(60).max(900).default(300),
-    REGISTRATION_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(1_800).default(600),
     ACCESS_TOKEN_SECRET: z.string().min(32).default(DEVELOPMENT_ACCESS_TOKEN_SECRET),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3_600).default(900),
     REFRESH_TOKEN_TTL_SECONDS: z.coerce
@@ -39,6 +55,17 @@ const envSchema = z
         code: 'custom',
         path: ['ACCESS_TOKEN_SECRET'],
         message: 'ACCESS_TOKEN_SECRET must be changed in production',
+      });
+    }
+
+    if (
+      value.NODE_ENV === 'production' &&
+      value.AUTH_SIGNING_SECRET === DEVELOPMENT_AUTH_SIGNING_SECRET
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['AUTH_SIGNING_SECRET'],
+        message: 'AUTH_SIGNING_SECRET must be changed in production',
       });
     }
   });

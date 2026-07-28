@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { USER_ACCOUNT_TYPES } from '../../constant/user';
-import isBase64Sep53Signature from '../../utils/auth/isBase64Sep53Signature';
+import { isCanonicalBase64Xdr } from '../../utils/stellar/sep10Challenge';
 import { creatorProfileSchema, nullableHttpUrlSchema, usernameSchema } from '../user/profileFields';
 
 const profileSchema = z
@@ -34,44 +34,18 @@ const profileSchema = z
 
 const registerBodySchema = z
   .object({
-    registrationToken: z
-      .string()
-      .trim()
-      .regex(/^[A-Za-z0-9_-]{43}$/, 'Registration token must be a 32-byte base64url value')
-      .optional(),
     challengeId: z
       .string()
       .trim()
-      .regex(/^[a-f\d]{24}$/i, 'Challenge ID must be a MongoDB ObjectId')
-      .optional(),
-    signature: z
+      .regex(/^[a-f\d]{24}$/i, 'Challenge ID must be a MongoDB ObjectId'),
+    signedTransactionXdr: z
       .string()
-      .trim()
-      .refine(isBase64Sep53Signature, 'Signature must be a canonical base64 SEP-53 signature')
-      .optional(),
+      .min(1)
+      .max(16_384)
+      .refine(isCanonicalBase64Xdr, 'Signed transaction must be canonical base64 XDR'),
     profile: profileSchema,
   })
-  .strict()
-  .superRefine((body, context) => {
-    const usesRegistrationToken = body.registrationToken !== undefined;
-    const usesSignedChallenge = body.challengeId !== undefined || body.signature !== undefined;
-
-    if (usesRegistrationToken === usesSignedChallenge) {
-      context.addIssue({
-        code: 'custom',
-        path: [],
-        message: 'Provide either registrationToken or challengeId with signature',
-      });
-    }
-
-    if (usesSignedChallenge && (!body.challengeId || !body.signature)) {
-      context.addIssue({
-        code: 'custom',
-        path: body.challengeId ? ['signature'] : ['challengeId'],
-        message: 'Challenge ID and signature must be provided together',
-      });
-    }
-  });
+  .strict();
 
 type RegisterBody = z.infer<typeof registerBodySchema>;
 

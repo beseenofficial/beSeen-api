@@ -38,7 +38,11 @@ describe('POST /v1/auth/registration/challenge', () => {
     createChallengeMock.mockResolvedValue({
       ok: true,
       challengeId: '507f1f77bcf86cd799439011',
-      message: 'Canonical registration message',
+      transactionXdr: 'AAAA',
+      stellarNetwork: 'testnet',
+      networkPassphrase: 'Test SDF Network ; September 2015',
+      serverSigningPublicKey: WALLET_ADDRESS,
+      homeDomain: 'beseen.app',
       expiresAt: new Date('2026-07-27T12:05:00.000Z'),
     });
 
@@ -50,7 +54,12 @@ describe('POST /v1/auth/registration/challenge', () => {
       message: 'Registration challenge created',
       result: {
         challengeId: '507f1f77bcf86cd799439011',
-        message: 'Canonical registration message',
+        authenticationStandard: 'SEP-10',
+        transactionXdr: 'AAAA',
+        stellarNetwork: 'testnet',
+        networkPassphrase: 'Test SDF Network ; September 2015',
+        serverSigningPublicKey: WALLET_ADDRESS,
+        homeDomain: 'beseen.app',
         expiresAt: '2026-07-27T12:05:00.000Z',
       },
     });

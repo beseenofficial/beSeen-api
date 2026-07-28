@@ -16,11 +16,15 @@ describe('POST /v1/auth/login/challenge', () => {
     createLoginChallengeMock.mockReset();
   });
 
-  it('normalizes the wallet and returns its signing message', async () => {
+  it('normalizes the wallet and returns its SEP-10 transaction', async () => {
     createLoginChallengeMock.mockResolvedValue({
       ok: true,
       challengeId: '507f1f77bcf86cd799439011',
-      message: 'Canonical login message',
+      transactionXdr: 'AAAA',
+      stellarNetwork: 'testnet',
+      networkPassphrase: 'Test SDF Network ; September 2015',
+      serverSigningPublicKey: WALLET_ADDRESS,
+      homeDomain: 'beseen.app',
       expiresAt: new Date('2026-07-27T12:05:00.000Z'),
     });
 
@@ -31,7 +35,12 @@ describe('POST /v1/auth/login/challenge', () => {
     expect(response.status).toBe(201);
     expect(response.body.result).toEqual({
       challengeId: '507f1f77bcf86cd799439011',
-      message: 'Canonical login message',
+      authenticationStandard: 'SEP-10',
+      transactionXdr: 'AAAA',
+      stellarNetwork: 'testnet',
+      networkPassphrase: 'Test SDF Network ; September 2015',
+      serverSigningPublicKey: WALLET_ADDRESS,
+      homeDomain: 'beseen.app',
       expiresAt: '2026-07-27T12:05:00.000Z',
     });
     expect(createLoginChallengeMock).toHaveBeenCalledWith({ walletAddress: WALLET_ADDRESS });

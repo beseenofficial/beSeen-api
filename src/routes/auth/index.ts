@@ -7,7 +7,6 @@ import loginRateLimit from '../../middleware/loginRateLimit';
 import noStore from '../../middleware/noStore';
 import registrationChallengeRateLimit from '../../middleware/registrationChallengeRateLimit';
 import registrationRateLimit from '../../middleware/registrationRateLimit';
-import registrationVerifyRateLimit from '../../middleware/registrationVerifyRateLimit';
 import refreshRateLimit from '../../middleware/refreshRateLimit';
 import getAuthConfigRoute from './config';
 import loginRoute from './login';
@@ -16,7 +15,6 @@ import logoutRoute from './logout';
 import registerRoute from './register';
 import refreshRoute from './refresh';
 import createRegistrationChallengeRoute from './registrationChallenge';
-import verifyRegistrationChallengeRoute from './registrationVerify';
 
 const authRoutes = Router();
 
@@ -31,11 +29,6 @@ authRoutes.post(
   '/registration/challenge',
   registrationChallengeRateLimit,
   createRegistrationChallengeRoute,
-);
-authRoutes.post(
-  '/registration/verify',
-  registrationVerifyRateLimit,
-  verifyRegistrationChallengeRoute,
 );
 
 export default authRoutes;

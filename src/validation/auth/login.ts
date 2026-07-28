@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import isBase64Sep53Signature from '../../utils/auth/isBase64Sep53Signature';
+import { isCanonicalBase64Xdr } from '../../utils/stellar/sep10Challenge';
 
 const loginBodySchema = z
   .object({
@@ -8,10 +8,11 @@ const loginBodySchema = z
       .string()
       .trim()
       .regex(/^[a-f\d]{24}$/i, 'Challenge ID must be a MongoDB ObjectId'),
-    signature: z
+    signedTransactionXdr: z
       .string()
-      .trim()
-      .refine(isBase64Sep53Signature, 'Signature must be a canonical base64 SEP-53 signature'),
+      .min(1)
+      .max(16_384)
+      .refine(isCanonicalBase64Xdr, 'Signed transaction must be canonical base64 XDR'),
   })
   .strict();
 

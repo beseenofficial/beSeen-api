@@ -31,10 +31,10 @@ const loginErrors: Record<LoginFailureReason, LoginErrorResponse> = {
     code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
     message: 'Login challenge verification attempts have been exceeded',
   },
-  invalid_signature: {
+  invalid_challenge: {
     statusCode: 401,
-    code: 'INVALID_STELLAR_SIGNATURE',
-    message: 'Stellar signature is invalid',
+    code: 'INVALID_SEP10_CHALLENGE',
+    message: 'Signed SEP-10 challenge transaction is invalid',
   },
   account_unavailable: {
     statusCode: 403,

@@ -34,9 +34,11 @@ const stellarAddressSchema = {
   example: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
 };
 
-const signatureSchema = {
+const signedTransactionXdrSchema = {
   type: 'string',
-  description: 'Canonical base64-encoded 64-byte SEP-53 wallet signature.',
+  maxLength: 16_384,
+  description:
+    'Canonical base64 Stellar transaction-envelope XDR returned by wallet signTransaction. It must not be submitted to Stellar.',
 };
 
 const openApiPaths = {
@@ -64,16 +66,8 @@ const openApiPaths = {
       tags: ['Authentication'],
       summary: 'Get client authentication protocol configuration',
       description:
-        'Returns the exact wallet-specific key derivation message and public protocol settings. Private keys never reach this API.',
+        'Returns public SEP-10 settings and the client-generated key derivation contract. No wallet address is required and private keys never reach this API.',
       operationId: 'getAuthConfig',
-      parameters: [
-        {
-          in: 'query',
-          name: 'walletAddress',
-          required: true,
-          schema: stellarAddressSchema,
-        },
-      ],
       responses: {
         '200': jsonResponse('Authentication configuration retrieved.', {
           type: 'object',
@@ -82,36 +76,36 @@ const openApiPaths = {
             protocol: {
               type: 'object',
               required: [
-                'signatureStandard',
+                'authenticationStandard',
+                'challengeFormat',
+                'walletMethod',
                 'stellarNetwork',
+                'networkPassphrase',
                 'authDomain',
-                'authMessageVersion',
+                'serverSigningPublicKey',
+                'transactionSubmissionRequired',
                 'challengeTtlSeconds',
                 'accessTokenTtlSeconds',
               ],
               properties: {
-                signatureStandard: { type: 'string', const: 'SEP-53' },
+                authenticationStandard: { type: 'string', const: 'SEP-10' },
+                challengeFormat: { type: 'string', const: 'stellar-transaction-xdr' },
+                walletMethod: { type: 'string', const: 'signTransaction' },
                 stellarNetwork: { type: 'string', enum: ['public', 'testnet'] },
+                networkPassphrase: { type: 'string' },
                 authDomain: { type: 'string' },
-                authMessageVersion: { type: 'integer' },
+                serverSigningPublicKey: stellarAddressSchema,
+                transactionSubmissionRequired: { type: 'boolean', const: false },
                 challengeTtlSeconds: { type: 'integer' },
                 accessTokenTtlSeconds: { type: 'integer' },
               },
             },
             keyDerivation: {
               type: 'object',
-              required: [
-                'version',
-                'domain',
-                'message',
-                'kdf',
-                'signingAlgorithm',
-                'encryptionAlgorithm',
-              ],
+              required: ['version', 'source', 'kdf', 'signingAlgorithm', 'encryptionAlgorithm'],
               properties: {
                 version: { type: 'integer' },
-                domain: { type: 'string' },
-                message: { type: 'string' },
+                source: { type: 'string', const: 'CLIENT_GENERATED' },
                 kdf: {
                   type: 'object',
                   additionalProperties: false,
@@ -126,8 +120,11 @@ const openApiPaths = {
                   ],
                   properties: {
                     name: { type: 'string', const: 'HKDF-SHA-256' },
-                    input: { type: 'string', const: 'SEP-53-SIGNATURE' },
-                    inputEncoding: { type: 'string', const: 'base64' },
+                    input: {
+                      type: 'string',
+                      const: 'CLIENT-RANDOM-32-BYTE-MASTER-SECRET',
+                    },
+                    inputEncoding: { type: 'string', const: 'raw-bytes' },
                     salt: { type: 'string', const: 'beseen.app/key-derivation/v1' },
                     seedLengthBytes: { type: 'integer', const: 32 },
                     signingInfo: {
@@ -146,7 +143,6 @@ const openApiPaths = {
             },
           },
         }),
-        '400': validationError,
         '429': rateLimited,
       },
     },
@@ -175,72 +171,22 @@ const openApiPaths = {
       },
     },
   },
-  '/v1/auth/registration/verify': {
-    post: {
-      deprecated: true,
-      tags: ['Registration'],
-      summary: 'Verify a registration challenge using the legacy three-request flow',
-      description:
-        'Compatibility endpoint. New clients should send challengeId, signature, and profile directly to /v1/auth/register.',
-      operationId: 'verifyRegistrationChallenge',
-      requestBody: jsonBody({
-        type: 'object',
-        additionalProperties: false,
-        required: ['challengeId', 'signature'],
-        properties: {
-          challengeId: { $ref: '#/components/schemas/ObjectId' },
-          signature: signatureSchema,
-        },
-      }),
-      responses: {
-        '200': jsonResponse('Registration challenge verified.', {
-          type: 'object',
-          required: ['registrationToken', 'expiresAt'],
-          properties: {
-            registrationToken: { type: 'string', pattern: '^[A-Za-z0-9_-]{43}$' },
-            expiresAt: { type: 'string', format: 'date-time' },
-          },
-        }),
-        '400': validationError,
-        '401': genericError,
-        '404': genericError,
-        '409': genericError,
-        '410': genericError,
-        '429': rateLimited,
-      },
-    },
-  },
   '/v1/auth/register': {
     post: {
       tags: ['Registration'],
       summary: 'Register an account and start an authenticated session',
       description:
-        'Recommended clients use the signedChallenge shape. The registrationToken shape is retained for compatibility.',
+        'Verifies and consumes the exact SEP-10 challenge. The signed transaction is never submitted to Stellar.',
       operationId: 'registerUser',
       requestBody: jsonBody({
-        oneOf: [
-          {
-            title: 'Signed challenge (recommended)',
-            type: 'object',
-            additionalProperties: false,
-            required: ['challengeId', 'signature', 'profile'],
-            properties: {
-              challengeId: { $ref: '#/components/schemas/ObjectId' },
-              signature: signatureSchema,
-              profile: { $ref: '#/components/schemas/ProfileInput' },
-            },
-          },
-          {
-            title: 'Legacy registration token',
-            type: 'object',
-            additionalProperties: false,
-            required: ['registrationToken', 'profile'],
-            properties: {
-              registrationToken: { type: 'string', pattern: '^[A-Za-z0-9_-]{43}$' },
-              profile: { $ref: '#/components/schemas/ProfileInput' },
-            },
-          },
-        ],
+        type: 'object',
+        additionalProperties: false,
+        required: ['challengeId', 'signedTransactionXdr', 'profile'],
+        properties: {
+          challengeId: { $ref: '#/components/schemas/ObjectId' },
+          signedTransactionXdr: signedTransactionXdrSchema,
+          profile: { $ref: '#/components/schemas/ProfileInput' },
+        },
       }),
       responses: {
         '201': jsonResponse('User registered and logged in.', {
@@ -284,10 +230,10 @@ const openApiPaths = {
       requestBody: jsonBody({
         type: 'object',
         additionalProperties: false,
-        required: ['challengeId', 'signature'],
+        required: ['challengeId', 'signedTransactionXdr'],
         properties: {
           challengeId: { $ref: '#/components/schemas/ObjectId' },
-          signature: signatureSchema,
+          signedTransactionXdr: signedTransactionXdrSchema,
         },
       }),
       responses: {
@@ -413,7 +359,7 @@ const openApiPaths = {
       tags: ['Profiles'],
       summary: 'Get a user’s active public encryption and signing keys',
       description:
-        'Returns public keys only. Wallet addresses, private keys, and key-derivation signatures are never returned.',
+        'Returns public keys only. Wallet addresses, private keys, and client master secrets are never returned.',
       operationId: 'getPublicUserKeys',
       parameters: [
         {
