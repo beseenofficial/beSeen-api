@@ -18,16 +18,6 @@ const updateErrors: Record<
     code: 'USERNAME_TAKEN',
     message: 'Username is already taken',
   },
-  creator_profile_not_allowed: {
-    statusCode: 400,
-    code: 'CREATOR_PROFILE_NOT_ALLOWED',
-    message: 'Creator profile is only available for creator accounts',
-  },
-  creator_profile_required: {
-    statusCode: 400,
-    code: 'CREATOR_PROFILE_REQUIRED',
-    message: 'A complete creator profile is required',
-  },
 };
 
 const updateMeRoute: RequestHandler = async (req, res) => {

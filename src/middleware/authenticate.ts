@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
-import { USER_ACCOUNT_TYPES, USER_ROLES } from '../constant/user';
+import { USER_ROLES } from '../constant/user';
 import env from '../env';
 import AuthSession from '../models/AuthSession';
 
@@ -11,7 +11,6 @@ const accessTokenPayloadSchema = z.object({
   jti: z.string().regex(/^[a-f\d]{24}$/i),
   type: z.literal('access'),
   role: z.enum(USER_ROLES),
-  accountType: z.enum(USER_ACCOUNT_TYPES),
 });
 
 const unauthorized = (res: Parameters<RequestHandler>[1]) =>
@@ -64,7 +63,6 @@ const authenticate: RequestHandler = async (req, res, next) => {
       userId: payload.data.sub,
       sessionId: payload.data.jti,
       role: payload.data.role,
-      accountType: payload.data.accountType,
     };
     res.setHeader('Cache-Control', 'no-store');
 
