@@ -11,7 +11,7 @@ const registerUserMock = vi.mocked(registerUser);
 const validBody = () => ({
   walletAddress: WALLET.toLowerCase(),
   username: '  New_User  ',
-  avatar: 'https://cdn.beseen.app/avatar.webp',
+  avatar: 'https://cdn.beseen.fi/avatar.webp',
   keys: {
     signing: { algorithm: 'Ed25519', publicKey: Buffer.alloc(32, 1).toString('base64') },
     encryption: { algorithm: 'X25519', publicKey: Buffer.alloc(32, 2).toString('base64') },
@@ -27,7 +27,7 @@ describe('POST /v1/auth/register', () => {
       user: {
         id: '507f1f77bcf86cd799439011',
         username: 'new_user',
-        avatar: 'https://cdn.beseen.app/avatar.webp',
+        avatar: 'https://cdn.beseen.fi/avatar.webp',
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
       },
       auth: {
@@ -44,7 +44,7 @@ describe('POST /v1/auth/register', () => {
     expect(response.body.result.user).toEqual({
       id: '507f1f77bcf86cd799439011',
       username: 'new_user',
-      avatar: 'https://cdn.beseen.app/avatar.webp',
+      avatar: 'https://cdn.beseen.fi/avatar.webp',
       createdAt: '2026-07-27T12:00:00.000Z',
     });
     expect(registerUserMock).toHaveBeenCalledWith(

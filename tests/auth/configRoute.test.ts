@@ -26,7 +26,7 @@ describe('GET /v1/auth/config', () => {
           operation: {
             type: 'manageData',
             name: 'beseen_kdf_v1',
-            value: 'beseen.app/key-derivation/v1',
+            value: 'beseen.fi/key-derivation/v1',
           },
           submissionRequired: false,
         },
