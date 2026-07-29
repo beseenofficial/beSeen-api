@@ -9,8 +9,9 @@ Backend API for Stellar wallet accounts, minimal user profiles, and end-to-end e
   reach the API.
 - The API stores the Stellar wallet address, the derived Ed25519/X25519 public keys, minimal profile
   data, encrypted broadcast content, and individually wrapped content keys.
-- Registration is intentionally demo-only: the API validates formats and trusts the wallet address
-  and derived public keys supplied by the client. It does not yet prove wallet ownership.
+- Registration validates the Stellar address through the BLUX server API with `user_id: 0` before
+  creating the user. BLUX credentials remain server-only; the frontend registration contract does
+  not change.
 - Login has no server challenge. The client signs a timestamped UUID message with its derived
   Ed25519 private key; used UUIDs are persisted to prevent replay.
 
@@ -51,8 +52,8 @@ The short version is:
 2. Build and sign the fixed `beseen_kdf_v1` transaction locally.
 3. Extract its raw 64-byte signature and use the documented HKDF settings to derive Ed25519 and
    X25519 key pairs. Keep private keys client-only.
-4. For a new account, call `POST /v1/auth/register`. In demo mode the API validates formats and
-   stores the client-declared wallet address and derived public keys.
+4. For a new account, call `POST /v1/auth/register`. The backend verifies the wallet through BLUX,
+   then stores the client-declared public keys only when BLUX returns `exists: true`.
 5. For an existing account, sign the documented login message with the derived Ed25519 private key
    and call `POST /v1/auth/login` directly. There is no challenge request.
 6. If local private keys are missing, sign the same fixed KDF transaction again and reconstruct the
