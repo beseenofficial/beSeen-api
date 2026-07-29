@@ -63,14 +63,17 @@ possession of the stored derived Ed25519 private key.
 
 ## Broadcasts
 
-Every active user can create a broadcast. The current entitlement mode is explicitly stored as demo:
+Every active user owns one database-backed demo token. Another authenticated user can acquire it
+without payment or an on-chain transaction. A broadcast audience is the active holders of the
+sender's token at the moment the draft is created:
 
-- `Broadcast.audienceType = "demo_all_users"`
-- `BroadcastRecipient.accessMode = "demo"`
-- `BroadcastRecipient.tokenId = null`
+- `Broadcast.audienceType = "token_holders"`
+- `BroadcastRecipient.accessMode = "token"`
+- `BroadcastRecipient.tokenId` identifies the sender's token
 
-Later the audience resolver can persist `token_holders`, `accessMode = "token"`, and a token ID
-without changing the encryption flow.
+The purchase endpoint is idempotent, so repeated clicks cannot create duplicate ownership records.
+Payment and Stellar asset validation can replace this demo acquisition later without changing the
+encryption flow.
 
 Broadcast encryption is entirely client-side:
 

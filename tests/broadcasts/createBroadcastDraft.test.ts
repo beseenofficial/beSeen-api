@@ -42,8 +42,8 @@ describe('createBroadcastDraft', () => {
         username: 'member_user',
         keyVersion: 1,
         encryptionPublicKey: Buffer.alloc(32, 3).toString('base64'),
-        accessMode: 'demo' as const,
-        tokenId: null,
+        accessMode: 'token' as const,
+        tokenId: new Types.ObjectId().toString(),
       },
     ];
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(creator) as never);
@@ -61,7 +61,7 @@ describe('createBroadcastDraft', () => {
         id: '507f1f77bcf86cd799439099',
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
         status: 'draft',
-        audienceType: 'demo_all_users',
+        audienceType: 'token_holders',
         audienceCount: 1,
         progress: { uploadedCount: 0, remainingCount: 1, complete: false },
         expiresAt: new Date('2026-08-03T12:00:00.000Z'),
@@ -90,7 +90,7 @@ describe('createBroadcastDraft', () => {
       ok: true,
       created: true,
       draft: {
-        audience: { type: 'demo_all_users', count: 1 },
+        audience: { type: 'token_holders', count: 1 },
         creatorKey: {
           keyVersion: 1,
           encryptionPublicKey: creatorKey.encryptionPublicKey,
@@ -107,8 +107,8 @@ describe('createBroadcastDraft', () => {
         expect.objectContaining({
           recipient: audience[0]!.recipientId,
           encryptionPublicKey: audience[0]!.encryptionPublicKey,
-          accessMode: 'demo',
-          tokenId: null,
+          accessMode: 'token',
+          tokenId: audience[0]!.tokenId,
         }),
       ],
       { ordered: true },

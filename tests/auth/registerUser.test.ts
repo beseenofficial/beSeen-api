@@ -4,6 +4,7 @@ import { withDatabaseTransaction } from '../../src/db';
 import AuthSession from '../../src/models/AuthSession';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
+import UserToken from '../../src/models/UserToken';
 import registerUser from '../../src/utils/auth/registerUser';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
@@ -47,6 +48,9 @@ describe('registerUser', () => {
       savedDerivationVersion = this.derivationVersion;
       return this;
     });
+    vi.spyOn(UserToken.prototype, 'save').mockImplementation(async function saveUserToken() {
+      return this;
+    });
     vi.spyOn(AuthSession.prototype, 'save').mockImplementation(async function saveSession() {
       return this;
     });
@@ -63,6 +67,7 @@ describe('registerUser', () => {
       auth: { tokenType: 'Bearer' },
     });
     expect(UserKey.prototype.save).toHaveBeenCalledOnce();
+    expect(UserToken.prototype.save).toHaveBeenCalledOnce();
     expect(savedDerivationVersion).toBe(1);
   });
 });
