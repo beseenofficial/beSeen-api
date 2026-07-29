@@ -19,13 +19,16 @@ const BROADCAST_FEED_MAX_LIMIT = 50;
 const BROADCAST_DRAFT_LIST_DEFAULT_LIMIT = 20;
 const BROADCAST_DRAFT_LIST_MAX_LIMIT = 50;
 const BROADCAST_STATUSES = ['draft', 'published', 'canceled'] as const;
-const BROADCAST_AUDIENCE_TYPES = ['all_active_users', 'token_holders'] as const;
+const BROADCAST_AUDIENCE_TYPES = ['demo_all_users', 'token_holders'] as const;
+const BROADCAST_ACCESS_MODES = ['demo', 'token'] as const;
 
 type BroadcastStatus = (typeof BROADCAST_STATUSES)[number];
 type BroadcastAudienceType = (typeof BROADCAST_AUDIENCE_TYPES)[number];
+type BroadcastAccessMode = (typeof BROADCAST_ACCESS_MODES)[number];
 
 export {
   BROADCAST_AUDIENCE_TYPES,
+  BROADCAST_ACCESS_MODES,
   BROADCAST_CONTENT_NONCE_BYTES,
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_DRAFT_LIST_DEFAULT_LIMIT,
@@ -43,4 +46,4 @@ export {
   BROADCAST_STATUSES,
   BROADCAST_WRAPPED_KEY_BYTES,
 };
-export type { BroadcastAudienceType, BroadcastStatus };
+export type { BroadcastAccessMode, BroadcastAudienceType, BroadcastStatus };
