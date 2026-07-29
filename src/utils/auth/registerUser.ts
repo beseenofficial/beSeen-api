@@ -9,11 +9,14 @@ import type { AuthTokens } from './createAuthSession';
 import type { AuthenticatedUser } from '../../types/auth';
 import type { RegisterBody } from '../../validation/auth/register';
 import { KEY_DERIVATION_VERSION } from '../../constant/auth';
+import verifyBluxWallet from '../blux/verifyBluxWallet';
 
 type RegistrationFailureReason =
   | 'username_taken'
   | 'wallet_already_registered'
-  | 'public_key_already_registered';
+  | 'public_key_already_registered'
+  | 'wallet_not_verified_by_blux'
+  | 'blux_verification_unavailable';
 
 type RegisterUserResult =
   | { ok: true; user: AuthenticatedUser; auth: AuthTokens }
@@ -99,6 +102,10 @@ const registerUserInTransaction = async (
 };
 
 const registerUser = async (body: RegisterBody): Promise<RegisterUserResult> => {
+  const verification = await verifyBluxWallet(body.walletAddress);
+  if (!verification.ok) return { ok: false, reason: 'blux_verification_unavailable' };
+  if (!verification.verified) return { ok: false, reason: 'wallet_not_verified_by_blux' };
+
   try {
     return await withDatabaseTransaction((session) => registerUserInTransaction(body, session));
   } catch (error: unknown) {

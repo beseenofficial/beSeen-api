@@ -1,5 +1,5 @@
-import { CreateBroadcastDraftFailureReason } from "../../utils/broadcast/createBroadcastDraft";
-import { UploadBroadcastRecipientKeysFailureReason } from "../../utils/broadcast/uploadBroadcastRecipientKeys";
+import type { CreateBroadcastDraftFailureReason } from '../../utils/broadcast/createBroadcastDraft';
+import type { UploadBroadcastRecipientKeysFailureReason } from '../../utils/broadcast/uploadBroadcastRecipientKeys';
 
 export const draftErrors: Record<
   CreateBroadcastDraftFailureReason,

@@ -141,7 +141,7 @@ const openApiPaths = {
       tags: ['Registration'],
       summary: 'Register an account and start an authenticated session',
       description:
-        'Demo mode. Validates the Stellar G-address format and derived-key algorithms/lengths, then trusts and stores the client-declared public values. This does not prove wallet ownership and must be replaced before production.',
+        'Before creating any account data, the API verifies the submitted Stellar address server-to-server through BLUX POST /server/wallets/verify with user_id 0. The client request shape is unchanged and BLUX credentials never reach the client.',
       operationId: 'registerUser',
       requestBody: jsonBody({
         type: 'object',
@@ -162,9 +162,10 @@ const openApiPaths = {
           $ref: '#/components/schemas/AuthenticatedResult',
         }),
         '400': validationError,
-        '401': genericError,
+        '403': genericError,
         '409': genericError,
         '429': rateLimited,
+        '503': genericError,
       },
     },
   },

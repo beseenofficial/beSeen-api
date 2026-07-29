@@ -1,4 +1,4 @@
-import { UpdateProfileFailureReason } from "../../utils/user/updateCurrentUser";
+import type { UpdateProfileFailureReason } from '../../utils/user/updateCurrentUser';
 
 export const updateErrors: Record<
   UpdateProfileFailureReason,

@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const DEVELOPMENT_ACCESS_TOKEN_SECRET = 'development-only-change-this-access-token-secret';
+const DEVELOPMENT_BLUX_APP_ID = 'development-blux-app-id';
+const DEVELOPMENT_BLUX_APP_SECRET = 'development-blux-app-secret';
 
 const envSchema = z
   .object({
@@ -14,6 +16,10 @@ const envSchema = z
     DB_NAME: z.string().min(1).default('beseen'),
     STELLAR_NETWORK: z.enum(['public', 'testnet']).default('testnet'),
     AUTH_DOMAIN: z.string().min(1).default('beseen.fi'),
+    BLUX_BASE_URL: z.url().default('https://api.blux.cc'),
+    BLUX_APP_ID: z.string().min(1).default(DEVELOPMENT_BLUX_APP_ID),
+    BLUX_APP_SECRET: z.string().min(1).default(DEVELOPMENT_BLUX_APP_SECRET),
+    BLUX_VERIFICATION_TIMEOUT_MS: z.coerce.number().int().min(500).max(15_000).default(5_000),
     ACCESS_TOKEN_SECRET: z.string().min(32).default(DEVELOPMENT_ACCESS_TOKEN_SECRET),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3_600).default(900),
     REFRESH_TOKEN_TTL_SECONDS: z.coerce
@@ -37,6 +43,17 @@ const envSchema = z
         code: 'custom',
         path: ['ACCESS_TOKEN_SECRET'],
         message: 'ACCESS_TOKEN_SECRET must be changed in production',
+      });
+    }
+    if (
+      value.NODE_ENV === 'production' &&
+      (value.BLUX_APP_ID === DEVELOPMENT_BLUX_APP_ID ||
+        value.BLUX_APP_SECRET === DEVELOPMENT_BLUX_APP_SECRET)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['BLUX_APP_SECRET'],
+        message: 'BLUX_APP_ID and BLUX_APP_SECRET must be configured in production',
       });
     }
   });

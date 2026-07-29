@@ -1,5 +1,5 @@
-import { LoginFailureReason } from "../../utils/auth/loginUser";
-import { RegistrationFailureReason } from "../../utils/auth/registerUser";
+import type { LoginFailureReason } from '../../utils/auth/loginUser';
+import type { RegistrationFailureReason } from '../../utils/auth/registerUser';
 
 export const loginErrors: Record<
   LoginFailureReason,
@@ -41,5 +41,15 @@ export const registrationErrors: Record<
     statusCode: 409,
     code: 'PUBLIC_KEY_ALREADY_REGISTERED',
     message: 'A BeSeen public key is already registered',
+  },
+  wallet_not_verified_by_blux: {
+    statusCode: 403,
+    code: 'WALLET_NOT_VERIFIED_BY_BLUX',
+    message: 'Wallet was not found in the configured BLUX project',
+  },
+  blux_verification_unavailable: {
+    statusCode: 503,
+    code: 'BLUX_VERIFICATION_UNAVAILABLE',
+    message: 'Wallet verification service is unavailable',
   },
 };

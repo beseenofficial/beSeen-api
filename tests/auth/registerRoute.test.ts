@@ -80,4 +80,13 @@ describe('POST /v1/auth/register', () => {
     expect(conflict.status).toBe(409);
     expect(conflict.body.result.code).toBe('USERNAME_TAKEN');
   });
+
+  it('returns a stable error when BLUX does not recognize the wallet', async () => {
+    registerUserMock.mockResolvedValue({ ok: false, reason: 'wallet_not_verified_by_blux' });
+
+    const response = await request(app).post('/v1/auth/register').send(validBody());
+
+    expect(response.status).toBe(403);
+    expect(response.body.result.code).toBe('WALLET_NOT_VERIFIED_BY_BLUX');
+  });
 });
