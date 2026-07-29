@@ -112,9 +112,8 @@ const openApiComponents = {
     RegistrationKeys: {
       type: 'object',
       additionalProperties: false,
-      required: ['derivationVersion', 'signing', 'encryption'],
+      required: ['signing', 'encryption'],
       properties: {
-        derivationVersion: { type: 'integer', const: 1 },
         signing: {
           type: 'object',
           additionalProperties: false,

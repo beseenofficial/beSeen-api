@@ -20,28 +20,23 @@ describe('GET /v1/users/:username', () => {
       ok: true,
       user: {
         id: '507f1f77bcf86cd799439011',
-        username: 'creator_user',
-        displayName: 'Creator User',
-        bio: '',
-        avatarUrl: null,
-        accountType: 'creator',
-        creatorProfile: {
-          headline: 'Visual storyteller',
-          categories: ['photography'],
-          skills: ['editing'],
-          websiteUrl: null,
-          isAvailableForWork: true,
-        },
+        username: 'sample_user',
+        avatar: null,
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
 
-    const response = await request(app).get('/v1/users/Creator_User');
+    const response = await request(app).get('/v1/users/Sample_User');
 
     expect(response.status).toBe(200);
     expect(response.body.result.user).not.toHaveProperty('walletAddress');
     expect(response.body.result.user.createdAt).toBe('2026-07-01T12:00:00.000Z');
-    expect(getPublicProfileMock).toHaveBeenCalledWith('creator_user');
+    expect(response.body.result.user).toMatchObject({
+      id: '507f1f77bcf86cd799439011',
+      username: 'sample_user',
+      avatar: null,
+    });
+    expect(getPublicProfileMock).toHaveBeenCalledWith('sample_user');
   });
 
   it('returns stable validation and not-found errors', async () => {

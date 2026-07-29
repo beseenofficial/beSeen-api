@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { KEY_DERIVATION_VERSION } from '../../constant/auth';
 import isBase64PublicKey from '../../utils/auth/isBase64PublicKey';
 import isValidStellarGAddress from '../../utils/stellar/isValidStellarGAddress';
 import { nullableAvatarSchema, usernameSchema } from '../user/profileFields';
@@ -21,7 +20,6 @@ const registerBodySchema = z
     avatar: nullableAvatarSchema.optional().default(null),
     keys: z
       .object({
-        derivationVersion: z.literal(KEY_DERIVATION_VERSION),
         signing: z
           .object({ algorithm: z.literal('Ed25519'), publicKey: publicKeySchema })
           .strict(),

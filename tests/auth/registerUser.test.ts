@@ -10,12 +10,12 @@ vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 const transactionMock = vi.mocked(withDatabaseTransaction);
+let savedDerivationVersion: number | undefined;
 const body = {
   walletAddress: WALLET,
   username: 'sample_user',
   avatar: null,
   keys: {
-    derivationVersion: 1 as const,
     signing: {
       algorithm: 'Ed25519' as const,
       publicKey: Buffer.alloc(32, 1).toString('base64'),
@@ -34,6 +34,7 @@ const existsResult = (value: unknown) => ({
 
 describe('registerUser', () => {
   beforeEach(() => {
+    savedDerivationVersion = undefined;
     transactionMock.mockReset();
     transactionMock.mockImplementation(async (operation) => operation({} as never));
     vi.spyOn(User, 'exists').mockReturnValue(existsResult(null) as never);
@@ -43,6 +44,7 @@ describe('registerUser', () => {
       return this;
     });
     vi.spyOn(UserKey.prototype, 'save').mockImplementation(async function saveUserKey() {
+      savedDerivationVersion = this.derivationVersion;
       return this;
     });
     vi.spyOn(AuthSession.prototype, 'save').mockImplementation(async function saveSession() {
@@ -61,5 +63,6 @@ describe('registerUser', () => {
       auth: { tokenType: 'Bearer' },
     });
     expect(UserKey.prototype.save).toHaveBeenCalledOnce();
+    expect(savedDerivationVersion).toBe(1);
   });
 });

@@ -1,5 +1,6 @@
 import type { ClientSession } from 'mongoose';
 
+import { KEY_DERIVATION_VERSION } from '../../constant/auth';
 import { withDatabaseTransaction } from '../../db';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
@@ -66,7 +67,7 @@ const registerUserInTransaction = async (
 
   const userKey = new UserKey({
     user: user._id,
-    derivationVersion: body.keys.derivationVersion,
+    derivationVersion: KEY_DERIVATION_VERSION,
     signingPublicKey: body.keys.signing.publicKey,
     encryptionPublicKey: body.keys.encryption.publicKey,
   });

@@ -13,7 +13,6 @@ const validBody = () => ({
   username: '  New_User  ',
   avatar: 'https://cdn.beseen.app/avatar.webp',
   keys: {
-    derivationVersion: 1,
     signing: { algorithm: 'Ed25519', publicKey: Buffer.alloc(32, 1).toString('base64') },
     encryption: { algorithm: 'X25519', publicKey: Buffer.alloc(32, 2).toString('base64') },
   },
@@ -57,6 +56,19 @@ describe('POST /v1/auth/register', () => {
     const response = await request(app)
       .post('/v1/auth/register')
       .send({ ...validBody(), accountType: 'creator' });
+    expect(response.status).toBe(400);
+    expect(registerUserMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a client-supplied derivation version', async () => {
+    const requestBody = validBody();
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .send({
+        ...requestBody,
+        keys: { ...requestBody.keys, derivationVersion: 1 },
+      });
+
     expect(response.status).toBe(400);
     expect(registerUserMock).not.toHaveBeenCalled();
   });
