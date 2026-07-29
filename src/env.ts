@@ -13,7 +13,7 @@ const envSchema = z
       .default('mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true'),
     DB_NAME: z.string().min(1).default('beseen'),
     STELLAR_NETWORK: z.enum(['public', 'testnet']).default('testnet'),
-    AUTH_DOMAIN: z.string().min(1).default('beseen.app'),
+    AUTH_DOMAIN: z.string().min(1).default('beseen.fi'),
     ACCESS_TOKEN_SECRET: z.string().min(32).default(DEVELOPMENT_ACCESS_TOKEN_SECRET),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3_600).default(900),
     REFRESH_TOKEN_TTL_SECONDS: z.coerce
