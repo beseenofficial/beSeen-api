@@ -1,7 +1,8 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
-import { BROADCAST_WRAPPED_KEY_BYTES } from '../constant/broadcast';
+import { BROADCAST_ACCESS_MODES, BROADCAST_WRAPPED_KEY_BYTES } from '../constant/broadcast';
+import type { BroadcastAccessMode } from '../constant/broadcast';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
 import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 
@@ -12,6 +13,8 @@ interface IBroadcastRecipient {
   keyVersion: number;
   encryptionPublicKey: string;
   encryptedBroadcastKey: string | null;
+  accessMode: BroadcastAccessMode;
+  tokenId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +64,18 @@ const broadcastRecipientSchema = new Schema<IBroadcastRecipient>(
           }),
         message: 'Encrypted broadcast key must be a canonical base64 sealed-box ciphertext',
       },
+    },
+    accessMode: {
+      type: String,
+      enum: BROADCAST_ACCESS_MODES,
+      required: true,
+      default: 'demo',
+      immutable: true,
+    },
+    tokenId: {
+      type: String,
+      default: null,
+      immutable: true,
     },
   },
   {
