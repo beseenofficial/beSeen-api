@@ -5,7 +5,6 @@ import type { UploadBroadcastRecipientKeysBody } from '../../validation/broadcas
 type UploadBroadcastRecipientKeysFailureReason =
   | 'draft_not_found'
   | 'recipient_not_in_audience'
-  | 'key_version_mismatch'
   | 'encrypted_key_conflict';
 
 interface BroadcastKeyUploadProgress {
@@ -52,10 +51,6 @@ const uploadBroadcastRecipientKeys = async (
 
     if (!row) {
       return { ok: false, reason: 'recipient_not_in_audience' };
-    }
-
-    if (row.keyVersion !== key.keyVersion) {
-      return { ok: false, reason: 'key_version_mismatch' };
     }
 
     if (

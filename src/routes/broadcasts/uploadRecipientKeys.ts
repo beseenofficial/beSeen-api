@@ -19,11 +19,6 @@ const uploadErrors: Record<
     code: 'RECIPIENT_NOT_IN_AUDIENCE',
     message: 'A recipient does not belong to the frozen audience',
   },
-  key_version_mismatch: {
-    statusCode: 409,
-    code: 'KEY_VERSION_MISMATCH',
-    message: 'A recipient key version does not match the frozen audience',
-  },
   encrypted_key_conflict: {
     statusCode: 409,
     code: 'ENCRYPTED_KEY_CONFLICT',

@@ -38,7 +38,6 @@ describe('uploadBroadcastRecipientKeys', () => {
     const body = {
       keys: rows.map((row, index) => ({
         recipientId: row.recipient.toString(),
-        keyVersion: 1,
         encryptedBroadcastKey: wrappedKey(index + 1),
       })),
     };
@@ -107,7 +106,6 @@ describe('uploadBroadcastRecipientKeys', () => {
       keys: [
         {
           recipientId: row.recipient.toString(),
-          keyVersion: 1,
           encryptedBroadcastKey: wrappedKey(2),
         },
       ],

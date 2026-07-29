@@ -22,7 +22,6 @@ const validBody = () => ({
   keys: [
     {
       recipientId: recipientId.toString(),
-      keyVersion: 1,
       encryptedBroadcastKey: Buffer.alloc(80, 1).toString('base64'),
     },
   ],
@@ -73,6 +72,18 @@ describe('PUT /v1/broadcasts/drafts/:draftId/recipient-keys', () => {
         plaintext: 'secret',
         privateKey: 'secret',
       });
+
+    expect(response.status).toBe(400);
+    expect(response.body.result.code).toBe('VALIDATION_ERROR');
+    expect(uploadKeysMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a client-supplied key version', async () => {
+    const key = validBody().keys[0]!;
+    const response = await request(app)
+      .put(`/v1/broadcasts/drafts/${draftId.toString()}/recipient-keys`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ keys: [{ ...key, keyVersion: 1 }] });
 
     expect(response.status).toBe(400);
     expect(response.body.result.code).toBe('VALIDATION_ERROR');

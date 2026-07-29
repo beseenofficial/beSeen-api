@@ -13,7 +13,6 @@ const recipientKeySchema = z
       .trim()
       .regex(/^[a-f\d]{24}$/i, 'Recipient ID must be a MongoDB ObjectId')
       .transform((value) => value.toLowerCase()),
-    keyVersion: z.number().int().positive(),
     encryptedBroadcastKey: z.string().refine(
       (value) =>
         isCanonicalBase64(value, {

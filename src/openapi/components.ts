@@ -178,15 +178,14 @@ const openApiComponents = {
     EncryptedBroadcastRecipientKey: {
       type: 'object',
       additionalProperties: false,
-      required: ['recipientId', 'keyVersion', 'encryptedBroadcastKey'],
+      required: ['recipientId', 'encryptedBroadcastKey'],
       properties: {
         recipientId: objectIdSchema,
-        keyVersion: { type: 'integer', minimum: 1 },
         encryptedBroadcastKey: {
           type: 'string',
           format: 'byte',
           description:
-            'Canonical base64 80-byte sealed-box ciphertext containing the random 32-byte broadcast content key.',
+            'Canonical base64 80-byte sealed-box ciphertext containing the random 32-byte broadcast content key. The server already owns the frozen recipient key version.',
         },
       },
     },
