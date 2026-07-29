@@ -365,6 +365,36 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/{username}/followers/count': {
+    get: {
+      tags: ['Tokens'],
+      summary: 'Count the users who hold this profile’s token',
+      description: 'Each unique demo token holding is one follower.',
+      operationId: 'getUserFollowerCount',
+      parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
+      responses: {
+        '200': jsonResponse('Follower count retrieved.', {
+          type: 'object',
+          additionalProperties: false,
+          required: ['user', 'followerCount'],
+          properties: {
+            user: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['id', 'username'],
+              properties: {
+                id: { $ref: '#/components/schemas/ObjectId' },
+                username: { type: 'string' },
+              },
+            },
+            followerCount: { type: 'integer', minimum: 0 },
+          },
+        }),
+        '400': validationError,
+        '404': genericError,
+      },
+    },
+  },
   '/v1/users/{username}/keys': {
     get: {
       tags: ['Profiles'],

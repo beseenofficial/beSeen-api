@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import authenticate from '../../middleware/authenticate';
 import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
+import getFollowerCountRoute from './followerCount';
 import getMeRoute from './me';
 import getMyTokensRoute from './myTokens';
 import purchaseUserTokenRoute from './purchaseToken';
@@ -22,6 +23,7 @@ userRoutes.get(
   getUsernameAvailabilityRoute,
 );
 userRoutes.get('/:username/keys', getPublicUserKeysRoute);
+userRoutes.get('/:username/followers/count', getFollowerCountRoute);
 userRoutes.get('/:username/token', getUserTokenRoute);
 userRoutes.post('/:username/token/purchase', authenticate, purchaseUserTokenRoute);
 userRoutes.get('/:username', getPublicProfileRoute);
