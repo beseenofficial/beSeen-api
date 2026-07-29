@@ -18,7 +18,7 @@ const draftId = new Types.ObjectId();
 const recipientId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = signAccessToken(
-  { id: creatorId, role: 'user', accountType: 'creator' },
+  { id: creatorId, role: 'user' },
   sessionId,
 );
 const encryptionPublicKey = Buffer.alloc(32, 2).toString('base64');
@@ -42,7 +42,7 @@ describe('broadcast draft routes', () => {
         id: draftId.toString(),
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
         status: 'draft',
-        audience: { type: 'all_active_users', count: 1 },
+        audience: { type: 'demo_all_users', count: 1 },
         encryption: {
           version: 1,
           contentSuite: 'XCHACHA20-POLY1305-IETF',
@@ -105,7 +105,7 @@ describe('broadcast draft routes', () => {
         id: draftId.toString(),
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
         status: 'draft',
-        audienceType: 'all_active_users',
+        audienceType: 'demo_all_users',
         audienceCount: 1,
         progress: { uploadedCount: 0, remainingCount: 1, complete: false },
         expiresAt: new Date('2026-08-03T12:00:00.000Z'),

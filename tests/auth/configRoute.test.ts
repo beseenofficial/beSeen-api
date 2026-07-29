@@ -5,44 +5,59 @@ import app from '../../src/app';
 import env from '../../src/env';
 
 describe('GET /v1/auth/config', () => {
-  it('returns the SEP-10 and client-generated key contract', async () => {
+  it('returns the client-only deterministic key and proof contract', async () => {
     const response = await request(app).get('/v1/auth/config');
 
     expect(response.status).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
     expect(response.body.result).toMatchObject({
-      protocol: {
-        authenticationStandard: 'SEP-10',
-        challengeFormat: 'stellar-transaction-xdr',
-        walletMethod: 'signTransaction',
-        stellarNetwork: env.STELLAR_NETWORK,
-        authDomain: env.AUTH_DOMAIN,
-        serverSigningPublicKey: expect.stringMatching(/^G[A-Z2-7]{55}$/),
-        transactionSubmissionRequired: false,
-        challengeTtlSeconds: 300,
-        accessTokenTtlSeconds: 900,
-      },
+      stellarNetwork: env.STELLAR_NETWORK,
+      networkPassphrase: expect.any(String),
       keyDerivation: {
         version: 1,
-        source: 'CLIENT_GENERATED',
-        kdf: {
-          name: 'HKDF-SHA-256',
-          input: 'CLIENT-RANDOM-32-BYTE-MASTER-SECRET',
-          inputEncoding: 'raw-bytes',
-          salt: 'beseen.app/key-derivation/v1',
-          seedLengthBytes: 32,
-          signingInfo: 'beseen.app/ed25519-signing-key/v1',
-          encryptionInfo: 'beseen.app/x25519-encryption-key/v1',
+        source: 'STELLAR_WALLET_FIXED_TRANSACTION_SIGNATURE',
+        walletMethod: 'signTransaction',
+        transaction: {
+          builtBy: 'client',
+          sourceAccount: 'connected-wallet',
+          sequence: '0',
+          feeStroops: '100',
+          timeBounds: { minTime: '0', maxTime: '0' },
+          operation: {
+            type: 'manageData',
+            name: 'beseen_kdf_v1',
+            value: 'beseen.app/key-derivation/v1',
+          },
+          submissionRequired: false,
         },
-        signingAlgorithm: 'Ed25519',
-        encryptionAlgorithm: 'X25519',
+        signature: {
+          input: 'RAW-64-BYTE-STELLAR-TRANSACTION-SIGNATURE',
+          lengthBytes: 64,
+          sentToServer: false,
+        },
+        privateKeyStorage: 'client-only',
+      },
+      registration: {
+        mode: 'DEMO_CLIENT_DECLARATION',
+        walletPublicKeyValidation: 'STELLAR_G_ADDRESS_FORMAT_ONLY',
+        additionalWalletSignatureRequired: false,
+        serverChallengeRequired: false,
+        productionReady: false,
+      },
+      login: {
+        proof: 'DERIVED_ED25519_SIGNATURE',
+        serverChallengeRequired: false,
+      },
+      session: {
+        accessTokenTtlSeconds: env.ACCESS_TOKEN_TTL_SECONDS,
+        refreshTokenTtlSeconds: env.REFRESH_TOKEN_TTL_SECONDS,
+        refreshEndpoint: '/v1/auth/refresh',
+        currentUserEndpoint: '/v1/users/me',
+        accessTokenStorage: 'memory',
+        refreshTokenStorage: 'persistent-client-storage',
+        refreshTokenRotationRequired: true,
       },
     });
-    expect(response.body.result.protocol.networkPassphrase).toBeTruthy();
-  });
-
-  it('does not require a wallet address because configuration is public and static', async () => {
-    const response = await request(app).get('/v1/auth/config');
-    expect(response.status).toBe(200);
+    expect(response.body.result).not.toHaveProperty('serverSigningPublicKey');
   });
 });

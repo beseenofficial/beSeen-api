@@ -15,7 +15,7 @@ const getCurrentUserMock = vi.mocked(getCurrentUser);
 const userId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = () =>
-  signAccessToken({ id: userId, role: 'user', accountType: 'regular' }, sessionId);
+  signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('GET /v1/users/me', () => {
   beforeEach(() => {
@@ -33,12 +33,8 @@ describe('GET /v1/users/me', () => {
       user: {
         id: userId.toString(),
         walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
-        username: 'regular_user',
-        displayName: 'Regular User',
-        bio: '',
-        avatarUrl: null,
-        accountType: 'regular',
-        creatorProfile: null,
+        username: 'sample_user',
+        avatar: null,
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
@@ -50,7 +46,8 @@ describe('GET /v1/users/me', () => {
     expect(response.status).toBe(200);
     expect(response.body.result.user).toMatchObject({
       id: userId.toString(),
-      username: 'regular_user',
+      username: 'sample_user',
+      avatar: null,
       createdAt: '2026-07-01T12:00:00.000Z',
     });
     expect(AuthSession.exists).toHaveBeenCalledWith(

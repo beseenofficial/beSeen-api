@@ -14,7 +14,7 @@ const creatorId = new Types.ObjectId();
 const draftId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = signAccessToken(
-  { id: creatorId, role: 'user', accountType: 'creator' },
+  { id: creatorId, role: 'user' },
   sessionId,
 );
 
@@ -37,7 +37,7 @@ describe('GET /v1/broadcasts/drafts', () => {
             id: draftId.toString(),
             clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
             status: 'draft',
-            audience: { type: 'all_active_users', count: 2 },
+            audience: { type: 'demo_all_users', count: 2 },
             progress: {
               uploadedCount: 1,
               remainingCount: 1,

@@ -14,7 +14,7 @@ const creatorId = new Types.ObjectId();
 const draftId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = signAccessToken(
-  { id: creatorId, role: 'user', accountType: 'creator' },
+  { id: creatorId, role: 'user' },
   sessionId,
 );
 const validBody = () => ({
@@ -44,7 +44,7 @@ describe('POST /v1/broadcasts/drafts/:draftId/finalize', () => {
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
         creatorId: creatorId.toString(),
         status: 'published',
-        audience: { type: 'all_active_users', count: 1 },
+        audience: { type: 'demo_all_users', count: 1 },
         encryptionVersion: 1,
         ...body,
         recipientKeysDigest: 'a'.repeat(64),

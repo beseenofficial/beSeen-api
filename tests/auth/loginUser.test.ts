@@ -1,75 +1,63 @@
-import mongoose, { Types } from 'mongoose';
-import type { ClientSession } from 'mongoose';
+import { generateKeyPairSync, sign } from 'node:crypto';
+
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import AuthChallenge from '../../src/models/AuthChallenge';
-import CreatorProfile from '../../src/models/CreatorProfile';
+import { withDatabaseTransaction } from '../../src/db';
+import AuthProof from '../../src/models/AuthProof';
+import AuthSession from '../../src/models/AuthSession';
 import User from '../../src/models/User';
-import createAuthSession from '../../src/utils/auth/createAuthSession';
+import UserKey from '../../src/models/UserKey';
+import buildLoginProofMessage from '../../src/utils/auth/buildLoginProofMessage';
 import loginUser from '../../src/utils/auth/loginUser';
-import { verifySep10Challenge } from '../../src/utils/stellar/sep10Challenge';
 
-vi.mock('../../src/utils/auth/createAuthSession', () => ({ default: vi.fn() }));
-vi.mock('../../src/utils/stellar/sep10Challenge', () => ({ verifySep10Challenge: vi.fn() }));
+vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 
-const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
-const SIGNED_XDR = Buffer.alloc(64, 3).toString('base64');
-const databaseSession = {} as ClientSession;
-const createAuthSessionMock = vi.mocked(createAuthSession);
-const verifyChallengeMock = vi.mocked(verifySep10Challenge);
+const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+const REQUEST_ID = '2f2b1762-f0f5-4b1b-8acd-70afcf043365';
+const NOW = new Date('2026-07-28T12:00:00.000Z');
+const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+const transactionMock = vi.mocked(withDatabaseTransaction);
 
-const body = {
-  challengeId: new Types.ObjectId().toString(),
-  signedTransactionXdr: SIGNED_XDR,
-};
+const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+const rawPublicKey = publicKey.export({ type: 'spki', format: 'der' }).subarray(-32).toString('base64');
 
-const queryResult = <T>(value: T) => {
-  const query = { session: vi.fn(), exec: vi.fn().mockResolvedValue(value) };
-  query.session.mockReturnValue(query);
-  return query;
-};
+const signedBody = (issuedAt = NOW.toISOString()) => {
+  const unsigned = {
+    walletAddress: WALLET,
+    requestId: REQUEST_ID,
+    issuedAt,
+  };
 
-const createChallenge = () =>
-  new AuthChallenge({
-    _id: new Types.ObjectId(body.challengeId),
-    purpose: 'login',
-    walletAddress: WALLET_ADDRESS,
-    nonce: 'n'.repeat(43),
-    transactionXdr: 'AAAA',
-    serverSigningPublicKey: WALLET_ADDRESS,
-    stellarNetwork: 'testnet',
-    authDomain: 'beseen.app',
-    expiresAt: new Date('2026-07-27T12:05:00.000Z'),
-    purgeAt: new Date('2026-07-27T12:05:00.000Z'),
-  });
-
-const createUser = (accountType: 'regular' | 'creator' = 'regular') => {
-  const user = new User({
-    _id: new Types.ObjectId(),
-    walletAddress: WALLET_ADDRESS,
-    username: `${accountType}_user`,
-    displayName: `${accountType} user`,
-    accountType,
-  });
-  user.createdAt = new Date('2026-07-01T12:00:00.000Z');
-  return user;
+  return {
+    ...unsigned,
+    signature: sign(null, Buffer.from(buildLoginProofMessage(unsigned), 'utf8'), privateKey).toString(
+      'base64',
+    ),
+  };
 };
 
 describe('loginUser', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-07-27T12:01:00.000Z'));
-    createAuthSessionMock.mockReset();
-    verifyChallengeMock.mockReset().mockReturnValue(true);
-    vi.spyOn(mongoose.connection, 'transaction').mockImplementation(async (operation) =>
-      operation(databaseSession),
+    vi.setSystemTime(NOW);
+    transactionMock.mockReset();
+    transactionMock.mockImplementation(async (operation) => operation({} as never));
+
+    const user = new User({
+      _id: new Types.ObjectId(),
+      walletAddress: WALLET,
+      username: 'sample_user',
+      avatar: null,
+      createdAt: NOW,
+    });
+    vi.spyOn(User, 'findOne').mockReturnValue(queryResult(user) as never);
+    vi.spyOn(UserKey, 'findOne').mockReturnValue(
+      queryResult({ user: user._id, signingPublicKey: rawPublicKey }) as never,
     );
-    createAuthSessionMock.mockResolvedValue({
-      accessToken: 'access-token',
-      refreshToken: 'refresh-token',
-      tokenType: 'Bearer',
-      expiresIn: 900,
-      refreshTokenExpiresAt: new Date('2026-08-26T12:01:00.000Z'),
+    vi.spyOn(AuthProof.prototype, 'save').mockResolvedValue(undefined as never);
+    vi.spyOn(AuthSession.prototype, 'save').mockImplementation(async function saveSession() {
+      return this;
     });
   });
 
@@ -78,85 +66,41 @@ describe('loginUser', () => {
     vi.restoreAllMocks();
   });
 
-  it('verifies and atomically consumes a SEP-10 login challenge', async () => {
-    const challenge = createChallenge();
-    const user = createUser();
-    vi.spyOn(AuthChallenge, 'findOne').mockReturnValue(queryResult(challenge) as never);
-    vi.spyOn(User, 'findOne').mockReturnValue(queryResult(user) as never);
-    const consumeSpy = vi
-      .spyOn(AuthChallenge, 'findOneAndUpdate')
-      .mockReturnValue(queryResult(challenge) as never);
-
-    const result = await loginUser(body);
+  it('accepts a fresh proof signed by the stored derived key', async () => {
+    const result = await loginUser(signedBody());
 
     expect(result).toMatchObject({
       ok: true,
-      user: { username: 'regular_user', creatorProfile: null },
-      auth: { accessToken: 'access-token' },
+      user: { username: 'sample_user', avatar: null },
+      auth: { tokenType: 'Bearer' },
     });
-    expect(verifyChallengeMock).toHaveBeenCalledWith({
-      signedTransactionXdr: SIGNED_XDR,
-      storedTransactionXdr: challenge.transactionXdr,
-      walletAddress: WALLET_ADDRESS,
-      serverSigningPublicKey: WALLET_ADDRESS,
-      stellarNetwork: 'testnet',
-      homeDomain: 'beseen.app',
-    });
-    expect(consumeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: challenge._id, purpose: 'login', usedAt: null }),
-      { $set: { usedAt: new Date('2026-07-27T12:01:00.000Z') } },
-      { new: true, session: databaseSession },
-    );
+    expect(AuthProof.prototype.save).toHaveBeenCalledOnce();
   });
 
-  it('returns creator profile data in the shared auth response', async () => {
-    const challenge = createChallenge();
-    const user = createUser('creator');
-    const creatorProfile = new CreatorProfile({
-      user: user._id,
-      headline: 'Visual storyteller',
-      categories: ['Photography'],
-      skills: ['Editing'],
-      isAvailableForWork: true,
+  it('rejects an invalid signature before starting a transaction', async () => {
+    const result = await loginUser({
+      ...signedBody(),
+      signature: Buffer.alloc(64, 1).toString('base64'),
     });
-    vi.spyOn(AuthChallenge, 'findOne').mockReturnValue(queryResult(challenge) as never);
-    vi.spyOn(User, 'findOne').mockReturnValue(queryResult(user) as never);
-    vi.spyOn(CreatorProfile, 'findOne').mockReturnValue(queryResult(creatorProfile) as never);
-    vi.spyOn(AuthChallenge, 'findOneAndUpdate').mockReturnValue(queryResult(challenge) as never);
 
-    const result = await loginUser(body);
-    expect(result).toMatchObject({
-      ok: true,
-      user: {
-        accountType: 'creator',
-        creatorProfile: { categories: ['photography'], skills: ['editing'] },
-      },
-    });
+    expect(result).toEqual({ ok: false, reason: 'invalid_signature' });
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
-  it('counts an invalid signed transaction without looking up the user', async () => {
-    const challenge = createChallenge();
-    challenge.attempts = 1;
-    vi.spyOn(AuthChallenge, 'findOne').mockReturnValue(queryResult(challenge) as never);
-    verifyChallengeMock.mockReturnValue(false);
-    vi.spyOn(AuthChallenge, 'updateOne').mockReturnValue(
-      queryResult({ modifiedCount: 1 }) as never,
-    );
-    const userSpy = vi.spyOn(User, 'findOne');
+  it('rejects stale proofs before reading the account', async () => {
+    const result = await loginUser(signedBody('2026-07-28T11:54:59.000Z'));
 
-    const result = await loginUser(body);
-
-    expect(result).toEqual({ ok: false, reason: 'invalid_challenge', attemptsRemaining: 3 });
-    expect(userSpy).not.toHaveBeenCalled();
-    expect(createAuthSessionMock).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, reason: 'proof_expired' });
+    expect(User.findOne).not.toHaveBeenCalled();
   });
 
-  it('rejects replay before cryptographic verification', async () => {
-    const challenge = createChallenge();
-    challenge.usedAt = new Date('2026-07-27T12:00:30.000Z');
-    vi.spyOn(AuthChallenge, 'findOne').mockReturnValue(queryResult(challenge) as never);
+  it('maps the unique proof constraint to a replay error', async () => {
+    const duplicateError = Object.assign(new Error('duplicate proof'), { code: 11_000 });
+    transactionMock.mockRejectedValueOnce(duplicateError);
 
-    expect(await loginUser(body)).toEqual({ ok: false, reason: 'challenge_already_used' });
-    expect(verifyChallengeMock).not.toHaveBeenCalled();
+    await expect(loginUser(signedBody())).resolves.toEqual({
+      ok: false,
+      reason: 'proof_replayed',
+    });
   });
 });

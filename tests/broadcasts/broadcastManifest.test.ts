@@ -36,7 +36,7 @@ describe('broadcast manifest canonicalization', () => {
       contentNonce: Buffer.alloc(24, 1).toString('base64'),
       contentCiphertext: Buffer.alloc(32, 2).toString('base64'),
       creatorEncryptedBroadcastKey: Buffer.alloc(80, 3).toString('base64'),
-      audienceType: 'all_active_users',
+      audienceType: 'demo_all_users',
       audienceCount: 2,
       recipientKeysDigest: 'a'.repeat(64),
     });

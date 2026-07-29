@@ -19,15 +19,14 @@ const createViewer = () =>
     _id: new Types.ObjectId(),
     walletAddress: WALLET_ADDRESS,
     username: 'viewer_user',
-    displayName: 'Viewer',
-    accountType: 'creator',
+    avatar: null,
   });
 
 const createPublishedBroadcast = (creatorId: Types.ObjectId) => ({
   _id: new Types.ObjectId(),
   clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
   creator: creatorId,
-  audienceType: 'all_active_users' as const,
+  audienceType: 'demo_all_users' as const,
   audienceSnapshotCount: 1,
   encryptionVersion: 1,
   creatorKeyVersion: 1,
@@ -57,8 +56,7 @@ describe('getBroadcastFeed', () => {
         creatorDocument: {
           _id: creatorId,
           username: 'creator_user',
-          displayName: 'Creator',
-          avatarUrl: null,
+          avatar: null,
         },
       },
     ];

@@ -29,8 +29,6 @@ describe('createBroadcastDraft', () => {
       _id: new Types.ObjectId(),
       walletAddress: WALLET_ADDRESS,
       username: 'creator_user',
-      displayName: 'Creator',
-      accountType: 'creator',
     });
     const creatorKey = new UserKey({
       user: creator._id,
@@ -44,6 +42,8 @@ describe('createBroadcastDraft', () => {
         username: 'member_user',
         keyVersion: 1,
         encryptionPublicKey: Buffer.alloc(32, 3).toString('base64'),
+        accessMode: 'demo' as const,
+        tokenId: null,
       },
     ];
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(creator) as never);
@@ -61,7 +61,7 @@ describe('createBroadcastDraft', () => {
         id: '507f1f77bcf86cd799439099',
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
         status: 'draft',
-        audienceType: 'all_active_users',
+        audienceType: 'demo_all_users',
         audienceCount: 1,
         progress: { uploadedCount: 0, remainingCount: 1, complete: false },
         expiresAt: new Date('2026-08-03T12:00:00.000Z'),
@@ -90,7 +90,7 @@ describe('createBroadcastDraft', () => {
       ok: true,
       created: true,
       draft: {
-        audience: { type: 'all_active_users', count: 1 },
+        audience: { type: 'demo_all_users', count: 1 },
         creatorKey: {
           keyVersion: 1,
           encryptionPublicKey: creatorKey.encryptionPublicKey,
@@ -107,27 +107,23 @@ describe('createBroadcastDraft', () => {
         expect.objectContaining({
           recipient: audience[0]!.recipientId,
           encryptionPublicKey: audience[0]!.encryptionPublicKey,
+          accessMode: 'demo',
+          tokenId: null,
         }),
       ],
       { ordered: true },
     );
   });
 
-  it('rejects regular accounts before resolving an audience', async () => {
-    const regularUser = new User({
-      _id: new Types.ObjectId(),
-      walletAddress: WALLET_ADDRESS,
-      username: 'regular_user',
-      displayName: 'Regular',
-      accountType: 'regular',
-    });
-    vi.spyOn(User, 'findOne').mockReturnValue(queryResult(regularUser) as never);
+  it('allows every active user type and rejects only unavailable users', async () => {
+    const userId = new Types.ObjectId();
+    vi.spyOn(User, 'findOne').mockReturnValue(queryResult(null) as never);
 
     await expect(
-      createBroadcastDraft(regularUser._id.toString(), {
+      createBroadcastDraft(userId.toString(), {
         clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
       }),
-    ).resolves.toEqual({ ok: false, reason: 'creator_required' });
+    ).resolves.toEqual({ ok: false, reason: 'user_unavailable' });
     expect(resolveAudienceMock).not.toHaveBeenCalled();
   });
 });

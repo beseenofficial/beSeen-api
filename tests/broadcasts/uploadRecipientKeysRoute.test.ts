@@ -15,7 +15,7 @@ const draftId = new Types.ObjectId();
 const recipientId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = signAccessToken(
-  { id: creatorId, role: 'user', accountType: 'creator' },
+  { id: creatorId, role: 'user' },
   sessionId,
 );
 const validBody = () => ({

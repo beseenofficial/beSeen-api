@@ -21,7 +21,7 @@ describe('Broadcast model', () => {
 
     expect(broadcast.status).toBe('draft');
     expect(broadcast.expiresAt).toBeInstanceOf(Date);
-    expect(broadcast.audienceType).toBe('all_active_users');
+    expect(broadcast.audienceType).toBe('demo_all_users');
     expect(Broadcast.schema.indexes()).toEqual(
       expect.arrayContaining([
         [

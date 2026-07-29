@@ -6,143 +6,65 @@ import registerUser from '../../src/utils/auth/registerUser';
 
 vi.mock('../../src/utils/auth/registerUser', () => ({ default: vi.fn() }));
 
+const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 const registerUserMock = vi.mocked(registerUser);
-const SIGNED_XDR = Buffer.alloc(64, 3).toString('base64');
-
-const authResult = () => ({
-  accessToken: 'access-token',
-  refreshToken: 'refresh-token',
-  tokenType: 'Bearer' as const,
-  expiresIn: 900,
-  refreshTokenExpiresAt: new Date('2026-08-26T12:00:00.000Z'),
-});
-
-const regularBody = () => ({
-  challengeId: '507f1f77bcf86cd799439099',
-  signedTransactionXdr: SIGNED_XDR,
-  profile: {
-    username: '  New_User  ',
-    displayName: 'New User',
-    bio: 'BeSeen member',
-    avatarUrl: 'https://cdn.beseen.app/avatar.webp',
-    accountType: 'regular',
-  },
-});
-
-const creatorBody = () => ({
-  ...regularBody(),
-  profile: {
-    username: 'creator_user',
-    displayName: 'Creator User',
-    accountType: 'creator',
-    creatorProfile: {
-      headline: 'Visual storyteller',
-      categories: [' Photography ', 'Art'],
-      skills: ['Editing'],
-      websiteUrl: 'https://creator.example',
-      isAvailableForWork: true,
-    },
+const validBody = () => ({
+  walletAddress: WALLET.toLowerCase(),
+  username: '  New_User  ',
+  avatar: 'https://cdn.beseen.app/avatar.webp',
+  keys: {
+    derivationVersion: 1,
+    signing: { algorithm: 'Ed25519', publicKey: Buffer.alloc(32, 1).toString('base64') },
+    encryption: { algorithm: 'X25519', publicKey: Buffer.alloc(32, 2).toString('base64') },
   },
 });
 
 describe('POST /v1/auth/register', () => {
   beforeEach(() => registerUserMock.mockReset());
 
-  it('creates a regular user from one signed SEP-10 challenge', async () => {
+  it('registers the minimal user in one request', async () => {
     registerUserMock.mockResolvedValue({
       ok: true,
-      auth: authResult(),
       user: {
         id: '507f1f77bcf86cd799439011',
-        walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
         username: 'new_user',
-        displayName: 'New User',
-        bio: 'BeSeen member',
-        avatarUrl: null,
-        accountType: 'regular',
-        creatorProfile: null,
+        avatar: 'https://cdn.beseen.app/avatar.webp',
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
+      },
+      auth: {
+        accessToken: 'access',
+        refreshToken: 'refresh',
+        tokenType: 'Bearer',
+        expiresIn: 900,
+        refreshTokenExpiresAt: new Date('2026-08-26T12:00:00.000Z'),
       },
     });
 
-    const response = await request(app).post('/v1/auth/register').send(regularBody());
-
+    const response = await request(app).post('/v1/auth/register').send(validBody());
     expect(response.status).toBe(201);
-    expect(response.body.result.user.username).toBe('new_user');
-    expect(registerUserMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        challengeId: '507f1f77bcf86cd799439099',
-        signedTransactionXdr: SIGNED_XDR,
-        profile: expect.objectContaining({ username: 'new_user' }),
-      }),
-    );
-  });
-
-  it('normalizes creator-only profile data', async () => {
-    registerUserMock.mockResolvedValue({
-      ok: true,
-      auth: authResult(),
-      user: {
-        id: '507f1f77bcf86cd799439012',
-        walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
-        username: 'creator_user',
-        displayName: 'Creator User',
-        bio: '',
-        avatarUrl: null,
-        accountType: 'creator',
-        creatorProfile: {
-          headline: 'Visual storyteller',
-          categories: ['photography', 'art'],
-          skills: ['editing'],
-          websiteUrl: 'https://creator.example',
-          isAvailableForWork: true,
-        },
-        createdAt: new Date('2026-07-27T12:00:00.000Z'),
-      },
+    expect(response.body.result.user).toEqual({
+      id: '507f1f77bcf86cd799439011',
+      username: 'new_user',
+      avatar: 'https://cdn.beseen.app/avatar.webp',
+      createdAt: '2026-07-27T12:00:00.000Z',
     });
-
-    expect((await request(app).post('/v1/auth/register').send(creatorBody())).status).toBe(201);
     expect(registerUserMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        profile: expect.objectContaining({
-          creatorProfile: expect.objectContaining({
-            categories: ['photography', 'art'],
-            skills: ['editing'],
-          }),
-        }),
-      }),
+      expect.objectContaining({ walletAddress: WALLET, username: 'new_user' }),
     );
   });
 
-  it('rejects missing or malformed SEP-10 input before database access', async () => {
-    const missing = await request(app)
+  it('rejects removed profile fields before service access', async () => {
+    const response = await request(app)
       .post('/v1/auth/register')
-      .send({ profile: regularBody().profile });
-    const malformed = await request(app)
-      .post('/v1/auth/register')
-      .send({ ...regularBody(), signedTransactionXdr: 'not-xdr' });
-
-    expect(missing.status).toBe(400);
-    expect(malformed.status).toBe(400);
+      .send({ ...validBody(), accountType: 'creator' });
+    expect(response.status).toBe(400);
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it('maps invalid challenges and username conflicts to stable errors', async () => {
-    registerUserMock.mockResolvedValueOnce({
-      ok: false,
-      reason: 'invalid_challenge',
-      attemptsRemaining: 4,
-    });
-    const invalid = await request(app).post('/v1/auth/register').send(regularBody());
+  it('maps registration conflicts', async () => {
+    registerUserMock.mockResolvedValue({ ok: false, reason: 'username_taken' });
+    const conflict = await request(app).post('/v1/auth/register').send(validBody());
 
-    registerUserMock.mockResolvedValueOnce({ ok: false, reason: 'username_taken' });
-    const conflict = await request(app).post('/v1/auth/register').send(regularBody());
-
-    expect(invalid.status).toBe(401);
-    expect(invalid.body.result).toEqual({
-      code: 'INVALID_SEP10_CHALLENGE',
-      attemptsRemaining: 4,
-    });
     expect(conflict.status).toBe(409);
     expect(conflict.body.result.code).toBe('USERNAME_TAKEN');
   });

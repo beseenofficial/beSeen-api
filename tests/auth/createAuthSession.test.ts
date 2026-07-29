@@ -26,7 +26,7 @@ describe('createAuthSession', () => {
     });
     const userId = new Types.ObjectId();
 
-    const auth = await createAuthSession({ id: userId, role: 'user', accountType: 'creator' });
+    const auth = await createAuthSession({ id: userId, role: 'user' });
     const payload = jwt.verify(auth.accessToken, env.ACCESS_TOKEN_SECRET, {
       algorithms: ['HS256'],
       issuer: env.AUTH_DOMAIN,
@@ -40,7 +40,6 @@ describe('createAuthSession', () => {
       sub: userId.toString(),
       type: 'access',
       role: 'user',
-      accountType: 'creator',
     });
     expect(auth.refreshTokenExpiresAt.toISOString()).toBe('2026-08-26T12:00:00.000Z');
   });

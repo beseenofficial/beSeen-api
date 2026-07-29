@@ -64,7 +64,7 @@ describe('finalizeBroadcast', () => {
       creatorKeyVersion: 1,
       encryptionVersion: 1,
       ...unsignedBody,
-      audienceType: 'all_active_users',
+    audienceType: 'demo_all_users',
       audienceCount: 1,
       recipientKeysDigest,
     });

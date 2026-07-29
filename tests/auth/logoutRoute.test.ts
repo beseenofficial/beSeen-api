@@ -10,7 +10,7 @@ const userId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
 const accessToken = () =>
-  signAccessToken({ id: userId, role: 'user', accountType: 'regular' }, sessionId);
+  signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('POST /v1/auth/logout', () => {
   afterEach(() => {

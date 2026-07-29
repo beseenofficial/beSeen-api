@@ -13,9 +13,7 @@ describe('OpenAPI contract', () => {
       expect.arrayContaining([
         '/v1/health',
         '/v1/auth/config',
-        '/v1/auth/registration/challenge',
         '/v1/auth/register',
-        '/v1/auth/login/challenge',
         '/v1/auth/login',
         '/v1/auth/refresh',
         '/v1/auth/logout',

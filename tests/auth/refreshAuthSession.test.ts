@@ -34,7 +34,7 @@ describe('refreshAuthSession', () => {
       .spyOn(AuthSession, 'findOneAndUpdate')
       .mockReturnValue(queryResult({ _id: authSessionId, user: userId, expiresAt }) as never);
     vi.spyOn(User, 'findOne').mockReturnValue(
-      queryResult({ _id: userId, role: 'user', accountType: 'regular' }) as never,
+      queryResult({ _id: userId, role: 'user' }) as never,
     );
 
     const result = await refreshAuthSession(REFRESH_TOKEN);

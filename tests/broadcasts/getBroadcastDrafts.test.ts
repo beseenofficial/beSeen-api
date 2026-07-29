@@ -37,8 +37,7 @@ describe('getBroadcastDrafts', () => {
       _id: new Types.ObjectId(),
       walletAddress: WALLET_ADDRESS,
       username: 'creator_user',
-      displayName: 'Creator',
-      accountType: 'creator',
+      avatar: null,
     });
     const first = createDraft(creator._id);
     const second = createDraft(creator._id);

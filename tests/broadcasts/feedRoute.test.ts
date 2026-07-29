@@ -13,7 +13,7 @@ const getBroadcastFeedMock = vi.mocked(getBroadcastFeed);
 const userId = new Types.ObjectId();
 const sessionId = new Types.ObjectId();
 const accessToken = signAccessToken(
-  { id: userId, role: 'user', accountType: 'regular' },
+  { id: userId, role: 'user' },
   sessionId,
 );
 
@@ -39,8 +39,7 @@ describe('GET /v1/broadcasts/feed', () => {
             creator: {
               id: '507f1f77bcf86cd799439010',
               username: 'creator_user',
-              displayName: 'Creator',
-              avatarUrl: null,
+              avatar: null,
             },
             manifest: {
               signatureVersion: 1,
@@ -52,7 +51,7 @@ describe('GET /v1/broadcasts/feed', () => {
               contentCiphertext: Buffer.alloc(32, 1).toString('base64'),
               contentNonce: Buffer.alloc(24, 2).toString('base64'),
               creatorEncryptedBroadcastKey: Buffer.alloc(80, 3).toString('base64'),
-              audienceType: 'all_active_users',
+              audienceType: 'demo_all_users',
               audienceCount: 1,
               recipientKeysDigest: 'a'.repeat(64),
             },
