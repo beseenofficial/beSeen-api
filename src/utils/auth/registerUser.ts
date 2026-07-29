@@ -4,6 +4,7 @@ import { KEY_DERIVATION_VERSION } from '../../constant/auth';
 import { withDatabaseTransaction } from '../../db';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import UserToken from '../../models/UserToken';
 import type { AuthenticatedUser } from '../../types/auth';
 import type { RegisterBody } from '../../validation/auth/register';
 import createAuthSession from './createAuthSession';
@@ -72,6 +73,9 @@ const registerUserInTransaction = async (
     encryptionPublicKey: body.keys.encryption.publicKey,
   });
   await userKey.save({ session });
+
+  const userToken = new UserToken({ owner: user._id });
+  await userToken.save({ session });
 
   const auth = await createAuthSession({ id: user._id, role: user.role }, session);
 

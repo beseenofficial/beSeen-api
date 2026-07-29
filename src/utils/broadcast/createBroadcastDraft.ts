@@ -21,7 +21,7 @@ interface CreatedBroadcastDraft {
   clientBroadcastId: string;
   status: 'draft';
   audience: {
-    type: 'demo_all_users';
+    type: 'token_holders';
     count: number;
   };
   encryption: {
@@ -67,7 +67,7 @@ const serializeDraft = async (draft: BroadcastDocument): Promise<CreatedBroadcas
     id: draft._id.toString(),
     clientBroadcastId: draft.clientBroadcastId,
     status: 'draft',
-    audience: { type: 'demo_all_users', count: draft.audienceSnapshotCount },
+    audience: { type: 'token_holders', count: draft.audienceSnapshotCount },
     encryption: {
       version: draft.encryptionVersion,
       contentSuite: BROADCAST_CONTENT_ENCRYPTION_SUITE,
@@ -137,7 +137,7 @@ const createBroadcastDraft = async (
     clientBroadcastId: body.clientBroadcastId,
     creator: creator._id,
     status: 'draft',
-    audienceType: 'demo_all_users',
+    audienceType: 'token_holders',
     audienceSnapshotCount: audience.length,
     encryptionVersion: BROADCAST_ENCRYPTION_VERSION,
     creatorKeyVersion: creatorKey.derivationVersion,

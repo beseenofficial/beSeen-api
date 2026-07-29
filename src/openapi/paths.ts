@@ -34,6 +34,13 @@ const stellarAddressSchema = {
   example: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
 };
 
+const userPathSchema = {
+  type: 'string',
+  minLength: 3,
+  maxLength: 30,
+  pattern: '^[a-zA-Z0-9_]+$',
+};
+
 const openApiPaths = {
   '/v1/health': {
     get: {
@@ -297,6 +304,67 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/me/tokens': {
+    get: {
+      tags: ['Tokens'],
+      summary: 'List the current user’s demo token holdings',
+      operationId: 'getMyTokens',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': jsonResponse('Owned tokens retrieved.', {
+          type: 'object',
+          required: ['tokens'],
+          properties: {
+            tokens: { type: 'array', items: { $ref: '#/components/schemas/UserToken' } },
+          },
+        }),
+        '401': unauthorized,
+      },
+    },
+  },
+  '/v1/users/{username}/token': {
+    get: {
+      tags: ['Tokens'],
+      summary: 'Get the single demo token belonging to a user',
+      operationId: 'getUserToken',
+      parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
+      responses: {
+        '200': jsonResponse('User token retrieved.', {
+          type: 'object',
+          required: ['token'],
+          properties: { token: { $ref: '#/components/schemas/UserToken' } },
+        }),
+        '400': validationError,
+        '404': genericError,
+      },
+    },
+  },
+  '/v1/users/{username}/token/purchase': {
+    post: {
+      tags: ['Tokens'],
+      summary: 'Acquire a user’s token in demo mode',
+      description: 'No payment or blockchain transaction occurs. Repeating the request is safe and does not create duplicate holdings.',
+      operationId: 'purchaseUserToken',
+      security: [{ bearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
+      responses: {
+        '201': jsonResponse('Token purchased.', {
+          type: 'object',
+          required: ['holding'],
+          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+        }),
+        '200': jsonResponse('Token already owned.', {
+          type: 'object',
+          required: ['holding'],
+          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
   '/v1/users/{username}/keys': {
     get: {
       tags: ['Profiles'],
@@ -460,7 +528,7 @@ const openApiPaths = {
       tags: ['Broadcasts'],
       summary: 'Create an encrypted broadcast draft and freeze its audience',
       description:
-        'Every active user may broadcast. Demo mode snapshots every other active user with an active encryption key and stores demo entitlement metadata per recipient. Returns the sender key and first recipient page. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
+        'Every active user may broadcast. The API snapshots active users who currently hold the sender’s demo token and stores the token entitlement per recipient. Returns the sender key and first recipient page. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
       operationId: 'createBroadcastDraft',
       security: [{ bearerAuth: [] }],
       requestBody: jsonBody({

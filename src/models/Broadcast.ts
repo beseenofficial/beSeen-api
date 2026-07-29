@@ -64,7 +64,7 @@ const broadcastSchema = new Schema<IBroadcast>(
     audienceType: {
       type: String,
       enum: BROADCAST_AUDIENCE_TYPES,
-      default: 'demo_all_users',
+      default: 'token_holders',
       required: true,
     },
     audienceSnapshotCount: {

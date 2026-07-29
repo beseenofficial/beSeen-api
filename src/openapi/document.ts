@@ -21,6 +21,7 @@ const openApiDocument = {
       description: 'Wallet login, rotating sessions, and protocol configuration.',
     },
     { name: 'Profiles', description: 'Private and public user profiles.' },
+    { name: 'Tokens', description: 'Database-backed demo token acquisition and ownership.' },
     {
       name: 'Broadcasts',
       description: 'End-to-end encrypted, signed, ciphertext-only broadcasts.',

@@ -1,20 +1,26 @@
+import { Types } from 'mongoose';
+
+import TokenHolding from '../../models/TokenHolding';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import getOrCreateUserToken from '../token/getOrCreateUserToken';
 
 interface BroadcastAudienceMember {
   recipientId: string;
   username: string;
   keyVersion: number;
   encryptionPublicKey: string;
-  accessMode: 'demo';
-  tokenId: null;
+  accessMode: 'token';
+  tokenId: string;
 }
 
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {
-  // Temporary MVP resolver: every active user with an active encryption key is eligible.
-  // The token-holder resolver will replace only this function when membership is implemented.
+  const token = await getOrCreateUserToken(new Types.ObjectId(creatorId));
+  const holdings = await TokenHolding.find({ token: token._id }).sort({ _id: 1 }).exec();
+  if (holdings.length === 0) return [];
+
   const users = await User.find({
-    _id: { $ne: creatorId },
+    _id: { $in: holdings.map((holding) => holding.holder), $ne: creatorId },
     status: 'active',
     deletedAt: null,
   })
@@ -42,8 +48,8 @@ const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAud
             username: user.username,
             keyVersion: key.derivationVersion,
             encryptionPublicKey: key.encryptionPublicKey,
-            accessMode: 'demo',
-            tokenId: null,
+            accessMode: 'token',
+            tokenId: token._id.toString(),
           },
         ]
       : [];

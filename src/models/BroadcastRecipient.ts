@@ -69,7 +69,7 @@ const broadcastRecipientSchema = new Schema<IBroadcastRecipient>(
       type: String,
       enum: BROADCAST_ACCESS_MODES,
       required: true,
-      default: 'demo',
+      default: 'token',
       immutable: true,
     },
     tokenId: {

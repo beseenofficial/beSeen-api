@@ -75,6 +75,41 @@ const openApiComponents = {
       required: Object.keys(userProperties),
       properties: userProperties,
     },
+    UserToken: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'owner', 'createdAt'],
+      properties: {
+        id: objectIdSchema,
+        owner: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['id', 'username', 'avatar'],
+          properties: {
+            id: objectIdSchema,
+            username: userProperties.username,
+            avatar: nullableUrlSchema,
+          },
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+        acquiredAt: {
+          type: 'string',
+          format: 'date-time',
+          description: 'Present when returned as one of the current user’s holdings.',
+        },
+      },
+    },
+    TokenHolding: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['tokenId', 'ownerId', 'ownerUsername', 'acquiredAt'],
+      properties: {
+        tokenId: objectIdSchema,
+        ownerId: objectIdSchema,
+        ownerUsername: userProperties.username,
+        acquiredAt: { type: 'string', format: 'date-time' },
+      },
+    },
     AuthTokens: {
       type: 'object',
       additionalProperties: false,
@@ -225,7 +260,7 @@ const openApiComponents = {
           additionalProperties: false,
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', const: 'demo_all_users' },
+            type: { type: 'string', const: 'token_holders' },
             count: { type: 'integer', minimum: 0 },
           },
         },
