@@ -4,37 +4,24 @@ import loginUser from '../../utils/auth/loginUser';
 import type { LoginFailureReason } from '../../utils/auth/loginUser';
 import loginBodySchema from '../../validation/auth/login';
 
-interface LoginErrorResponse {
-  statusCode: number;
-  code: string;
-  message: string;
-}
-
-const loginErrors: Record<LoginFailureReason, LoginErrorResponse> = {
-  challenge_not_found: {
-    statusCode: 404,
-    code: 'CHALLENGE_NOT_FOUND',
-    message: 'Login challenge was not found',
-  },
-  challenge_expired: {
-    statusCode: 410,
-    code: 'CHALLENGE_EXPIRED',
-    message: 'Login challenge has expired',
-  },
-  challenge_already_used: {
-    statusCode: 409,
-    code: 'CHALLENGE_ALREADY_USED',
-    message: 'Login challenge has already been used',
-  },
-  attempts_exceeded: {
-    statusCode: 429,
-    code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
-    message: 'Login challenge verification attempts have been exceeded',
-  },
-  invalid_challenge: {
+const loginErrors: Record<
+  LoginFailureReason,
+  { statusCode: number; code: string; message: string }
+> = {
+  proof_expired: {
     statusCode: 401,
-    code: 'INVALID_SEP10_CHALLENGE',
-    message: 'Signed SEP-10 challenge transaction is invalid',
+    code: 'LOGIN_PROOF_EXPIRED',
+    message: 'The signed login proof is outside the allowed time window',
+  },
+  proof_replayed: {
+    statusCode: 409,
+    code: 'LOGIN_PROOF_REPLAYED',
+    message: 'This login proof was already used',
+  },
+  invalid_signature: {
+    statusCode: 401,
+    code: 'INVALID_LOGIN_SIGNATURE',
+    message: 'The derived-key login signature is invalid',
   },
   account_unavailable: {
     statusCode: 403,
@@ -45,7 +32,6 @@ const loginErrors: Record<LoginFailureReason, LoginErrorResponse> = {
 
 const loginRoute: RequestHandler = async (req, res) => {
   const parsedBody = loginBodySchema.safeParse(req.body);
-
   if (!parsedBody.success) {
     return res.status(400).j({
       status: 'error',
@@ -61,19 +47,12 @@ const loginRoute: RequestHandler = async (req, res) => {
   }
 
   const result = await loginUser(parsedBody.data);
-
   if (!result.ok) {
     const error = loginErrors[result.reason];
-
     return res.status(error.statusCode).j({
       status: 'error',
       message: error.message,
-      result: {
-        code: error.code,
-        ...(result.attemptsRemaining === undefined
-          ? {}
-          : { attemptsRemaining: result.attemptsRemaining }),
-      },
+      result: { code: error.code },
     });
   }
 
@@ -81,10 +60,7 @@ const loginRoute: RequestHandler = async (req, res) => {
     status: 'success',
     message: 'Login successful',
     result: {
-      user: {
-        ...result.user,
-        createdAt: result.user.createdAt.toISOString(),
-      },
+      user: { ...result.user, createdAt: result.user.createdAt.toISOString() },
       auth: {
         ...result.auth,
         refreshTokenExpiresAt: result.auth.refreshTokenExpiresAt.toISOString(),

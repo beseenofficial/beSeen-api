@@ -1,20 +1,9 @@
-interface AuthenticatedCreatorProfile {
-  headline: string;
-  categories: string[];
-  skills: string[];
-  websiteUrl: string | null;
-  isAvailableForWork: boolean;
-}
+import type { UserRole } from '../constant/user';
 
 interface AuthenticatedUser {
   id: string;
-  walletAddress: string;
   username: string;
-  displayName: string;
-  bio: string;
-  avatarUrl: string | null;
-  accountType: 'regular' | 'creator';
-  creatorProfile: AuthenticatedCreatorProfile | null;
+  avatar: string | null;
   createdAt: Date;
 }
 
@@ -22,15 +11,8 @@ interface AuthRequestContext {
   userId: string;
   sessionId: string;
   role: UserRole;
-  accountType: UserAccountType;
 }
 
-type PublicUserProfile = Omit<AuthenticatedUser, 'walletAddress'>;
+type PublicUserProfile = AuthenticatedUser;
 
-export type {
-  AuthenticatedCreatorProfile,
-  AuthenticatedUser,
-  AuthRequestContext,
-  PublicUserProfile,
-};
-import type { UserAccountType, UserRole } from '../constant/user';
+export type { AuthenticatedUser, AuthRequestContext, PublicUserProfile };

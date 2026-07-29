@@ -1,18 +1,23 @@
 import { z } from 'zod';
 
-import { isCanonicalBase64Xdr } from '../../utils/stellar/sep10Challenge';
+import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
+import isValidStellarGAddress from '../../utils/stellar/isValidStellarGAddress';
 
 const loginBodySchema = z
   .object({
-    challengeId: z
+    walletAddress: z
       .string()
       .trim()
-      .regex(/^[a-f\d]{24}$/i, 'Challenge ID must be a MongoDB ObjectId'),
-    signedTransactionXdr: z
+      .transform((value) => value.toUpperCase())
+      .refine(isValidStellarGAddress, 'Wallet address must be a valid Stellar G address'),
+    requestId: z.uuid().transform((value) => value.toLowerCase()),
+    issuedAt: z.iso.datetime().transform((value) => new Date(value).toISOString()),
+    signature: z
       .string()
-      .min(1)
-      .max(16_384)
-      .refine(isCanonicalBase64Xdr, 'Signed transaction must be canonical base64 XDR'),
+      .refine(
+        (value) => isCanonicalBase64(value, { minBytes: 64, maxBytes: 64 }),
+        'Signature must be a canonical base64 Ed25519 signature',
+      ),
   })
   .strict();
 

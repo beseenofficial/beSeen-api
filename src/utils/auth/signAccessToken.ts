@@ -1,13 +1,12 @@
 import jwt from 'jsonwebtoken';
 import type { Types } from 'mongoose';
 
-import type { UserAccountType, UserRole } from '../../constant/user';
+import type { UserRole } from '../../constant/user';
 import env from '../../env';
 
 interface AccessTokenUser {
   id: Types.ObjectId;
   role: UserRole;
-  accountType: UserAccountType;
 }
 
 const signAccessToken = (user: AccessTokenUser, authSessionId: Types.ObjectId): string =>
@@ -15,7 +14,6 @@ const signAccessToken = (user: AccessTokenUser, authSessionId: Types.ObjectId): 
     {
       type: 'access',
       role: user.role,
-      accountType: user.accountType,
     },
     env.ACCESS_TOKEN_SECRET,
     {

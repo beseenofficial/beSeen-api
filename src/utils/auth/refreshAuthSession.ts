@@ -57,7 +57,7 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
     ok: true,
     auth: {
       accessToken: signAccessToken(
-        { id: user._id, role: user.role, accountType: user.accountType },
+        { id: user._id, role: user.role },
         rotatedSession._id,
       ),
       refreshToken: nextRefreshToken,

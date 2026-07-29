@@ -2,14 +2,13 @@ import type { ClientSession, Types } from 'mongoose';
 
 import env from '../../env';
 import AuthSession from '../../models/AuthSession';
-import type { UserAccountType, UserRole } from '../../constant/user';
+import type { UserRole } from '../../constant/user';
 import { generateRefreshToken, hashRefreshToken } from './refreshToken';
 import signAccessToken from './signAccessToken';
 
 interface SessionUser {
   id: Types.ObjectId;
   role: UserRole;
-  accountType: UserAccountType;
 }
 
 interface AuthTokens {

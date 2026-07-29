@@ -4,43 +4,11 @@ import registerUser from '../../utils/auth/registerUser';
 import type { RegistrationFailureReason } from '../../utils/auth/registerUser';
 import registerBodySchema from '../../validation/auth/register';
 
-interface RegistrationErrorResponse {
-  statusCode: number;
-  code: string;
-  message: string;
-}
-
-const registrationErrors: Record<RegistrationFailureReason, RegistrationErrorResponse> = {
-  challenge_not_found: {
-    statusCode: 404,
-    code: 'CHALLENGE_NOT_FOUND',
-    message: 'Registration challenge was not found',
-  },
-  challenge_expired: {
-    statusCode: 410,
-    code: 'CHALLENGE_EXPIRED',
-    message: 'Registration challenge has expired',
-  },
-  challenge_already_used: {
-    statusCode: 409,
-    code: 'CHALLENGE_ALREADY_USED',
-    message: 'Registration challenge has already been used',
-  },
-  attempts_exceeded: {
-    statusCode: 429,
-    code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
-    message: 'Registration challenge verification attempts have been exceeded',
-  },
-  invalid_challenge: {
-    statusCode: 401,
-    code: 'INVALID_SEP10_CHALLENGE',
-    message: 'Signed SEP-10 challenge transaction is invalid',
-  },
-  username_taken: {
-    statusCode: 409,
-    code: 'USERNAME_TAKEN',
-    message: 'Username is already taken',
-  },
+const registrationErrors: Record<
+  RegistrationFailureReason,
+  { statusCode: number; code: string; message: string }
+> = {
+  username_taken: { statusCode: 409, code: 'USERNAME_TAKEN', message: 'Username is already taken' },
   wallet_already_registered: {
     statusCode: 409,
     code: 'WALLET_ALREADY_REGISTERED',
@@ -55,7 +23,6 @@ const registrationErrors: Record<RegistrationFailureReason, RegistrationErrorRes
 
 const registerRoute: RequestHandler = async (req, res) => {
   const parsedBody = registerBodySchema.safeParse(req.body);
-
   if (!parsedBody.success) {
     return res.status(400).j({
       status: 'error',
@@ -71,19 +38,12 @@ const registerRoute: RequestHandler = async (req, res) => {
   }
 
   const result = await registerUser(parsedBody.data);
-
   if (!result.ok) {
     const error = registrationErrors[result.reason];
-
     return res.status(error.statusCode).j({
       status: 'error',
       message: error.message,
-      result: {
-        code: error.code,
-        ...(result.attemptsRemaining === undefined
-          ? {}
-          : { attemptsRemaining: result.attemptsRemaining }),
-      },
+      result: { code: error.code },
     });
   }
 
@@ -91,10 +51,7 @@ const registerRoute: RequestHandler = async (req, res) => {
     status: 'success',
     message: 'User registered successfully',
     result: {
-      user: {
-        ...result.user,
-        createdAt: result.user.createdAt.toISOString(),
-      },
+      user: { ...result.user, createdAt: result.user.createdAt.toISOString() },
       auth: {
         ...result.auth,
         refreshTokenExpiresAt: result.auth.refreshTokenExpiresAt.toISOString(),
