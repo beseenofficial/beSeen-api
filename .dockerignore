@@ -1,13 +1,10 @@
 .git
 .gitignore
-.env
-.env.*
 !.env.example
 node_modules
 dist
 coverage
 tests
-docs
 *.log
 npm-debug.log*
 Dockerfile*

@@ -1,14 +1,11 @@
-# syntax=docker/dockerfile:1
-
 FROM node:22-alpine AS build
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm i
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY . .
 
 RUN npm run build
 
@@ -22,7 +19,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 FROM node:22-alpine AS runtime
 
 ENV NODE_ENV=production \
-    PORT=5000
+    PORT=3000
 
 WORKDIR /app
 
@@ -32,6 +29,6 @@ COPY --chown=node:node package.json package-lock.json ./
 
 USER node
 
-EXPOSE 5000
+EXPOSE 3000
 
 CMD ["node", "dist/index.js"]
