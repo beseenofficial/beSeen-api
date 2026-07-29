@@ -14,15 +14,14 @@ import getBroadcastDraftRecipients from './getBroadcastDraftRecipients';
 import type { BroadcastRecipientPage } from './getBroadcastDraftRecipients';
 import resolveBroadcastAudience from './resolveBroadcastAudience';
 
-type CreateBroadcastDraftFailureReason =
-  'creator_unavailable' | 'creator_required' | 'creator_active_keys_not_found';
+type CreateBroadcastDraftFailureReason = 'user_unavailable' | 'active_keys_not_found';
 
 interface CreatedBroadcastDraft {
   id: string;
   clientBroadcastId: string;
   status: 'draft';
   audience: {
-    type: 'all_active_users';
+    type: 'demo_all_users';
     count: number;
   };
   encryption: {
@@ -68,7 +67,7 @@ const serializeDraft = async (draft: BroadcastDocument): Promise<CreatedBroadcas
     id: draft._id.toString(),
     clientBroadcastId: draft.clientBroadcastId,
     status: 'draft',
-    audience: { type: 'all_active_users', count: draft.audienceSnapshotCount },
+    audience: { type: 'demo_all_users', count: draft.audienceSnapshotCount },
     encryption: {
       version: draft.encryptionVersion,
       contentSuite: BROADCAST_CONTENT_ENCRYPTION_SUITE,
@@ -114,11 +113,7 @@ const createBroadcastDraft = async (
   }).exec();
 
   if (!creator) {
-    return { ok: false, reason: 'creator_unavailable' };
-  }
-
-  if (creator.accountType !== 'creator') {
-    return { ok: false, reason: 'creator_required' };
+    return { ok: false, reason: 'user_unavailable' };
   }
 
   const existing = await findExistingDraft(creatorId, body.clientBroadcastId);
@@ -134,7 +129,7 @@ const createBroadcastDraft = async (
   }).exec();
 
   if (!creatorKey) {
-    return { ok: false, reason: 'creator_active_keys_not_found' };
+    return { ok: false, reason: 'active_keys_not_found' };
   }
 
   const audience = await resolveBroadcastAudience(creatorId);
@@ -142,7 +137,7 @@ const createBroadcastDraft = async (
     clientBroadcastId: body.clientBroadcastId,
     creator: creator._id,
     status: 'draft',
-    audienceType: 'all_active_users',
+    audienceType: 'demo_all_users',
     audienceSnapshotCount: audience.length,
     encryptionVersion: BROADCAST_ENCRYPTION_VERSION,
     creatorKeyVersion: creatorKey.derivationVersion,
@@ -159,6 +154,8 @@ const createBroadcastDraft = async (
           username: member.username,
           keyVersion: member.keyVersion,
           encryptionPublicKey: member.encryptionPublicKey,
+          accessMode: member.accessMode,
+          tokenId: member.tokenId,
         })),
         { ordered: true },
       );

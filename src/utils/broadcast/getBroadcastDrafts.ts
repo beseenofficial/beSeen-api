@@ -4,6 +4,7 @@ import {
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_KEY_WRAP_SUITE,
 } from '../../constant/broadcast';
+import type { BroadcastAudienceType } from '../../constant/broadcast';
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
 import User from '../../models/User';
@@ -14,7 +15,7 @@ interface BroadcastDraftListItem {
   clientBroadcastId: string;
   status: 'draft';
   audience: {
-    type: 'all_active_users' | 'token_holders';
+    type: BroadcastAudienceType;
     count: number;
   };
   progress: {

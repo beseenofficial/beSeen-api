@@ -5,6 +5,7 @@ import type { FinalizeBroadcastBody } from '../../validation/broadcast/finalize'
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import buildBroadcastRecipientKeysDigest from './buildBroadcastRecipientKeysDigest';
 import buildBroadcastSignatureMessage from './buildBroadcastSignatureMessage';
+import type { BroadcastAudienceType } from '../../constant/broadcast';
 
 type FinalizeBroadcastFailure =
   | { reason: 'draft_not_found' }
@@ -20,7 +21,7 @@ interface PublishedBroadcast {
   creatorId: string;
   status: 'published';
   audience: {
-    type: 'all_active_users' | 'token_holders';
+    type: BroadcastAudienceType;
     count: number;
   };
   encryptionVersion: number;

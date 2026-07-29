@@ -6,6 +6,8 @@ interface BroadcastAudienceMember {
   username: string;
   keyVersion: number;
   encryptionPublicKey: string;
+  accessMode: 'demo';
+  tokenId: null;
 }
 
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {
@@ -40,6 +42,8 @@ const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAud
             username: user.username,
             keyVersion: key.derivationVersion,
             encryptionPublicKey: key.encryptionPublicKey,
+            accessMode: 'demo',
+            tokenId: null,
           },
         ]
       : [];

@@ -34,8 +34,7 @@ interface FeedBroadcastRecord {
 interface FeedCreatorRecord {
   _id: Types.ObjectId;
   username: string;
-  displayName: string;
-  avatarUrl: string | null;
+  avatar: string | null;
 }
 
 interface ReceivedFeedRecord {
@@ -51,8 +50,7 @@ interface BroadcastFeedItem {
   creator: {
     id: string;
     username: string;
-    displayName: string;
-    avatarUrl: string | null;
+    avatar: string | null;
   };
   manifest: {
     signatureVersion: number;
@@ -104,8 +102,7 @@ const serializeFeedItem = (
   creator: {
     id: creator._id.toString(),
     username: creator.username,
-    displayName: creator.displayName,
-    avatarUrl: creator.avatarUrl,
+    avatar: creator.avatar,
   },
   manifest: {
     signatureVersion: BROADCAST_SIGNATURE_VERSION,

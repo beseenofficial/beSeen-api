@@ -1,6 +1,7 @@
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
 import type { BroadcastRecipientPageQuery } from '../../validation/broadcast/draft';
+import type { BroadcastAudienceType } from '../../constant/broadcast';
 
 interface BroadcastRecipientPublicKey {
   userId: string;
@@ -24,7 +25,7 @@ type GetBroadcastDraftRecipientsResult =
         id: string;
         clientBroadcastId: string;
         status: 'draft';
-        audienceType: 'all_active_users' | 'token_holders';
+        audienceType: BroadcastAudienceType;
         audienceCount: number;
         progress: {
           uploadedCount: number;

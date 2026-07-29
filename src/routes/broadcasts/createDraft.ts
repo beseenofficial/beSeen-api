@@ -8,20 +8,15 @@ const draftErrors: Record<
   CreateBroadcastDraftFailureReason,
   { statusCode: number; code: string; message: string }
 > = {
-  creator_unavailable: {
+  user_unavailable: {
     statusCode: 401,
     code: 'ACCOUNT_UNAVAILABLE',
-    message: 'The creator account is not available',
+    message: 'The user account is not available',
   },
-  creator_required: {
-    statusCode: 403,
-    code: 'CREATOR_ACCOUNT_REQUIRED',
-    message: 'Only creator accounts can create broadcasts',
-  },
-  creator_active_keys_not_found: {
+  active_keys_not_found: {
     statusCode: 409,
     code: 'ACTIVE_KEYS_NOT_FOUND',
-    message: 'The creator does not have active encryption keys',
+    message: 'The user does not have active encryption keys',
   },
 };
 
@@ -35,7 +30,6 @@ const createBroadcastDraftRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedBody = createBroadcastDraftBodySchema.safeParse(req.body);
-
   if (!parsedBody.success) {
     return res.status(400).j({
       status: 'error',
@@ -51,10 +45,8 @@ const createBroadcastDraftRoute: RequestHandler = async (req, res) => {
   }
 
   const result = await createBroadcastDraft(req.auth.userId, parsedBody.data);
-
   if (!result.ok) {
     const error = draftErrors[result.reason];
-
     return res.status(error.statusCode).j({
       status: 'error',
       message: error.message,
