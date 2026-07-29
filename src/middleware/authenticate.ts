@@ -1,9 +1,9 @@
-import type { RequestHandler } from 'express';
-import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
+import type { RequestHandler } from 'express';
 
-import { USER_ROLES } from '../constant/user';
 import env from '../env';
+import { USER_ROLES } from '../constant/user';
 import AuthSession from '../models/AuthSession';
 
 const accessTokenPayloadSchema = z.object({

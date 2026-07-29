@@ -1,9 +1,9 @@
 import env from '../../env';
-import AuthSession from '../../models/AuthSession';
 import User from '../../models/User';
+import signAccessToken from './signAccessToken';
+import AuthSession from '../../models/AuthSession';
 import type { AuthTokens } from './createAuthSession';
 import { generateRefreshToken, hashRefreshToken } from './refreshToken';
-import signAccessToken from './signAccessToken';
 
 type RefreshAuthSessionResult =
   { ok: true; auth: AuthTokens } | { ok: false; reason: 'refresh_token_invalid' };
@@ -33,6 +33,7 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
   }
 
   const nextRefreshToken = generateRefreshToken();
+  
   const rotatedSession = await AuthSession.findOneAndUpdate(
     {
       _id: authSession._id,

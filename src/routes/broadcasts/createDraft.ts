@@ -1,24 +1,8 @@
 import type { RequestHandler } from 'express';
 
+import { draftErrors } from '../../types/errors/broadcasts';
 import createBroadcastDraft from '../../utils/broadcast/createBroadcastDraft';
-import type { CreateBroadcastDraftFailureReason } from '../../utils/broadcast/createBroadcastDraft';
 import { createBroadcastDraftBodySchema } from '../../validation/broadcast/draft';
-
-const draftErrors: Record<
-  CreateBroadcastDraftFailureReason,
-  { statusCode: number; code: string; message: string }
-> = {
-  user_unavailable: {
-    statusCode: 401,
-    code: 'ACCOUNT_UNAVAILABLE',
-    message: 'The user account is not available',
-  },
-  active_keys_not_found: {
-    statusCode: 409,
-    code: 'ACTIVE_KEYS_NOT_FOUND',
-    message: 'The user does not have active encryption keys',
-  },
-};
 
 const createBroadcastDraftRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {

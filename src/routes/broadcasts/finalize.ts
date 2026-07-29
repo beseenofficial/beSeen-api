@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 
+import { finalizeErrors } from '../../types/errors/broadcasts';
 import finalizeBroadcast from '../../utils/broadcast/finalizeBroadcast';
 import { broadcastDraftParamsSchema } from '../../validation/broadcast/draft';
 import finalizeBroadcastBodySchema from '../../validation/broadcast/finalize';
@@ -53,34 +54,8 @@ const finalizeBroadcastRoute: RequestHandler = async (req, res) => {
       });
     }
 
-    const errors = {
-      draft_not_found: {
-        statusCode: 404,
-        code: 'BROADCAST_DRAFT_NOT_FOUND',
-        message: 'Broadcast draft was not found',
-      },
-      draft_expired: {
-        statusCode: 410,
-        code: 'BROADCAST_DRAFT_EXPIRED',
-        message: 'Broadcast draft has expired',
-      },
-      audience_snapshot_mismatch: {
-        statusCode: 409,
-        code: 'AUDIENCE_SNAPSHOT_MISMATCH',
-        message: 'The frozen broadcast audience is inconsistent',
-      },
-      invalid_signature: {
-        statusCode: 401,
-        code: 'INVALID_BROADCAST_SIGNATURE',
-        message: 'The encrypted broadcast signature is invalid',
-      },
-      finalization_conflict: {
-        statusCode: 409,
-        code: 'BROADCAST_FINALIZATION_CONFLICT',
-        message: 'This broadcast was already finalized with different encrypted content',
-      },
-    } as const;
-    const error = errors[result.reason];
+    
+    const error = finalizeErrors[result.reason];
 
     return res.status(error.statusCode).j({
       status: 'error',

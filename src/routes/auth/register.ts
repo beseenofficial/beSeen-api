@@ -1,25 +1,8 @@
 import type { RequestHandler } from 'express';
 
 import registerUser from '../../utils/auth/registerUser';
-import type { RegistrationFailureReason } from '../../utils/auth/registerUser';
+import { registrationErrors } from '../../types/errors/auth';
 import registerBodySchema from '../../validation/auth/register';
-
-const registrationErrors: Record<
-  RegistrationFailureReason,
-  { statusCode: number; code: string; message: string }
-> = {
-  username_taken: { statusCode: 409, code: 'USERNAME_TAKEN', message: 'Username is already taken' },
-  wallet_already_registered: {
-    statusCode: 409,
-    code: 'WALLET_ALREADY_REGISTERED',
-    message: 'Wallet is already registered',
-  },
-  public_key_already_registered: {
-    statusCode: 409,
-    code: 'PUBLIC_KEY_ALREADY_REGISTERED',
-    message: 'A BeSeen public key is already registered',
-  },
-};
 
 const registerRoute: RequestHandler = async (req, res) => {
   const parsedBody = registerBodySchema.safeParse(req.body);

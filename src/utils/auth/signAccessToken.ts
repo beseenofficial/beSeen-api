@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import type { Types } from 'mongoose';
 
-import type { UserRole } from '../../constant/user';
 import env from '../../env';
+import type { UserRole } from '../../constant/user';
 
 interface AccessTokenUser {
   id: Types.ObjectId;

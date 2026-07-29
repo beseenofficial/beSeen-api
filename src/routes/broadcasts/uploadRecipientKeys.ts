@@ -1,30 +1,9 @@
 import type { RequestHandler } from 'express';
 
-import uploadBroadcastRecipientKeys from '../../utils/broadcast/uploadBroadcastRecipientKeys';
-import type { UploadBroadcastRecipientKeysFailureReason } from '../../utils/broadcast/uploadBroadcastRecipientKeys';
+import { uploadErrors } from '../../types/errors/broadcasts';
 import { broadcastDraftParamsSchema } from '../../validation/broadcast/draft';
+import uploadBroadcastRecipientKeys from '../../utils/broadcast/uploadBroadcastRecipientKeys';
 import uploadBroadcastRecipientKeysBodySchema from '../../validation/broadcast/uploadRecipientKeys';
-
-const uploadErrors: Record<
-  UploadBroadcastRecipientKeysFailureReason,
-  { statusCode: number; code: string; message: string }
-> = {
-  draft_not_found: {
-    statusCode: 404,
-    code: 'BROADCAST_DRAFT_NOT_FOUND',
-    message: 'Broadcast draft was not found',
-  },
-  recipient_not_in_audience: {
-    statusCode: 409,
-    code: 'RECIPIENT_NOT_IN_AUDIENCE',
-    message: 'A recipient does not belong to the frozen audience',
-  },
-  encrypted_key_conflict: {
-    statusCode: 409,
-    code: 'ENCRYPTED_KEY_CONFLICT',
-    message: 'A different encrypted key was already stored for a recipient',
-  },
-};
 
 const uploadBroadcastRecipientKeysRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {

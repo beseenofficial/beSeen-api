@@ -1,16 +1,16 @@
 import type { ClientSession } from 'mongoose';
 
-import { LOGIN_PROOF_MAX_AGE_SECONDS } from '../../constant/auth';
-import { withDatabaseTransaction } from '../../db';
-import AuthProof from '../../models/AuthProof';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
-import type { AuthenticatedUser } from '../../types/auth';
-import type { LoginBody } from '../../validation/auth/login';
-import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
-import buildLoginProofMessage from './buildLoginProofMessage';
+import AuthProof from '../../models/AuthProof';
+import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
 import type { AuthTokens } from './createAuthSession';
+import type { AuthenticatedUser } from '../../types/auth';
+import type { LoginBody } from '../../validation/auth/login';
+import buildLoginProofMessage from './buildLoginProofMessage';
+import { LOGIN_PROOF_MAX_AGE_SECONDS } from '../../constant/auth';
+import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 
 type LoginFailureReason =
   | 'proof_expired'
@@ -37,9 +37,11 @@ const createLoginSession = async (
     issuedAt: new Date(body.issuedAt),
     expiresAt: new Date(Date.now() + LOGIN_PROOF_MAX_AGE_SECONDS * 1_000),
   });
+
   await proof.save({ session });
 
   const auth = await createAuthSession({ id: user._id, role: user.role }, session);
+
   return {
     ok: true,
     auth,
@@ -54,6 +56,7 @@ const createLoginSession = async (
 
 const loginUser = async (body: LoginBody): Promise<LoginUserResult> => {
   const issuedAt = new Date(body.issuedAt).getTime();
+
   if (Math.abs(Date.now() - issuedAt) > LOGIN_PROOF_MAX_AGE_SECONDS * 1_000) {
     return { ok: false, reason: 'proof_expired' };
   }
@@ -63,12 +66,15 @@ const loginUser = async (body: LoginBody): Promise<LoginUserResult> => {
     status: 'active',
     deletedAt: null,
   }).exec();
+
   if (!user) return { ok: false, reason: 'account_unavailable' };
 
   const key = await UserKey.findOne({ user: user._id, status: 'active', revokedAt: null }).exec();
+
   if (!key) return { ok: false, reason: 'account_unavailable' };
 
   const message = buildLoginProofMessage(body);
+  
   if (!verifyEd25519Signature(key.signingPublicKey, message, body.signature)) {
     return { ok: false, reason: 'invalid_signature' };
   }

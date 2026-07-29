@@ -1,14 +1,14 @@
 import type { ClientSession } from 'mongoose';
 
-import { KEY_DERIVATION_VERSION } from '../../constant/auth';
-import { withDatabaseTransaction } from '../../db';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
 import UserToken from '../../models/UserToken';
-import type { AuthenticatedUser } from '../../types/auth';
-import type { RegisterBody } from '../../validation/auth/register';
+import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
 import type { AuthTokens } from './createAuthSession';
+import type { AuthenticatedUser } from '../../types/auth';
+import type { RegisterBody } from '../../validation/auth/register';
+import { KEY_DERIVATION_VERSION } from '../../constant/auth';
 
 type RegistrationFailureReason =
   | 'username_taken'
@@ -29,8 +29,15 @@ const isMongoDuplicateKeyError = (error: unknown): error is MongoDuplicateKeyErr
 
 const duplicateKeyReason = (error: MongoDuplicateKeyError): RegistrationFailureReason => {
   const keyPattern = error.keyPattern ?? {};
-  if ('username' in keyPattern) return 'username_taken';
-  if ('walletAddress' in keyPattern || 'user' in keyPattern) return 'wallet_already_registered';
+  
+  if ('username' in keyPattern) {
+     return 'username_taken' 
+  };
+
+  if ('walletAddress' in keyPattern || 'user' in keyPattern) {
+    return 'wallet_already_registered' 
+  }
+
   return 'public_key_already_registered';
 };
 

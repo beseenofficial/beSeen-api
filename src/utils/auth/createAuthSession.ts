@@ -1,10 +1,10 @@
 import type { ClientSession, Types } from 'mongoose';
 
 import env from '../../env';
+import signAccessToken from './signAccessToken';
 import AuthSession from '../../models/AuthSession';
 import type { UserRole } from '../../constant/user';
 import { generateRefreshToken, hashRefreshToken } from './refreshToken';
-import signAccessToken from './signAccessToken';
 
 interface SessionUser {
   id: Types.ObjectId;
@@ -30,6 +30,7 @@ const createAuthSession = async (
     refreshTokenHash: hashRefreshToken(refreshToken),
     expiresAt: refreshTokenExpiresAt,
   });
+
   await authSession.save(databaseSession ? { session: databaseSession } : undefined);
 
   const accessToken = signAccessToken(user, authSession._id);
