@@ -10,37 +10,8 @@ const nullableUrlSchema = {
   example: 'https://cdn.example/avatar.webp',
 };
 
-const creatorProfileSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['headline', 'categories', 'skills', 'websiteUrl', 'isAvailableForWork'],
-  properties: {
-    headline: { type: 'string', minLength: 1, maxLength: 100 },
-    categories: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 5,
-      uniqueItems: true,
-      items: { type: 'string', minLength: 1, maxLength: 32 },
-    },
-    skills: {
-      type: 'array',
-      maxItems: 20,
-      uniqueItems: true,
-      items: { type: 'string', minLength: 1, maxLength: 50 },
-    },
-    websiteUrl: nullableUrlSchema,
-    isAvailableForWork: { type: 'boolean' },
-  },
-};
-
 const userProperties = {
   id: objectIdSchema,
-  walletAddress: {
-    type: 'string',
-    description: 'Canonical Stellar G address. Only returned to the account owner.',
-    example: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
-  },
   username: {
     type: 'string',
     minLength: 3,
@@ -48,35 +19,8 @@ const userProperties = {
     pattern: '^[a-z0-9_]+$',
     example: 'new_user',
   },
-  displayName: { type: 'string', minLength: 1, maxLength: 50, example: 'New User' },
-  bio: { type: 'string', maxLength: 300, example: 'BeSeen member' },
-  avatarUrl: nullableUrlSchema,
-  accountType: { type: 'string', enum: ['regular', 'creator'] },
-  creatorProfile: {
-    oneOf: [{ $ref: '#/components/schemas/CreatorProfile' }, { type: 'null' }],
-  },
+  avatar: nullableUrlSchema,
   createdAt: { type: 'string', format: 'date-time' },
-};
-
-const profileInputProperties = {
-  username: userProperties.username,
-  displayName: userProperties.displayName,
-  bio: { type: 'string', maxLength: 300, default: '' },
-  avatarUrl: nullableUrlSchema,
-  accountType: userProperties.accountType,
-  creatorProfile: { $ref: '#/components/schemas/CreatorProfileInput' },
-};
-
-const creatorProfileInputSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['headline', 'categories'],
-  properties: {
-    ...creatorProfileSchema.properties,
-    skills: { ...creatorProfileSchema.properties.skills, default: [] },
-    websiteUrl: { ...nullableUrlSchema, default: null },
-    isAvailableForWork: { type: 'boolean', default: false },
-  },
 };
 
 const openApiComponents = {
@@ -119,14 +63,6 @@ const openApiComponents = {
         },
       },
     },
-    CreatorProfile: creatorProfileSchema,
-    CreatorProfileInput: creatorProfileInputSchema,
-    CreatorProfileUpdate: {
-      type: 'object',
-      minProperties: 1,
-      additionalProperties: false,
-      properties: creatorProfileSchema.properties,
-    },
     User: {
       type: 'object',
       additionalProperties: false,
@@ -136,10 +72,8 @@ const openApiComponents = {
     PublicUser: {
       type: 'object',
       additionalProperties: false,
-      required: Object.keys(userProperties).filter((property) => property !== 'walletAddress'),
-      properties: Object.fromEntries(
-        Object.entries(userProperties).filter(([property]) => property !== 'walletAddress'),
-      ),
+      required: Object.keys(userProperties),
+      properties: userProperties,
     },
     AuthTokens: {
       type: 'object',
@@ -166,23 +100,13 @@ const openApiComponents = {
         auth: { $ref: '#/components/schemas/AuthTokens' },
       },
     },
-    ProfileInput: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['username', 'displayName', 'accountType'],
-      properties: profileInputProperties,
-    },
     ProfileUpdate: {
       type: 'object',
       minProperties: 1,
       additionalProperties: false,
       properties: {
-        username: profileInputProperties.username,
-        displayName: profileInputProperties.displayName,
-        bio: profileInputProperties.bio,
-        avatarUrl: profileInputProperties.avatarUrl,
-        accountType: profileInputProperties.accountType,
-        creatorProfile: { $ref: '#/components/schemas/CreatorProfileUpdate' },
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
       },
     },
     RegistrationKeys: {
@@ -209,30 +133,6 @@ const openApiComponents = {
             publicKey: { type: 'string', pattern: '^[A-Za-z0-9+/]{43}=$' },
           },
         },
-      },
-    },
-    ChallengeResult: {
-      type: 'object',
-      additionalProperties: false,
-      required: [
-        'challengeId',
-        'authenticationStandard',
-        'transactionXdr',
-        'stellarNetwork',
-        'networkPassphrase',
-        'serverSigningPublicKey',
-        'homeDomain',
-        'expiresAt',
-      ],
-      properties: {
-        challengeId: objectIdSchema,
-        authenticationStandard: { type: 'string', const: 'SEP-10' },
-        transactionXdr: { type: 'string', maxLength: 16_384 },
-        stellarNetwork: { type: 'string', enum: ['public', 'testnet'] },
-        networkPassphrase: { type: 'string' },
-        serverSigningPublicKey: { type: 'string', pattern: '^G[A-Z2-7]{55}$' },
-        homeDomain: { type: 'string' },
-        expiresAt: { type: 'string', format: 'date-time' },
       },
     },
     BroadcastRecipientPublicKey: {
@@ -327,7 +227,7 @@ const openApiComponents = {
           additionalProperties: false,
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', const: 'all_active_users' },
+            type: { type: 'string', const: 'demo_all_users' },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -391,7 +291,7 @@ const openApiComponents = {
           type: 'object',
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+            type: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -447,7 +347,7 @@ const openApiComponents = {
           additionalProperties: false,
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+            type: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -490,12 +390,11 @@ const openApiComponents = {
         creator: {
           type: 'object',
           additionalProperties: false,
-          required: ['id', 'username', 'displayName', 'avatarUrl'],
+          required: ['id', 'username', 'avatar'],
           properties: {
             id: objectIdSchema,
             username: { type: 'string' },
-            displayName: { type: 'string' },
-            avatarUrl: nullableUrlSchema,
+            avatar: nullableUrlSchema,
           },
         },
         manifest: {
@@ -528,7 +427,7 @@ const openApiComponents = {
             contentCiphertext: { type: 'string', format: 'byte' },
             contentNonce: { type: 'string', format: 'byte' },
             creatorEncryptedBroadcastKey: { type: 'string', format: 'byte' },
-            audienceType: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+            audienceType: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
             audienceCount: { type: 'integer', minimum: 0 },
             recipientKeysDigest: { type: 'string', pattern: '^[a-f0-9]{64}$' },
           },

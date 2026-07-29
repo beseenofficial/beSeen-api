@@ -34,13 +34,6 @@ const stellarAddressSchema = {
   example: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
 };
 
-const signedTransactionXdrSchema = {
-  type: 'string',
-  maxLength: 16_384,
-  description:
-    'Canonical base64 Stellar transaction-envelope XDR returned by wallet signTransaction. It must not be submitted to Stellar.',
-};
-
 const openApiPaths = {
   '/v1/health': {
     get: {
@@ -66,107 +59,72 @@ const openApiPaths = {
       tags: ['Authentication'],
       summary: 'Get client authentication protocol configuration',
       description:
-        'Returns public SEP-10 settings and the client-generated key derivation contract. No wallet address is required and private keys never reach this API.',
+        'Returns the exact client-built fixed KDF transaction, demo registration contract, and challenge-less login signature contract. The KDF signature and every private key stay in the client.',
       operationId: 'getAuthConfig',
       responses: {
         '200': jsonResponse('Authentication configuration retrieved.', {
           type: 'object',
-          required: ['protocol', 'keyDerivation'],
+          required: [
+            'stellarNetwork',
+            'networkPassphrase',
+            'keyDerivation',
+            'registration',
+            'login',
+            'session',
+          ],
           properties: {
-            protocol: {
-              type: 'object',
-              required: [
-                'authenticationStandard',
-                'challengeFormat',
-                'walletMethod',
-                'stellarNetwork',
-                'networkPassphrase',
-                'authDomain',
-                'serverSigningPublicKey',
-                'transactionSubmissionRequired',
-                'challengeTtlSeconds',
-                'accessTokenTtlSeconds',
-              ],
-              properties: {
-                authenticationStandard: { type: 'string', const: 'SEP-10' },
-                challengeFormat: { type: 'string', const: 'stellar-transaction-xdr' },
-                walletMethod: { type: 'string', const: 'signTransaction' },
-                stellarNetwork: { type: 'string', enum: ['public', 'testnet'] },
-                networkPassphrase: { type: 'string' },
-                authDomain: { type: 'string' },
-                serverSigningPublicKey: stellarAddressSchema,
-                transactionSubmissionRequired: { type: 'boolean', const: false },
-                challengeTtlSeconds: { type: 'integer' },
-                accessTokenTtlSeconds: { type: 'integer' },
-              },
-            },
+            stellarNetwork: { type: 'string', enum: ['public', 'testnet'] },
+            networkPassphrase: { type: 'string' },
             keyDerivation: {
               type: 'object',
-              required: ['version', 'source', 'kdf', 'signingAlgorithm', 'encryptionAlgorithm'],
+              required: [
+                'version',
+                'source',
+                'walletMethod',
+                'transaction',
+                'signature',
+                'kdf',
+                'signingAlgorithm',
+                'encryptionAlgorithm',
+                'privateKeyStorage',
+              ],
               properties: {
-                version: { type: 'integer' },
-                source: { type: 'string', const: 'CLIENT_GENERATED' },
+                version: { type: 'integer', const: 1 },
+                source: {
+                  type: 'string',
+                  const: 'STELLAR_WALLET_FIXED_TRANSACTION_SIGNATURE',
+                },
+                walletMethod: { type: 'string', const: 'signTransaction' },
+                transaction: { type: 'object' },
+                signature: {
+                  type: 'object',
+                  description: 'The raw 64-byte wallet signature is KDF input and is never sent.',
+                },
                 kdf: {
                   type: 'object',
-                  additionalProperties: false,
-                  required: [
-                    'name',
-                    'input',
-                    'inputEncoding',
-                    'salt',
-                    'seedLengthBytes',
-                    'signingInfo',
-                    'encryptionInfo',
-                  ],
-                  properties: {
-                    name: { type: 'string', const: 'HKDF-SHA-256' },
-                    input: {
-                      type: 'string',
-                      const: 'CLIENT-RANDOM-32-BYTE-MASTER-SECRET',
-                    },
-                    inputEncoding: { type: 'string', const: 'raw-bytes' },
-                    salt: { type: 'string', const: 'beseen.app/key-derivation/v1' },
-                    seedLengthBytes: { type: 'integer', const: 32 },
-                    signingInfo: {
-                      type: 'string',
-                      const: 'beseen.app/ed25519-signing-key/v1',
-                    },
-                    encryptionInfo: {
-                      type: 'string',
-                      const: 'beseen.app/x25519-encryption-key/v1',
-                    },
-                  },
+                  description: 'HKDF-SHA-256 settings for Ed25519 and X25519 client keys.',
                 },
                 signingAlgorithm: { type: 'string', const: 'Ed25519' },
                 encryptionAlgorithm: { type: 'string', const: 'X25519' },
+                privateKeyStorage: { type: 'string', const: 'client-only' },
               },
+            },
+            registration: {
+              type: 'object',
+              description:
+                'Demo mode: the API validates only the formats of the client-declared wallet address and derived public keys. No external identity proof, wallet signature, or server challenge is required.',
+            },
+            login: {
+              type: 'object',
+              description: 'Timestamped UUID request signed by the stored derived Ed25519 key.',
+            },
+            session: {
+              type: 'object',
+              description:
+                'Token lifetimes and the refresh-first session restoration contract for returning clients.',
             },
           },
         }),
-        '429': rateLimited,
-      },
-    },
-  },
-  '/v1/auth/registration/challenge': {
-    post: {
-      tags: ['Registration'],
-      summary: 'Create a registration wallet-signing challenge',
-      operationId: 'createRegistrationChallenge',
-      requestBody: jsonBody({
-        type: 'object',
-        additionalProperties: false,
-        required: ['walletAddress', 'keys'],
-        properties: {
-          walletAddress: stellarAddressSchema,
-          keys: { $ref: '#/components/schemas/RegistrationKeys' },
-        },
-      }),
-      responses: {
-        '201': jsonResponse('Registration challenge created.', {
-          $ref: '#/components/schemas/ChallengeResult',
-        }),
-        '400': validationError,
-        '409': genericError,
         '429': rateLimited,
       },
     },
@@ -176,16 +134,20 @@ const openApiPaths = {
       tags: ['Registration'],
       summary: 'Register an account and start an authenticated session',
       description:
-        'Verifies and consumes the exact SEP-10 challenge. The signed transaction is never submitted to Stellar.',
+        'Demo mode. Validates the Stellar G-address format and derived-key algorithms/lengths, then trusts and stores the client-declared public values. This does not prove wallet ownership and must be replaced before production.',
       operationId: 'registerUser',
       requestBody: jsonBody({
         type: 'object',
         additionalProperties: false,
-        required: ['challengeId', 'signedTransactionXdr', 'profile'],
+        required: ['walletAddress', 'username', 'keys'],
         properties: {
-          challengeId: { $ref: '#/components/schemas/ObjectId' },
-          signedTransactionXdr: signedTransactionXdrSchema,
-          profile: { $ref: '#/components/schemas/ProfileInput' },
+          walletAddress: stellarAddressSchema,
+          username: { type: 'string', minLength: 3, maxLength: 30 },
+          avatar: {
+            oneOf: [{ type: 'string', format: 'uri', maxLength: 2048 }, { type: 'null' }],
+            default: null,
+          },
+          keys: { $ref: '#/components/schemas/RegistrationKeys' },
         },
       }),
       responses: {
@@ -194,30 +156,7 @@ const openApiPaths = {
         }),
         '400': validationError,
         '401': genericError,
-        '404': genericError,
         '409': genericError,
-        '410': genericError,
-        '429': rateLimited,
-      },
-    },
-  },
-  '/v1/auth/login/challenge': {
-    post: {
-      tags: ['Authentication'],
-      summary: 'Create a login wallet-signing challenge',
-      operationId: 'createLoginChallenge',
-      requestBody: jsonBody({
-        type: 'object',
-        additionalProperties: false,
-        required: ['walletAddress'],
-        properties: { walletAddress: stellarAddressSchema },
-      }),
-      responses: {
-        '201': jsonResponse('Login challenge created.', {
-          $ref: '#/components/schemas/ChallengeResult',
-        }),
-        '400': validationError,
-        '404': genericError,
         '429': rateLimited,
       },
     },
@@ -225,15 +164,21 @@ const openApiPaths = {
   '/v1/auth/login': {
     post: {
       tags: ['Authentication'],
-      summary: 'Verify wallet ownership and start a session',
+      summary: 'Verify possession of the derived private key and start a session',
       operationId: 'loginUser',
       requestBody: jsonBody({
         type: 'object',
         additionalProperties: false,
-        required: ['challengeId', 'signedTransactionXdr'],
+        required: ['walletAddress', 'requestId', 'issuedAt', 'signature'],
         properties: {
-          challengeId: { $ref: '#/components/schemas/ObjectId' },
-          signedTransactionXdr: signedTransactionXdrSchema,
+          walletAddress: stellarAddressSchema,
+          requestId: { type: 'string', format: 'uuid' },
+          issuedAt: { type: 'string', format: 'date-time' },
+          signature: {
+            type: 'string',
+            format: 'byte',
+            description: 'Ed25519 signature over the canonical login message.',
+          },
         },
       }),
       responses: {
@@ -243,9 +188,7 @@ const openApiPaths = {
         '400': validationError,
         '401': genericError,
         '403': genericError,
-        '404': genericError,
         '409': genericError,
-        '410': genericError,
         '429': rateLimited,
       },
     },
@@ -306,7 +249,7 @@ const openApiPaths = {
       tags: ['Profiles'],
       summary: 'Update only supplied current-user profile fields',
       description:
-        'A regular-to-creator transition requires a complete creator profile. A creator-to-regular transition removes creator-only data atomically.',
+        'The only editable profile fields are username and avatar.',
       operationId: 'updateCurrentUser',
       security: [{ bearerAuth: [] }],
       requestBody: jsonBody({ $ref: '#/components/schemas/ProfileUpdate' }),
@@ -517,7 +460,7 @@ const openApiPaths = {
       tags: ['Broadcasts'],
       summary: 'Create an encrypted broadcast draft and freeze its audience',
       description:
-        'Creator-only. Currently snapshots every other active user that has an active encryption key. Returns the creator key and first recipient page so small audiences need no additional key-list request. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
+        'Every active user may broadcast. Demo mode snapshots every other active user with an active encryption key and stores demo entitlement metadata per recipient. Returns the sender key and first recipient page. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
       operationId: 'createBroadcastDraft',
       security: [{ bearerAuth: [] }],
       requestBody: jsonBody({
@@ -599,7 +542,7 @@ const openApiPaths = {
                 id: { $ref: '#/components/schemas/ObjectId' },
                 clientBroadcastId: { type: 'string', format: 'uuid' },
                 status: { type: 'string', const: 'draft' },
-                audienceType: { type: 'string', enum: ['all_active_users', 'token_holders'] },
+                audienceType: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
                 audienceCount: { type: 'integer', minimum: 0 },
                 progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
                 expiresAt: { type: 'string', format: 'date-time' },
