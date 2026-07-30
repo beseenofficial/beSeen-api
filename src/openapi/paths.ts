@@ -141,7 +141,7 @@ const openApiPaths = {
       tags: ['Registration'],
       summary: 'Register an account and start an authenticated session',
       description:
-        'Send multipart/form-data with the previous registration JSON serialized in payload and the optional avatar file in avatar. The API validates and converts JPEG, PNG, or WebP input to a 512x512 WebP before storing it in R2. Before creating account data, it also verifies the Stellar address server-to-server through BLUX with user_id 0.',
+        'Avatar is optional. Send multipart/form-data with the registration JSON serialized in payload and, only when selected, the avatar file in avatar. Unknown top-level registration properties are ignored. The API validates and converts JPEG, PNG, or WebP input to a 512x512 WebP before storing it in R2. Before creating account data, it also verifies the Stellar address server-to-server through BLUX with user_id 0.',
       operationId: 'registerUser',
       requestBody: {
         required: true,
@@ -149,7 +149,7 @@ const openApiPaths = {
           'multipart/form-data': {
             schema: {
               type: 'object',
-              additionalProperties: false,
+              additionalProperties: true,
               required: ['payload'],
               properties: {
                 payload: {
@@ -171,7 +171,7 @@ const openApiPaths = {
           'application/json': {
             schema: {
               type: 'object',
-              additionalProperties: false,
+              additionalProperties: true,
               required: ['walletAddress', 'username', 'keys'],
               properties: {
                 walletAddress: stellarAddressSchema,

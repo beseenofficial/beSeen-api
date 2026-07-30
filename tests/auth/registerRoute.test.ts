@@ -73,6 +73,23 @@ describe('POST /v1/auth/register', () => {
     );
   });
 
+  it('accepts multipart registration without an avatar file', async () => {
+    registerUserMock.mockResolvedValue({
+      ok: false,
+      reason: 'wallet_not_verified_by_blux',
+    });
+
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .field('payload', JSON.stringify(validBody()));
+
+    expect(response.status).toBe(403);
+    expect(registerUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({ walletAddress: WALLET, username: 'new_user' }),
+      undefined,
+    );
+  });
+
   it('rejects an oversized avatar before calling the registration service', async () => {
     const response = await request(app)
       .post('/v1/auth/register')
@@ -104,12 +121,30 @@ describe('POST /v1/auth/register', () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it('rejects removed profile fields before service access', async () => {
+  it('ignores unknown top-level client fields instead of rejecting registration', async () => {
+    registerUserMock.mockResolvedValue({
+      ok: false,
+      reason: 'wallet_not_verified_by_blux',
+    });
+
     const response = await request(app)
       .post('/v1/auth/register')
-      .send({ ...validBody(), accountType: 'creator' });
-    expect(response.status).toBe(400);
-    expect(registerUserMock).not.toHaveBeenCalled();
+      .send({
+        ...validBody(),
+        avatar: null,
+        accountType: 'creator',
+        category: 'ignored',
+      });
+
+    expect(response.status).toBe(403);
+    expect(registerUserMock).toHaveBeenCalledWith(
+      {
+        walletAddress: WALLET,
+        username: 'new_user',
+        keys: validBody().keys,
+      },
+      undefined,
+    );
   });
 
   it('rejects a client-supplied derivation version', async () => {

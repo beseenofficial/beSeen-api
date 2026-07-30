@@ -35,7 +35,7 @@ const registerBodySchema = z
         }
       }),
   })
-  .strict();
+  .strip();
 
 type RegisterBody = z.infer<typeof registerBodySchema>;
 
