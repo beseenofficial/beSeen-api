@@ -1,20 +1,35 @@
 import User from '../../models/User';
+import log from '../../logger';
 import type { AuthenticatedUser } from '../../types/auth';
 import type { UpdateProfileBody } from '../../validation/user/updateProfile';
+import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
+import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
+import type { StoredAvatar } from '../avatar/avatarStorage';
 
-type UpdateProfileFailureReason = 'account_unavailable' | 'username_taken';
+type UpdateProfileFailureReason =
+  'account_unavailable' | 'username_taken' | 'invalid_avatar' | 'avatar_storage_unavailable';
 type UpdateCurrentUserResult =
-  | { ok: true; user: AuthenticatedUser }
-  | { ok: false; reason: UpdateProfileFailureReason };
+  { ok: true; user: AuthenticatedUser } | { ok: false; reason: UpdateProfileFailureReason };
 
 const isUsernameDuplicateError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 11_000;
 
+const deleteAvatarBestEffort = async (objectKey: string, context: string): Promise<void> => {
+  try {
+    await deleteAvatar(objectKey);
+  } catch (error: unknown) {
+    log.warn({ error, objectKey }, context);
+  }
+};
+
 const updateCurrentUser = async (
   userId: string,
   body: UpdateProfileBody,
+  avatarFile?: Express.Multer.File,
 ): Promise<UpdateCurrentUserResult> => {
-  const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
+  const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null })
+    .select('+avatarObjectKey')
+    .exec();
   if (!user) return { ok: false, reason: 'account_unavailable' };
 
   if (body.username && body.username !== user.username) {
@@ -22,14 +37,50 @@ const updateCurrentUser = async (
     if (owner) return { ok: false, reason: 'username_taken' };
   }
 
+  let uploadedAvatar: StoredAvatar | null = null;
+  const previousAvatarObjectKey = user.avatarObjectKey;
+
+  if (avatarFile) {
+    let processedAvatar: Buffer;
+    try {
+      processedAvatar = await processAvatar(avatarFile.buffer);
+    } catch (error: unknown) {
+      if (error instanceof InvalidAvatarError) return { ok: false, reason: 'invalid_avatar' };
+      throw error;
+    }
+
+    try {
+      uploadedAvatar = await uploadAvatar(user._id, processedAvatar);
+    } catch (error: unknown) {
+      log.error({ error, userId }, 'Failed to upload profile avatar');
+      return { ok: false, reason: 'avatar_storage_unavailable' };
+    }
+  }
+
   if (body.username !== undefined) user.username = body.username;
-  if (body.avatar !== undefined) user.avatar = body.avatar;
+  if (uploadedAvatar) {
+    user.avatar = uploadedAvatar.publicUrl;
+    user.avatarObjectKey = uploadedAvatar.objectKey;
+  } else if (body.removeAvatar) {
+    user.avatar = null;
+    user.avatarObjectKey = null;
+  }
 
   try {
     await user.save();
   } catch (error: unknown) {
+    if (uploadedAvatar) {
+      await deleteAvatarBestEffort(
+        uploadedAvatar.objectKey,
+        'Failed to clean up an uncommitted profile avatar',
+      );
+    }
     if (isUsernameDuplicateError(error)) return { ok: false, reason: 'username_taken' };
     throw error;
+  }
+
+  if ((uploadedAvatar || body.removeAvatar) && previousAvatarObjectKey) {
+    await deleteAvatarBestEffort(previousAvatarObjectKey, 'Failed to delete the previous avatar');
   }
 
   return {

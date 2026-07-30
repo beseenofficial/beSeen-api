@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import authenticate from '../../middleware/authenticate';
+import avatarUpload from '../../middleware/avatarUpload';
 import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
 import getFollowerCountRoute from './followerCount';
 import getMeRoute from './me';
@@ -15,7 +16,7 @@ import getUsernameAvailabilityRoute from './usernameAvailability';
 const userRoutes = Router();
 
 userRoutes.get('/me', authenticate, getMeRoute);
-userRoutes.patch('/me', authenticate, updateMeRoute);
+userRoutes.patch('/me', authenticate, avatarUpload, updateMeRoute);
 userRoutes.get('/:username', getPublicProfileRoute);
 userRoutes.get('/:username/token', getUserTokenRoute);
 userRoutes.get('/:username/keys', getPublicUserKeysRoute);

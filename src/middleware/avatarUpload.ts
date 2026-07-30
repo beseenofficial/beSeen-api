@@ -13,7 +13,7 @@ const upload = multer({
   },
 });
 
-const registrationAvatarUpload: RequestHandler = (req, res, next) => {
+const avatarUpload: RequestHandler = (req, res, next) => {
   upload.single('avatar')(req, res, (error: unknown) => {
     if (!error) return next();
 
@@ -33,4 +33,4 @@ const registrationAvatarUpload: RequestHandler = (req, res, next) => {
   });
 };
 
-export default registrationAvatarUpload;
+export default avatarUpload;

@@ -68,6 +68,11 @@ The browser should reject avatar files over 5 MiB, images below 128x128 pixels, 
 selections for immediate feedback. Backend validation remains authoritative. `R2_PUBLIC_BASE_URL` must be an R2 custom domain
 or enabled public development URL; the S3 API endpoint is not a browser image URL.
 
+Avatar is optional. `PATCH /v1/users/me` accepts a new optional `avatar` file using the same
+multipart `payload` convention. The payload may contain `username` or `removeAvatar: true`; a
+username-only update may remain JSON. The API replaces or removes the old R2 object only after the
+profile update succeeds.
+
 ## Broadcasts
 
 Every active user owns one database-backed demo token. Another authenticated user can acquire it

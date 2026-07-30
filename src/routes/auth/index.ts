@@ -5,7 +5,7 @@ import authConfigRateLimit from '../../middleware/authConfigRateLimit';
 import loginRateLimit from '../../middleware/loginRateLimit';
 import noStore from '../../middleware/noStore';
 import registrationRateLimit from '../../middleware/registrationRateLimit';
-import registrationAvatarUpload from '../../middleware/registrationAvatarUpload';
+import avatarUpload from '../../middleware/avatarUpload';
 import refreshRateLimit from '../../middleware/refreshRateLimit';
 import getAuthConfigRoute from './config';
 import loginRoute from './login';
@@ -19,7 +19,7 @@ authRoutes.use(noStore);
 authRoutes.get('/config', authConfigRateLimit, getAuthConfigRoute);
 authRoutes.post('/login', loginRateLimit, loginRoute);
 authRoutes.post('/logout', authenticate, logoutRoute);
-authRoutes.post('/register', registrationRateLimit, registrationAvatarUpload, registerRoute);
+authRoutes.post('/register', registrationRateLimit, avatarUpload, registerRoute);
 authRoutes.post('/refresh', refreshRateLimit, refreshRoute);
 
 export default authRoutes;

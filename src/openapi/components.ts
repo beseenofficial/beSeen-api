@@ -141,7 +141,11 @@ const openApiComponents = {
       additionalProperties: false,
       properties: {
         username: userProperties.username,
-        avatar: nullableUrlSchema,
+        removeAvatar: {
+          type: 'boolean',
+          const: true,
+          description: 'Set to true to remove the current avatar.',
+        },
       },
     },
     RegistrationKeys: {

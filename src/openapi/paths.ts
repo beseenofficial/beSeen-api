@@ -281,11 +281,39 @@ const openApiPaths = {
     },
     patch: {
       tags: ['Profiles'],
-      summary: 'Update only supplied current-user profile fields',
-      description: 'The only editable profile fields are username and avatar.',
+      summary: 'Update the current username or optional avatar',
+      description:
+        'For an avatar change, send multipart/form-data with an optional JSON payload field and an avatar file. Send {"removeAvatar":true} in payload to remove the current avatar. A username-only update may still use application/json. Avatar files and removeAvatar cannot be sent together.',
       operationId: 'updateCurrentUser',
       security: [{ bearerAuth: [] }],
-      requestBody: jsonBody({ $ref: '#/components/schemas/ProfileUpdate' }),
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                payload: {
+                  type: 'string',
+                  description:
+                    'Optional JSON.stringify({ username?, removeAvatar?: true }). It may be omitted when only uploading an avatar.',
+                  example: '{"username":"new_username"}',
+                },
+                avatar: {
+                  type: 'string',
+                  format: 'binary',
+                  description:
+                    'Optional JPEG, PNG, or WebP file; maximum 5 MiB and minimum 128x128 pixels.',
+                },
+              },
+            },
+          },
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ProfileUpdate' },
+          },
+        },
+      },
       responses: {
         '200': jsonResponse('Profile updated.', {
           type: 'object',
@@ -295,6 +323,8 @@ const openApiPaths = {
         '400': validationError,
         '401': unauthorized,
         '409': genericError,
+        '413': genericError,
+        '503': genericError,
       },
     },
   },

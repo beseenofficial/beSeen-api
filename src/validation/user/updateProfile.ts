@@ -1,14 +1,13 @@
 import { z } from 'zod';
 
-import { nullableAvatarSchema, usernameSchema } from './profileFields';
+import { usernameSchema } from './profileFields';
 
 const updateProfileBodySchema = z
   .object({
     username: usernameSchema.optional(),
-    avatar: nullableAvatarSchema.optional(),
+    removeAvatar: z.literal(true).optional(),
   })
-  .strict()
-  .refine((value) => Object.keys(value).length > 0, 'Profile update cannot be empty');
+  .strict();
 
 const publicUsernameParamsSchema = z.object({ username: usernameSchema }).strict();
 
