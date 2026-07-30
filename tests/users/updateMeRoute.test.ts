@@ -20,13 +20,13 @@ describe('PATCH /v1/users/me', () => {
     vi.spyOn(AuthSession, 'exists').mockResolvedValue({ _id: sessionId } as never);
   });
 
-  it('accepts only username and avatar', async () => {
+  it('accepts a username-only JSON update without changing the avatar', async () => {
     updateCurrentUserMock.mockResolvedValue({
       ok: true,
       user: {
         id: userId.toString(),
         username: 'new_username',
-        avatar: 'https://cdn.example/avatar.webp',
+        avatar: null,
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
       },
     });
@@ -34,13 +34,90 @@ describe('PATCH /v1/users/me', () => {
     const response = await request(app)
       .patch('/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
-      .send({ username: ' New_Username ', avatar: 'https://cdn.example/avatar.webp' });
+      .send({ username: ' New_Username ' });
 
     expect(response.status).toBe(200);
-    expect(updateCurrentUserMock).toHaveBeenCalledWith(userId.toString(), {
-      username: 'new_username',
-      avatar: 'https://cdn.example/avatar.webp',
+    expect(updateCurrentUserMock).toHaveBeenCalledWith(
+      userId.toString(),
+      { username: 'new_username' },
+      undefined,
+    );
+  });
+
+  it('accepts an optional avatar file with an optional profile payload', async () => {
+    updateCurrentUserMock.mockResolvedValue({
+      ok: true,
+      user: {
+        id: userId.toString(),
+        username: 'new_username',
+        avatar: 'https://images.beseen.fi/avatars/user/new.webp',
+        createdAt: new Date('2026-07-27T12:00:00.000Z'),
+      },
     });
+
+    const response = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .field('payload', JSON.stringify({ username: ' New_Username ' }))
+      .attach('avatar', Buffer.from('image bytes'), {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      });
+
+    expect(response.status).toBe(200);
+    expect(updateCurrentUserMock).toHaveBeenCalledWith(
+      userId.toString(),
+      { username: 'new_username' },
+      expect.objectContaining({ fieldname: 'avatar', originalname: 'avatar.png' }),
+    );
+  });
+
+  it('allows removing an existing avatar', async () => {
+    updateCurrentUserMock.mockResolvedValue({
+      ok: true,
+      user: {
+        id: userId.toString(),
+        username: 'current_user',
+        avatar: null,
+        createdAt: new Date('2026-07-27T12:00:00.000Z'),
+      },
+    });
+
+    const response = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ removeAvatar: true });
+
+    expect(response.status).toBe(200);
+    expect(updateCurrentUserMock).toHaveBeenCalledWith(
+      userId.toString(),
+      { removeAvatar: true },
+      undefined,
+    );
+  });
+
+  it('rejects client-supplied avatar URLs', async () => {
+    const response = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ avatar: 'https://untrusted.example/avatar.webp' });
+
+    expect(response.status).toBe(400);
+    expect(updateCurrentUserMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects uploading and removing an avatar in the same request', async () => {
+    const response = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .field('payload', JSON.stringify({ removeAvatar: true }))
+      .attach('avatar', Buffer.from('image bytes'), {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      });
+
+    expect(response.status).toBe(400);
+    expect(updateCurrentUserMock).not.toHaveBeenCalled();
   });
 
   it('rejects empty and removed creator/profile fields', async () => {
