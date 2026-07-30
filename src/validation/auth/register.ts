@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import isBase64PublicKey from '../../utils/auth/isBase64PublicKey';
 import isValidStellarGAddress from '../../utils/stellar/isValidStellarGAddress';
-import { nullableAvatarSchema, usernameSchema } from '../user/profileFields';
+import { usernameSchema } from '../user/profileFields';
 
 const publicKeySchema = z
   .string()
@@ -17,12 +17,9 @@ const registerBodySchema = z
       .transform((value) => value.toUpperCase())
       .refine(isValidStellarGAddress, 'Wallet address must be a valid Stellar G address'),
     username: usernameSchema,
-    avatar: nullableAvatarSchema.optional().default(null),
     keys: z
       .object({
-        signing: z
-          .object({ algorithm: z.literal('Ed25519'), publicKey: publicKeySchema })
-          .strict(),
+        signing: z.object({ algorithm: z.literal('Ed25519'), publicKey: publicKeySchema }).strict(),
         encryption: z
           .object({ algorithm: z.literal('X25519'), publicKey: publicKeySchema })
           .strict(),

@@ -141,27 +141,53 @@ const openApiPaths = {
       tags: ['Registration'],
       summary: 'Register an account and start an authenticated session',
       description:
-        'Before creating any account data, the API verifies the submitted Stellar address server-to-server through BLUX POST /server/wallets/verify with user_id 0. The client request shape is unchanged and BLUX credentials never reach the client.',
+        'Send multipart/form-data with the previous registration JSON serialized in payload and the optional avatar file in avatar. The API validates and converts JPEG, PNG, or WebP input to a 512x512 WebP before storing it in R2. Before creating account data, it also verifies the Stellar address server-to-server through BLUX with user_id 0.',
       operationId: 'registerUser',
-      requestBody: jsonBody({
-        type: 'object',
-        additionalProperties: false,
-        required: ['walletAddress', 'username', 'keys'],
-        properties: {
-          walletAddress: stellarAddressSchema,
-          username: { type: 'string', minLength: 3, maxLength: 30 },
-          avatar: {
-            oneOf: [{ type: 'string', format: 'uri', maxLength: 2048 }, { type: 'null' }],
-            default: null,
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['payload'],
+              properties: {
+                payload: {
+                  type: 'string',
+                  description:
+                    'JSON.stringify({ walletAddress, username, keys }). Do not include avatarUrl or private keys.',
+                  example:
+                    '{"walletAddress":"G...","username":"new_user","keys":{"signing":{"algorithm":"Ed25519","publicKey":"..."},"encryption":{"algorithm":"X25519","publicKey":"..."}}}',
+                },
+                avatar: {
+                  type: 'string',
+                  format: 'binary',
+                  description:
+                    'Optional JPEG, PNG, or WebP file; maximum 5 MiB and minimum 128x128 pixels.',
+                },
+              },
+            },
           },
-          keys: { $ref: '#/components/schemas/RegistrationKeys' },
+          'application/json': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['walletAddress', 'username', 'keys'],
+              properties: {
+                walletAddress: stellarAddressSchema,
+                username: { type: 'string', minLength: 3, maxLength: 30 },
+                keys: { $ref: '#/components/schemas/RegistrationKeys' },
+              },
+            },
+          },
         },
-      }),
+      },
       responses: {
         '201': jsonResponse('User registered and logged in.', {
           $ref: '#/components/schemas/AuthenticatedResult',
         }),
         '400': validationError,
+        '413': genericError,
         '403': genericError,
         '409': genericError,
         '429': rateLimited,
@@ -256,8 +282,7 @@ const openApiPaths = {
     patch: {
       tags: ['Profiles'],
       summary: 'Update only supplied current-user profile fields',
-      description:
-        'The only editable profile fields are username and avatar.',
+      description: 'The only editable profile fields are username and avatar.',
       operationId: 'updateCurrentUser',
       security: [{ bearerAuth: [] }],
       requestBody: jsonBody({ $ref: '#/components/schemas/ProfileUpdate' }),
@@ -344,7 +369,8 @@ const openApiPaths = {
     post: {
       tags: ['Tokens'],
       summary: 'Acquire a user’s token in demo mode',
-      description: 'No payment or blockchain transaction occurs. Repeating the request is safe and does not create duplicate holdings.',
+      description:
+        'No payment or blockchain transaction occurs. Repeating the request is safe and does not create duplicate holdings.',
       operationId: 'purchaseUserToken',
       security: [{ bearerAuth: [] }],
       parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],

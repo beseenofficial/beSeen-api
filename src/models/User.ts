@@ -11,6 +11,7 @@ interface IUser {
   walletAddress: string;
   username: string;
   avatar: string | null;
+  avatarObjectKey: string | null;
   role: UserRole;
   status: UserStatus;
   deletedAt: Date | null;
@@ -46,6 +47,13 @@ const userSchema = new Schema<IUser>(
       trim: true,
       maxlength: 2_048,
       default: null,
+    },
+    avatarObjectKey: {
+      type: String,
+      trim: true,
+      maxlength: 1_024,
+      default: null,
+      select: false,
     },
     role: {
       type: String,

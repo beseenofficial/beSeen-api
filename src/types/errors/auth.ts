@@ -52,4 +52,14 @@ export const registrationErrors: Record<
     code: 'BLUX_VERIFICATION_UNAVAILABLE',
     message: 'Wallet verification service is unavailable',
   },
+  invalid_avatar: {
+    statusCode: 400,
+    code: 'INVALID_AVATAR',
+    message: 'Avatar must be a valid JPEG, PNG, or WebP image of at least 128x128 pixels',
+  },
+  avatar_storage_unavailable: {
+    statusCode: 503,
+    code: 'AVATAR_STORAGE_UNAVAILABLE',
+    message: 'Avatar storage is temporarily unavailable',
+  },
 };
