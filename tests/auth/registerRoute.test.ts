@@ -11,7 +11,6 @@ const registerUserMock = vi.mocked(registerUser);
 const validBody = () => ({
   walletAddress: WALLET.toLowerCase(),
   username: '  New_User  ',
-  avatar: 'https://cdn.beseen.fi/avatar.webp',
   keys: {
     signing: { algorithm: 'Ed25519', publicKey: Buffer.alloc(32, 1).toString('base64') },
     encryption: { algorithm: 'X25519', publicKey: Buffer.alloc(32, 2).toString('base64') },
@@ -49,7 +48,60 @@ describe('POST /v1/auth/register', () => {
     });
     expect(registerUserMock).toHaveBeenCalledWith(
       expect.objectContaining({ walletAddress: WALLET, username: 'new_user' }),
+      undefined,
     );
+  });
+
+  it('accepts the existing registration payload plus an avatar file', async () => {
+    registerUserMock.mockResolvedValue({
+      ok: false,
+      reason: 'wallet_not_verified_by_blux',
+    });
+
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .field('payload', JSON.stringify(validBody()))
+      .attach('avatar', Buffer.from('image bytes'), {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      });
+
+    expect(response.status).toBe(403);
+    expect(registerUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({ walletAddress: WALLET, username: 'new_user' }),
+      expect.objectContaining({ fieldname: 'avatar', originalname: 'avatar.png' }),
+    );
+  });
+
+  it('rejects an oversized avatar before calling the registration service', async () => {
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .field('payload', JSON.stringify(validBody()))
+      .attach('avatar', Buffer.alloc(5_242_881), {
+        filename: 'too-large.png',
+        contentType: 'image/png',
+      });
+
+    expect(response.status).toBe(413);
+    expect(response.body.result).toEqual({
+      code: 'AVATAR_TOO_LARGE',
+      maxBytes: 5_242_880,
+    });
+    expect(registerUserMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed multipart payload JSON', async () => {
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .field('payload', '{invalid')
+      .attach('avatar', Buffer.from('image bytes'), {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.result.code).toBe('VALIDATION_ERROR');
+    expect(registerUserMock).not.toHaveBeenCalled();
   });
 
   it('rejects removed profile fields before service access', async () => {

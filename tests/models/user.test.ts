@@ -12,6 +12,7 @@ describe('User model', () => {
     expect(user.walletAddress).toBe(WALLET);
     expect(user.username).toBe('beseen_user');
     expect(user.avatar).toBeNull();
+    expect(user.avatarObjectKey).toBeNull();
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.toObject()).not.toHaveProperty('accountType');
@@ -20,7 +21,11 @@ describe('User model', () => {
   });
 
   it('rejects invalid Stellar addresses and usernames', async () => {
-    await expect(new User({ walletAddress: 'invalid', username: 'ok_user' }).validate()).rejects.toThrow();
-    await expect(new User({ walletAddress: WALLET, username: 'bad-name' }).validate()).rejects.toThrow();
+    await expect(
+      new User({ walletAddress: 'invalid', username: 'ok_user' }).validate(),
+    ).rejects.toThrow();
+    await expect(
+      new User({ walletAddress: WALLET, username: 'bad-name' }).validate(),
+    ).rejects.toThrow();
   });
 });
