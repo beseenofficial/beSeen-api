@@ -52,8 +52,10 @@ The short version is:
 2. Build and sign the fixed `beseen_kdf_v1` transaction locally.
 3. Extract its raw 64-byte signature and use the documented HKDF settings to derive Ed25519 and
    X25519 key pairs. Keep private keys client-only.
-4. For a new account, call `POST /v1/auth/register`. The backend verifies the wallet through BLUX,
-   then stores the client-declared public keys only when BLUX returns `exists: true`.
+4. For a new account, call `POST /v1/auth/register` as `multipart/form-data`: put the unchanged
+   registration object in `payload` with `JSON.stringify(...)`, and put the image file in the
+   optional `avatar` field. The backend verifies the wallet through BLUX, validates the actual image
+   bytes, converts it to a 512x512 WebP, uploads it to R2, and stores only its public URL/object key.
 5. For an existing account, sign the documented login message with the derived Ed25519 private key
    and call `POST /v1/auth/login` directly. There is no challenge request.
 6. If local private keys are missing, sign the same fixed KDF transaction again and reconstruct the
@@ -61,6 +63,10 @@ The short version is:
 
 The registration trust model is suitable only for the demo. Login after registration still proves
 possession of the stored derived Ed25519 private key.
+
+The browser should reject avatar files over 5 MiB, images below 128x128 pixels, and non-JPEG/PNG/WebP
+selections for immediate feedback. Backend validation remains authoritative. `R2_PUBLIC_BASE_URL` must be an R2 custom domain
+or enabled public development URL; the S3 API endpoint is not a browser image URL.
 
 ## Broadcasts
 

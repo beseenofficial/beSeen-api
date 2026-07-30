@@ -4,6 +4,9 @@ import { z } from 'zod';
 const DEVELOPMENT_ACCESS_TOKEN_SECRET = 'development-only-change-this-access-token-secret';
 const DEVELOPMENT_BLUX_APP_ID = 'development-blux-app-id';
 const DEVELOPMENT_BLUX_APP_SECRET = 'development-blux-app-secret';
+const DEVELOPMENT_R2_ACCESS_KEY_ID = 'development-r2-access-key-id';
+const DEVELOPMENT_R2_SECRET_ACCESS_KEY = 'development-r2-secret-access-key';
+const DEVELOPMENT_R2_PUBLIC_BASE_URL = 'https://avatars.example.invalid';
 
 const envSchema = z
   .object({
@@ -20,6 +23,12 @@ const envSchema = z
     BLUX_APP_ID: z.string().min(1).default(DEVELOPMENT_BLUX_APP_ID),
     BLUX_APP_SECRET: z.string().min(1).default(DEVELOPMENT_BLUX_APP_SECRET),
     BLUX_VERIFICATION_TIMEOUT_MS: z.coerce.number().int().min(500).max(15_000).default(5_000),
+    R2_ENDPOINT: z.url().default('https://example.r2.cloudflarestorage.com'),
+    R2_ACCESS_KEY_ID: z.string().min(1).default(DEVELOPMENT_R2_ACCESS_KEY_ID),
+    R2_SECRET_ACCESS_KEY: z.string().min(1).default(DEVELOPMENT_R2_SECRET_ACCESS_KEY),
+    R2_BUCKET_NAME: z.string().min(1).default('beseen-avatars'),
+    R2_PUBLIC_BASE_URL: z.url().default(DEVELOPMENT_R2_PUBLIC_BASE_URL),
+    R2_MAX_AVATAR_BYTES: z.coerce.number().int().min(262_144).max(10_485_760).default(5_242_880),
     ACCESS_TOKEN_SECRET: z.string().min(32).default(DEVELOPMENT_ACCESS_TOKEN_SECRET),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3_600).default(900),
     REFRESH_TOKEN_TTL_SECONDS: z.coerce
@@ -54,6 +63,18 @@ const envSchema = z
         code: 'custom',
         path: ['BLUX_APP_SECRET'],
         message: 'BLUX_APP_ID and BLUX_APP_SECRET must be configured in production',
+      });
+    }
+    if (
+      value.NODE_ENV === 'production' &&
+      (value.R2_ACCESS_KEY_ID === DEVELOPMENT_R2_ACCESS_KEY_ID ||
+        value.R2_SECRET_ACCESS_KEY === DEVELOPMENT_R2_SECRET_ACCESS_KEY ||
+        value.R2_PUBLIC_BASE_URL === DEVELOPMENT_R2_PUBLIC_BASE_URL)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['R2_SECRET_ACCESS_KEY'],
+        message: 'R2 credentials and public base URL must be configured in production',
       });
     }
   });
