@@ -9,13 +9,16 @@ import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
 import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
+import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
 import sendMessage from '../../src/utils/messenger/sendMessage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/crypto/verifyEd25519Signature', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/messenger/resolveReplyBounty', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
 const verifySignatureMock = vi.mocked(verifyEd25519Signature);
+const resolveReplyBountyMock = vi.mocked(resolveReplyBounty);
 const senderId = new Types.ObjectId('000000000000000000000001');
 const recipientId = new Types.ObjectId('000000000000000000000002');
 const conversationId = new Types.ObjectId('000000000000000000000003');
@@ -76,6 +79,8 @@ describe('sendMessage', () => {
     transactionMock.mockReset();
     transactionMock.mockImplementation(async (operation) => operation(session));
     verifySignatureMock.mockReset();
+    resolveReplyBountyMock.mockReset();
+    resolveReplyBountyMock.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -84,8 +89,10 @@ describe('sendMessage', () => {
   });
 
   it('verifies the server-owned conversation context and creates the next encrypted message', async () => {
-    const requestBody = body();
+    const replyToMessageId = new Types.ObjectId('000000000000000000000009').toString();
+    const requestBody = { ...body(), replyToMessageId };
     setupNewMessageReads();
+    vi.spyOn(Message, 'exists').mockReturnValue(sessionQuery({ _id: replyToMessageId }) as never);
     verifySignatureMock.mockReturnValue(true);
     vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
       execQuery({ nextSequence: 1 }) as never,
@@ -130,7 +137,7 @@ describe('sendMessage', () => {
       contentNonce: requestBody.contentNonce,
       senderEncryptedMessageKey: requestBody.senderEncryptedMessageKey,
       recipientEncryptedMessageKey: requestBody.recipientEncryptedMessageKey,
-      replyToMessageId: null,
+      replyToMessageId,
     });
     expect(verifySignatureMock).toHaveBeenCalledWith(
       senderSigningPublicKey,
@@ -148,6 +155,15 @@ describe('sendMessage', () => {
         },
       },
       { new: false, session },
+    );
+    expect(resolveReplyBountyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId,
+        replyToMessageId,
+        senderId,
+        recipientId,
+        session,
+      }),
     );
   });
 
