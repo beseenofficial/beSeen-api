@@ -20,6 +20,12 @@ describe('Conversation model', () => {
     expect(conversation.participantB.equals(participantB)).toBe(true);
     expect(conversation.nextSequence).toBe(MESSENGER_INITIAL_SEQUENCE);
     expect(conversation.lastMessageAt).toBeNull();
+    expect(conversation.lastMessageSender).toBeNull();
+    expect(conversation.lastMessageClientMessageId).toBeNull();
+    expect(conversation.participantAReadSequence).toBe(0);
+    expect(conversation.participantBReadSequence).toBe(0);
+    expect(conversation.participantAUnreadCount).toBe(0);
+    expect(conversation.participantBUnreadCount).toBe(0);
   });
 
   it('defines one unique conversation for an unordered user pair', () => {

@@ -38,6 +38,8 @@ describe('Messenger conversation routes', () => {
           {
             id: conversationId.toString(),
             otherParticipant: { id: otherUserId.toString(), username: 'other_user', avatar: null },
+            unreadCount: 0,
+            lastMessage: null,
             lastMessageAt: null,
             createdAt: new Date('2026-08-07T12:00:00.000Z'),
           },
