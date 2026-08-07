@@ -1,5 +1,6 @@
 import type { ConversationAccessFailureReason } from '../../utils/messenger/getConversationAccess';
 import type { SendMessageFailureReason } from '../../utils/messenger/sendMessage';
+import type { MarkConversationReadFailureReason } from '../../utils/messenger/markConversationRead';
 
 type MessengerConversationErrorReason = ConversationAccessFailureReason | 'active_keys_not_found';
 
@@ -51,5 +52,18 @@ const messengerSendErrors: Record<
   },
 };
 
-export { messengerConversationErrors, messengerSendErrors };
+const messengerReadErrors: Record<
+  MarkConversationReadFailureReason,
+  { statusCode: number; code: string; message: string }
+> = {
+  account_unavailable: messengerConversationErrors.account_unavailable,
+  conversation_not_found: messengerConversationErrors.conversation_not_found,
+  read_sequence_not_found: {
+    statusCode: 409,
+    code: 'READ_SEQUENCE_NOT_FOUND',
+    message: 'The requested read sequence does not exist in this conversation',
+  },
+};
+
+export { messengerConversationErrors, messengerReadErrors, messengerSendErrors };
 export type { MessengerConversationErrorReason };

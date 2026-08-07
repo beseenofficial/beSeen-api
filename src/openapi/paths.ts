@@ -712,6 +712,53 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/messenger/conversations/{conversationId}/read': {
+    put: {
+      tags: ['Messenger'],
+      summary: 'Advance the authenticated user read cursor',
+      description:
+        'Marks every message through the supplied sequence as seen by the authenticated participant. The cursor is monotonic, identical or older retries are safe, and unreadCount is recalculated atomically. This endpoint changes no encrypted content and requires no message-key signature.',
+      operationId: 'markMessengerConversationRead',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['throughSequence'],
+              properties: {
+                throughSequence: { type: 'integer', minimum: 1 },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': jsonResponse('Conversation read cursor updated or already current.', {
+          type: 'object',
+          required: ['readState', 'updated'],
+          properties: {
+            readState: { $ref: '#/components/schemas/MessengerReadReceipt' },
+            updated: { type: 'boolean' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
   '/v1/broadcasts/feed': {
     get: {
       tags: ['Broadcasts'],

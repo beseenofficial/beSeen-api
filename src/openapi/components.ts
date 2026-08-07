@@ -139,6 +139,7 @@ const openApiComponents = {
         'id',
         'otherParticipant',
         'unreadCount',
+        'readState',
         'lastMessage',
         'lastMessageAt',
         'createdAt',
@@ -147,6 +148,7 @@ const openApiComponents = {
         id: objectIdSchema,
         otherParticipant: { $ref: '#/components/schemas/MessengerParticipant' },
         unreadCount: { type: 'integer', minimum: 0 },
+        readState: { $ref: '#/components/schemas/MessengerConversationReadState' },
         lastMessage: {
           oneOf: [
             { $ref: '#/components/schemas/MessengerConversationLastMessage' },
@@ -168,6 +170,15 @@ const openApiComponents = {
         clientMessageId: { type: 'string', format: 'uuid' },
         senderId: objectIdSchema,
         createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerConversationReadState: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['viewerReadSequence', 'otherParticipantReadSequence'],
+      properties: {
+        viewerReadSequence: { type: 'integer', minimum: 0 },
+        otherParticipantReadSequence: { type: 'integer', minimum: 0 },
       },
     },
     MessengerConversationPage: {
@@ -370,13 +381,25 @@ const openApiComponents = {
     MessengerMessageHistoryItem: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'sequence', 'manifest', 'viewerKey', 'integrity', 'createdAt'],
+      required: ['id', 'sequence', 'manifest', 'viewerKey', 'integrity', 'delivery', 'createdAt'],
       properties: {
         id: objectIdSchema,
         sequence: { type: 'integer', minimum: 1 },
         manifest: { $ref: '#/components/schemas/MessengerMessageManifest' },
         viewerKey: { $ref: '#/components/schemas/MessengerMessageViewerKey' },
         integrity: { $ref: '#/components/schemas/MessengerMessageIntegrity' },
+        delivery: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['seenByRecipient'],
+          properties: {
+            seenByRecipient: {
+              type: 'boolean',
+              description:
+                'True when the recipient read cursor has reached or passed this message sequence.',
+            },
+          },
+        },
         createdAt: { type: 'string', format: 'date-time' },
       },
     },
@@ -394,6 +417,16 @@ const openApiComponents = {
           oneOf: [{ type: 'integer', minimum: 2 }, { type: 'null' }],
         },
         hasMore: { type: 'boolean' },
+      },
+    },
+    MessengerReadReceipt: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['conversationId', 'readSequence', 'unreadCount'],
+      properties: {
+        conversationId: objectIdSchema,
+        readSequence: { type: 'integer', minimum: 1 },
+        unreadCount: { type: 'integer', minimum: 0 },
       },
     },
     AuthTokens: {

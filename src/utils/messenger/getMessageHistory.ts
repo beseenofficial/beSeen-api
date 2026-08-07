@@ -42,6 +42,9 @@ interface MessageHistoryItem {
     signingPublicKey: string;
     signature: string;
   };
+  delivery: {
+    seenByRecipient: boolean;
+  };
   createdAt: Date;
 }
 
@@ -58,6 +61,7 @@ type GetMessageHistoryResult =
 const serializeMessageHistoryItem = (
   message: MessageDocument,
   viewerId: string,
+  recipientReadSequence: number,
 ): MessageHistoryItem => {
   const viewerIsSender = message.sender.toString() === viewerId;
 
@@ -102,6 +106,9 @@ const serializeMessageHistoryItem = (
       signingPublicKey: message.senderSigningPublicKey,
       signature: message.signature,
     },
+    delivery: {
+      seenByRecipient: recipientReadSequence >= message.sequence,
+    },
     createdAt: message.createdAt,
   };
 };
@@ -129,7 +136,15 @@ const getMessageHistory = async (
     .exec();
   const hasMore = rows.length > query.limit;
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
-  const items = pageRows.map((message) => serializeMessageHistoryItem(message, userId));
+  const participantAReadSequence = access.conversation.participantAReadSequence ?? 0;
+  const participantBReadSequence = access.conversation.participantBReadSequence ?? 0;
+  const items = pageRows.map((message) => {
+    const recipientReadSequence = access.conversation.participantA.equals(message.recipient)
+      ? participantAReadSequence
+      : participantBReadSequence;
+
+    return serializeMessageHistoryItem(message, userId, recipientReadSequence);
+  });
   const oldestItem = items.at(-1);
 
   return {

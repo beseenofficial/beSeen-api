@@ -5,6 +5,7 @@ import getConversationRoute from './getConversation';
 import getConversationContextRoute from './getConversationContext';
 import getMessageHistoryRoute from './getMessageHistory';
 import listConversationsRoute from './listConversations';
+import markConversationReadRoute from './markConversationRead';
 import sendMessageRoute from './sendMessage';
 
 const messengerRoutes = Router();
@@ -22,5 +23,6 @@ messengerRoutes.get(
   getMessageHistoryRoute,
 );
 messengerRoutes.post('/conversations/:conversationId/messages', authenticate, sendMessageRoute);
+messengerRoutes.put('/conversations/:conversationId/read', authenticate, markConversationReadRoute);
 
 export default messengerRoutes;

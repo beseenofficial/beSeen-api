@@ -9,6 +9,10 @@ interface ConversationView {
     avatar: string | null;
   };
   unreadCount: number;
+  readState: {
+    viewerReadSequence: number;
+    otherParticipantReadSequence: number;
+  };
   lastMessage: {
     sequence: number;
     clientMessageId: string;
@@ -34,6 +38,16 @@ const serializeConversation = (
     conversation.participantA.toString() === viewerId
       ? (conversation.participantAUnreadCount ?? 0)
       : (conversation.participantBUnreadCount ?? 0),
+  readState:
+    conversation.participantA.toString() === viewerId
+      ? {
+          viewerReadSequence: conversation.participantAReadSequence ?? 0,
+          otherParticipantReadSequence: conversation.participantBReadSequence ?? 0,
+        }
+      : {
+          viewerReadSequence: conversation.participantBReadSequence ?? 0,
+          otherParticipantReadSequence: conversation.participantAReadSequence ?? 0,
+        },
   lastMessage:
     conversation.lastMessageAt &&
     conversation.lastMessageSender &&
