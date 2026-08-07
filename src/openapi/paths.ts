@@ -529,6 +529,42 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/messenger/bounties/{bountyId}/claim': {
+    post: {
+      tags: ['Messenger'],
+      summary: 'Claim an unlocked demo message bounty',
+      description:
+        'Only the bounty beneficiary can call this endpoint. A timely direct reply first changes the bounty from offered to claimable. Claiming is idempotent and records demo state only; it performs no payment, balance change, escrow action, or blockchain transfer.',
+      operationId: 'claimMessengerMessageBounty',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'bountyId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Demo bounty claimed or was already claimed.', {
+          type: 'object',
+          required: ['bounty', 'claimedNow'],
+          properties: {
+            bounty: { $ref: '#/components/schemas/MessengerBounty' },
+            claimedNow: {
+              type: 'boolean',
+              description: 'True only for the request that performed the claim transition.',
+            },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '410': genericError,
+      },
+    },
+  },
   '/v1/messenger/conversations': {
     get: {
       tags: ['Messenger'],

@@ -295,6 +295,7 @@ const openApiComponents = {
         'recipientId',
         'replyToMessageId',
         'bounty',
+        'unlockedBounty',
         'createdAt',
       ],
       properties: {
@@ -309,6 +310,11 @@ const openApiComponents = {
         },
         bounty: {
           oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
+        },
+        unlockedBounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
+          description:
+            'The original bounty unlocked by this direct reply, or null. Useful for immediate client feedback.',
         },
         createdAt: { type: 'string', format: 'date-time' },
       },

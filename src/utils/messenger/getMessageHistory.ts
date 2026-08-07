@@ -7,6 +7,7 @@ import type { MessageDocument } from '../../models/Message';
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import type { MessageHistoryQuery } from '../../validation/messenger/messageHistory';
+import expireOfferedMessageBounties from './expireOfferedMessageBounties';
 import getConversationAccess from './getConversationAccess';
 import type { ConversationAccessFailureReason } from './getConversationAccess';
 
@@ -175,6 +176,12 @@ const getMessageHistory = async (
     .exec();
   const hasMore = rows.length > query.limit;
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
+
+  await expireOfferedMessageBounties(
+    new Date(),
+    pageRows.map((message) => message._id),
+  );
+
   const bounties =
     pageRows.length > 0
       ? await MessageBounty.find({

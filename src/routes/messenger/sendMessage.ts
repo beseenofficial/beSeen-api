@@ -66,6 +66,14 @@ const sendMessageRoute: RequestHandler = async (req, res) => {
               claimedAt: result.message.bounty.claimedAt?.toISOString() ?? null,
             }
           : null,
+        unlockedBounty: result.message.unlockedBounty
+          ? {
+              ...result.message.unlockedBounty,
+              expiresAt: result.message.unlockedBounty.expiresAt.toISOString(),
+              claimableAt: result.message.unlockedBounty.claimableAt?.toISOString() ?? null,
+              claimedAt: result.message.unlockedBounty.claimedAt?.toISOString() ?? null,
+            }
+          : null,
         createdAt: result.message.createdAt.toISOString(),
       },
     },

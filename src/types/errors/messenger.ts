@@ -1,6 +1,7 @@
 import type { ConversationAccessFailureReason } from '../../utils/messenger/getConversationAccess';
 import type { SendMessageFailureReason } from '../../utils/messenger/sendMessage';
 import type { MarkConversationReadFailureReason } from '../../utils/messenger/markConversationRead';
+import type { ClaimMessageBountyFailureReason } from '../../utils/messenger/claimMessageBounty';
 
 type MessengerConversationErrorReason = ConversationAccessFailureReason | 'active_keys_not_found';
 
@@ -65,5 +66,32 @@ const messengerReadErrors: Record<
   },
 };
 
-export { messengerConversationErrors, messengerReadErrors, messengerSendErrors };
+const messengerBountyClaimErrors: Record<
+  ClaimMessageBountyFailureReason,
+  { statusCode: number; code: string; message: string }
+> = {
+  account_unavailable: messengerConversationErrors.account_unavailable,
+  bounty_not_found: {
+    statusCode: 404,
+    code: 'BOUNTY_NOT_FOUND',
+    message: 'Demo bounty was not found',
+  },
+  bounty_not_claimable: {
+    statusCode: 409,
+    code: 'BOUNTY_NOT_CLAIMABLE',
+    message: 'Demo bounty is not claimable yet',
+  },
+  bounty_expired: {
+    statusCode: 410,
+    code: 'BOUNTY_EXPIRED',
+    message: 'Demo bounty expired before a valid reply',
+  },
+};
+
+export {
+  messengerBountyClaimErrors,
+  messengerConversationErrors,
+  messengerReadErrors,
+  messengerSendErrors,
+};
 export type { MessengerConversationErrorReason };

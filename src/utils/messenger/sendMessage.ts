@@ -4,7 +4,6 @@ import {
   MESSENGER_ENCRYPTION_VERSION,
   MESSENGER_SIGNATURE_VERSION,
 } from '../../constant/messenger';
-import type { MessengerBountyStatus } from '../../constant/messenger';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
 import Message from '../../models/Message';
@@ -16,6 +15,9 @@ import UserKey from '../../models/UserKey';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
+import resolveReplyBounty from './resolveReplyBounty';
+import serializeMessageBounty from './serializeMessageBounty';
+import type { SerializedMessageBounty } from './serializeMessageBounty';
 
 type SendMessageFailureReason =
   | 'account_unavailable'
@@ -34,17 +36,8 @@ interface SentMessage {
   senderId: string;
   recipientId: string;
   replyToMessageId: string | null;
-  bounty: {
-    id: string;
-    assetCode: string;
-    amount: string;
-    durationSeconds: number;
-    status: MessengerBountyStatus;
-    expiresAt: Date;
-    replyMessageId: string | null;
-    claimableAt: Date | null;
-    claimedAt: Date | null;
-  } | null;
+  bounty: SerializedMessageBounty | null;
+  unlockedBounty: SerializedMessageBounty | null;
   createdAt: Date;
 }
 
@@ -62,6 +55,7 @@ const isMongoDuplicateKeyError = (error: unknown): error is MongoDuplicateKeyErr
 const serializeSentMessage = (
   message: MessageDocument,
   bounty: MessageBountyDocument | null,
+  unlockedBounty: MessageBountyDocument | null,
 ): SentMessage => ({
   id: message._id.toString(),
   conversationId: message.conversation.toString(),
@@ -70,19 +64,8 @@ const serializeSentMessage = (
   senderId: message.sender.toString(),
   recipientId: message.recipient.toString(),
   replyToMessageId: message.replyToMessage?.toString() ?? null,
-  bounty: bounty
-    ? {
-        id: bounty._id.toString(),
-        assetCode: bounty.assetCode,
-        amount: bounty.amount,
-        durationSeconds: bounty.durationSeconds,
-        status: bounty.status,
-        expiresAt: bounty.expiresAt,
-        replyMessageId: bounty.replyMessage?.toString() ?? null,
-        claimableAt: bounty.claimableAt,
-        claimedAt: bounty.claimedAt,
-      }
-    : null,
+  bounty: bounty ? serializeMessageBounty(bounty) : null,
+  unlockedBounty: unlockedBounty ? serializeMessageBounty(unlockedBounty) : null,
   createdAt: message.createdAt,
 });
 
@@ -124,6 +107,19 @@ const findMessageBounty = async (
   return query.exec();
 };
 
+const findUnlockedBounty = async (
+  message: MessageDocument,
+  session?: ClientSession,
+): Promise<MessageBountyDocument | null> => {
+  const query = MessageBounty.findOne({ replyMessage: message._id });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
+};
+
 const idempotentResult = async (
   message: MessageDocument,
   conversationId: string,
@@ -135,9 +131,16 @@ const idempotentResult = async (
     return { ok: false, reason: 'message_conflict' };
   }
 
-  const bounty = await findMessageBounty(message, session);
+  const [bounty, unlockedBounty] = await Promise.all([
+    findMessageBounty(message, session),
+    findUnlockedBounty(message, session),
+  ]);
 
-  return { ok: true, message: serializeSentMessage(message, bounty), created: false };
+  return {
+    ok: true,
+    message: serializeSentMessage(message, bounty, unlockedBounty),
+    created: false,
+  };
 };
 
 const sendMessageInTransaction = async (
@@ -305,6 +308,7 @@ const sendMessageInTransaction = async (
   }
 
   let createdBounty: MessageBountyDocument | null = null;
+  let unlockedBounty: MessageBountyDocument | null = null;
 
   if (body.bounty) {
     const expiresAt = new Date(createdAt.getTime() + body.bounty.durationSeconds * 1_000);
@@ -333,9 +337,21 @@ const sendMessageInTransaction = async (
     }
   }
 
+  if (body.replyToMessageId) {
+    unlockedBounty = await resolveReplyBounty({
+      conversationId: conversation._id,
+      replyToMessageId: body.replyToMessageId,
+      replyMessageId: createdMessage._id,
+      senderId: sender._id,
+      recipientId: recipient._id,
+      repliedAt: createdAt,
+      session,
+    });
+  }
+
   return {
     ok: true,
-    message: serializeSentMessage(createdMessage, createdBounty),
+    message: serializeSentMessage(createdMessage, createdBounty, unlockedBounty),
     created: true,
   };
 };
