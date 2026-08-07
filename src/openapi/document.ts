@@ -26,6 +26,10 @@ const openApiDocument = {
       name: 'Broadcasts',
       description: 'End-to-end encrypted, signed, ciphertext-only broadcasts.',
     },
+    {
+      name: 'Messenger',
+      description: 'Token-enabled one-to-one conversations and public encryption context.',
+    },
   ],
   paths: openApiPaths,
   components: openApiComponents,

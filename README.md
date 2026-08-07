@@ -91,6 +91,10 @@ The same existing token purchase also ensures one canonical Messenger conversati
 and token owner. It does not create a separate Messenger token or entitlement. Repeating the
 purchase, or later purchasing in the reverse direction, reuses the same user-pair conversation.
 
+Authenticated clients can list their conversations, read one conversation, and fetch both
+participants’ current public signing/encryption keys from `/v1/messenger/conversations`. These
+endpoints expose no wallet address, private key, plaintext, or raw content key.
+
 Broadcast encryption is entirely client-side:
 
 1. Create a draft and receive the frozen recipient X25519 public-key snapshot plus the sender's own

@@ -122,6 +122,74 @@ const openApiComponents = {
         },
       },
     },
+    MessengerParticipant: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'username', 'avatar'],
+      properties: {
+        id: objectIdSchema,
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
+      },
+    },
+    MessengerConversation: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'otherParticipant', 'lastMessageAt', 'createdAt'],
+      properties: {
+        id: objectIdSchema,
+        otherParticipant: { $ref: '#/components/schemas/MessengerParticipant' },
+        lastMessageAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerConversationPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextCursor', 'hasMore'],
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/MessengerConversation' },
+        },
+        nextCursor: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        hasMore: { type: 'boolean' },
+      },
+    },
+    MessengerContextParticipant: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'username',
+        'avatar',
+        'keyVersion',
+        'signingPublicKey',
+        'encryptionPublicKey',
+      ],
+      properties: {
+        id: objectIdSchema,
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
+        keyVersion: { type: 'integer', minimum: 1 },
+        signingPublicKey: { type: 'string', pattern: '^[A-Za-z0-9+/]{43}=$' },
+        encryptionPublicKey: { type: 'string', pattern: '^[A-Za-z0-9+/]{43}=$' },
+      },
+    },
+    MessengerConversationContext: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['conversationId', 'viewer', 'otherParticipant'],
+      properties: {
+        conversationId: objectIdSchema,
+        viewer: { $ref: '#/components/schemas/MessengerContextParticipant' },
+        otherParticipant: { $ref: '#/components/schemas/MessengerContextParticipant' },
+      },
+    },
     AuthTokens: {
       type: 'object',
       additionalProperties: false,

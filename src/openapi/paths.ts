@@ -529,6 +529,103 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/messenger/conversations': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'List conversations belonging to the authenticated user',
+      description:
+        'Returns only canonical conversations where the authenticated user is one of the two participants. Message previews and unread counts are added in a later protocol stage.',
+      operationId: 'listMessengerConversations',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversations retrieved.', {
+          type: 'object',
+          required: ['conversations'],
+          properties: {
+            conversations: { $ref: '#/components/schemas/MessengerConversationPage' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get one conversation belonging to the authenticated user',
+      description:
+        'Returns 404 when the conversation does not exist or the authenticated user is not one of its participants.',
+      operationId: 'getMessengerConversation',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversation retrieved.', {
+          type: 'object',
+          required: ['conversation'],
+          properties: {
+            conversation: { $ref: '#/components/schemas/MessengerConversation' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}/context': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get current public encryption context for a conversation',
+      description:
+        'Returns active public signing/encryption keys for the two participants. Wallet addresses, private keys, plaintext, and content keys are never returned.',
+      operationId: 'getMessengerConversationContext',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversation encryption context retrieved.', {
+          type: 'object',
+          required: ['context'],
+          properties: {
+            context: { $ref: '#/components/schemas/MessengerConversationContext' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
   '/v1/broadcasts/feed': {
     get: {
       tags: ['Broadcasts'],

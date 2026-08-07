@@ -75,6 +75,14 @@ conversationSchema.index(
   { participantB: 1, lastMessageAt: -1, _id: -1 },
   { name: 'conversations_participant_b_activity' },
 );
+conversationSchema.index(
+  { participantA: 1, _id: -1 },
+  { name: 'conversations_participant_a_created' },
+);
+conversationSchema.index(
+  { participantB: 1, _id: -1 },
+  { name: 'conversations_participant_b_created' },
+);
 
 const Conversation = model<IConversation>('Conversation', conversationSchema);
 
