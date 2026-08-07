@@ -138,8 +138,12 @@ describe('sendMessage', () => {
     expect(Conversation.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ _id: conversationId }),
       {
-        $inc: { nextSequence: 1 },
-        $set: { lastMessageAt: expect.any(Date) },
+        $inc: { nextSequence: 1, participantBUnreadCount: 1 },
+        $set: {
+          lastMessageAt: expect.any(Date),
+          lastMessageSender: senderId,
+          lastMessageClientMessageId: requestBody.clientMessageId,
+        },
       },
       { new: false, session },
     );
