@@ -102,6 +102,32 @@ ciphertext, nonce, one wrapped content-key copy per participant, an optional rep
 sender’s Ed25519 signature. Identical retries are idempotent, while UUID reuse with changed content
 is rejected.
 
+`GET /v1/messenger/conversations/:conversationId/messages` returns newest-first encrypted history
+with sequence pagination. Each signed manifest contains both opaque wrapped-key copies for integrity
+verification, while `viewerKey` tells the client which copy its locally stored derived private key
+can open. Conversation lists are ordered by latest activity and include ciphertext-safe last-message
+metadata plus a server-maintained unread count.
+
+After actually displaying messages, the client advances its monotonic read cursor with
+`PUT /v1/messenger/conversations/:conversationId/read` and `{ "throughSequence": n }`. The server
+recalculates unread messages in the same transaction. History items expose `delivery.seenByRecipient`,
+and conversation summaries expose both participants’ read sequences, so senders can render seen
+state without revealing message content.
+
+A sender may include an optional demo bounty in the same encrypted-message request, for example
+`{ "assetCode": "USDC", "amount": "10", "durationSeconds": 3600 }`. Amount is a canonical decimal
+string, not a floating-point JSON number. The immutable terms are part of the Ed25519 message
+manifest, and the `offered` bounty record is created in the same database transaction as the
+message. If the beneficiary sends a direct reply to that exact message before `expiresAt`, the
+first valid reply atomically changes the bounty to `claimable`; the send response exposes it as
+`unlockedBounty`. The beneficiary can then call
+`POST /v1/messenger/bounties/:bountyId/claim`. Claim retries are idempotent. Offered bounties with
+no timely reply become `expired`. All bounty behavior remains demo-only: it does not move money,
+touch Stellar, reserve a balance, create escrow, or change any real balance.
+
+The exact client encryption, signing, history, read-receipt, and demo-bounty flow is documented in
+[`docs/MESSENGER_CLIENT_INTEGRATION.md`](docs/MESSENGER_CLIENT_INTEGRATION.md).
+
 Broadcast encryption is entirely client-side:
 
 1. Create a draft and receive the frozen recipient X25519 public-key snapshot plus the sender's own
