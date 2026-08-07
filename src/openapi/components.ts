@@ -110,6 +110,18 @@ const openApiComponents = {
         acquiredAt: { type: 'string', format: 'date-time' },
       },
     },
+    TokenPurchaseConversation: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'created'],
+      properties: {
+        id: objectIdSchema,
+        created: {
+          type: 'boolean',
+          description: 'True only when this token purchase created the pair conversation.',
+        },
+      },
+    },
     AuthTokens: {
       type: 'object',
       additionalProperties: false,

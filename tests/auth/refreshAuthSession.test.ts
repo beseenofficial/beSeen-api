@@ -33,14 +33,14 @@ describe('refreshAuthSession', () => {
     const rotateSpy = vi
       .spyOn(AuthSession, 'findOneAndUpdate')
       .mockReturnValue(queryResult({ _id: authSessionId, user: userId, expiresAt }) as never);
-    vi.spyOn(User, 'findOne').mockReturnValue(
-      queryResult({ _id: userId, role: 'user' }) as never,
-    );
+    vi.spyOn(User, 'findOne').mockReturnValue(queryResult({ _id: userId, role: 'user' }) as never);
 
     const result = await refreshAuthSession(REFRESH_TOKEN);
 
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
+    if (!result.ok) {
+      return;
+    }
     expect(result.auth.refreshToken).not.toBe(REFRESH_TOKEN);
     expect(result.auth.refreshTokenExpiresAt).toBe(expiresAt);
     expect(rotateSpy).toHaveBeenCalledWith(

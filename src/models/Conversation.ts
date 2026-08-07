@@ -47,7 +47,9 @@ const conversationSchema = new Schema<IConversation>(
 );
 
 conversationSchema.pre('validate', function canonicalizeParticipants() {
-  if (!this.participantA || !this.participantB) return;
+  if (!this.participantA || !this.participantB) {
+    return;
+  }
 
   if (this.participantA.equals(this.participantB)) {
     this.invalidate('participantB', 'A conversation requires two different users');

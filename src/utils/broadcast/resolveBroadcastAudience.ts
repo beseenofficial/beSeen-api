@@ -17,7 +17,9 @@ interface BroadcastAudienceMember {
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {
   const token = await getOrCreateUserToken(new Types.ObjectId(creatorId));
   const holdings = await TokenHolding.find({ token: token._id }).sort({ _id: 1 }).exec();
-  if (holdings.length === 0) return [];
+  if (holdings.length === 0) {
+    return [];
+  }
 
   const users = await User.find({
     _id: { $in: holdings.map((holding) => holding.holder), $ne: creatorId },

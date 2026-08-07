@@ -16,10 +16,14 @@ type MyTokensResult =
 
 const getMyTokens = async (userId: string): Promise<MyTokensResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
-  if (!user) return { ok: false, reason: 'account_unavailable' };
+  if (!user) {
+    return { ok: false, reason: 'account_unavailable' };
+  }
 
   const holdings = await TokenHolding.find({ holder: user._id }).sort({ _id: -1 }).exec();
-  if (holdings.length === 0) return { ok: true, tokens: [] };
+  if (holdings.length === 0) {
+    return { ok: true, tokens: [] };
+  }
 
   const tokens = await UserToken.find({ _id: { $in: holdings.map((item) => item.token) } }).exec();
   const tokenById = new Map(tokens.map((token) => [token._id.toString(), token]));
@@ -36,12 +40,14 @@ const getMyTokens = async (userId: string): Promise<MyTokensResult> => {
       const token = tokenById.get(holding.token.toString());
       const owner = token ? ownerById.get(token.owner.toString()) : undefined;
       return token && owner
-        ? [{
-            id: token._id.toString(),
-            owner: { id: owner._id.toString(), username: owner.username, avatar: owner.avatar },
-            createdAt: token.createdAt,
-            acquiredAt: holding.createdAt,
-          }]
+        ? [
+            {
+              id: token._id.toString(),
+              owner: { id: owner._id.toString(), username: owner.username, avatar: owner.avatar },
+              createdAt: token.createdAt,
+              acquiredAt: holding.createdAt,
+            },
+          ]
         : [];
     }),
   };

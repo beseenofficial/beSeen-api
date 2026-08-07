@@ -2,12 +2,13 @@ import User from '../../models/User';
 import type { PublicUserProfile } from '../../types/auth';
 
 type GetPublicProfileResult =
-  | { ok: true; user: PublicUserProfile }
-  | { ok: false; reason: 'user_not_found' };
+  { ok: true; user: PublicUserProfile } | { ok: false; reason: 'user_not_found' };
 
 const getPublicProfile = async (username: string): Promise<GetPublicProfileResult> => {
   const user = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
-  if (!user) return { ok: false, reason: 'user_not_found' };
+  if (!user) {
+    return { ok: false, reason: 'user_not_found' };
+  }
 
   return {
     ok: true,

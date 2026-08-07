@@ -400,20 +400,26 @@ const openApiPaths = {
       tags: ['Tokens'],
       summary: 'Acquire a user’s token in demo mode',
       description:
-        'No payment or blockchain transaction occurs. Repeating the request is safe and does not create duplicate holdings.',
+        'No payment or blockchain transaction occurs. The existing token holding also grants Broadcast access and ensures exactly one shared Messenger conversation for the buyer/owner pair. Repeating or reverse purchases do not create duplicate conversations.',
       operationId: 'purchaseUserToken',
       security: [{ bearerAuth: [] }],
       parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
       responses: {
         '201': jsonResponse('Token purchased.', {
           type: 'object',
-          required: ['holding'],
-          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+          required: ['holding', 'conversation'],
+          properties: {
+            holding: { $ref: '#/components/schemas/TokenHolding' },
+            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+          },
         }),
         '200': jsonResponse('Token already owned.', {
           type: 'object',
-          required: ['holding'],
-          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+          required: ['holding', 'conversation'],
+          properties: {
+            holding: { $ref: '#/components/schemas/TokenHolding' },
+            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+          },
         }),
         '400': validationError,
         '401': unauthorized,

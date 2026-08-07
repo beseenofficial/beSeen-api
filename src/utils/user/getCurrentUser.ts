@@ -2,12 +2,13 @@ import User from '../../models/User';
 import type { AuthenticatedUser } from '../../types/auth';
 
 type GetCurrentUserResult =
-  | { ok: true; user: AuthenticatedUser }
-  | { ok: false; reason: 'account_unavailable' };
+  { ok: true; user: AuthenticatedUser } | { ok: false; reason: 'account_unavailable' };
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
-  if (!user) return { ok: false, reason: 'account_unavailable' };
+  if (!user) {
+    return { ok: false, reason: 'account_unavailable' };
+  }
 
   return {
     ok: true,

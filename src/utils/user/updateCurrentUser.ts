@@ -30,11 +30,15 @@ const updateCurrentUser = async (
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null })
     .select('+avatarObjectKey')
     .exec();
-  if (!user) return { ok: false, reason: 'account_unavailable' };
+  if (!user) {
+    return { ok: false, reason: 'account_unavailable' };
+  }
 
   if (body.username && body.username !== user.username) {
     const owner = await User.exists({ username: body.username, _id: { $ne: user._id } }).exec();
-    if (owner) return { ok: false, reason: 'username_taken' };
+    if (owner) {
+      return { ok: false, reason: 'username_taken' };
+    }
   }
 
   let uploadedAvatar: StoredAvatar | null = null;
@@ -45,7 +49,9 @@ const updateCurrentUser = async (
     try {
       processedAvatar = await processAvatar(avatarFile.buffer);
     } catch (error: unknown) {
-      if (error instanceof InvalidAvatarError) return { ok: false, reason: 'invalid_avatar' };
+      if (error instanceof InvalidAvatarError) {
+        return { ok: false, reason: 'invalid_avatar' };
+      }
       throw error;
     }
 
@@ -57,7 +63,9 @@ const updateCurrentUser = async (
     }
   }
 
-  if (body.username !== undefined) user.username = body.username;
+  if (body.username !== undefined) {
+    user.username = body.username;
+  }
   if (uploadedAvatar) {
     user.avatar = uploadedAvatar.publicUrl;
     user.avatarObjectKey = uploadedAvatar.objectKey;
@@ -75,7 +83,9 @@ const updateCurrentUser = async (
         'Failed to clean up an uncommitted profile avatar',
       );
     }
-    if (isUsernameDuplicateError(error)) return { ok: false, reason: 'username_taken' };
+    if (isUsernameDuplicateError(error)) {
+      return { ok: false, reason: 'username_taken' };
+    }
     throw error;
   }
 

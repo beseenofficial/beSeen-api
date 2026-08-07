@@ -13,7 +13,9 @@ const getOrCreateUserToken = async (
     { new: true, upsert: true, setDefaultsOnInsert: true, ...(session ? { session } : {}) },
   ).exec();
 
-  if (!token) throw new Error('User token could not be created');
+  if (!token) {
+    throw new Error('User token could not be created');
+  }
   return token;
 };
 

@@ -39,7 +39,9 @@ const verifyBluxWallet = async (walletAddress: string): Promise<VerifyBluxWallet
       signal: controller.signal,
     });
 
-    if (!response.ok) return { ok: false, reason: 'unavailable' };
+    if (!response.ok) {
+      return { ok: false, reason: 'unavailable' };
+    }
 
     const body = (await response.json()) as BluxVerifyWalletResponse;
     if (typeof body.result?.exists !== 'boolean') {

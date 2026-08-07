@@ -8,7 +8,9 @@ type GetFollowerCountResult =
 
 const getFollowerCount = async (username: string): Promise<GetFollowerCountResult> => {
   const user = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
-  if (!user) return { ok: false, reason: 'user_not_found' };
+  if (!user) {
+    return { ok: false, reason: 'user_not_found' };
+  }
 
   const token = await getOrCreateUserToken(user._id);
   const count = await TokenHolding.countDocuments({ token: token._id }).exec();
