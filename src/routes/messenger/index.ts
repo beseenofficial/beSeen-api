@@ -4,6 +4,7 @@ import authenticate from '../../middleware/authenticate';
 import getConversationRoute from './getConversation';
 import getConversationContextRoute from './getConversationContext';
 import listConversationsRoute from './listConversations';
+import sendMessageRoute from './sendMessage';
 
 const messengerRoutes = Router();
 
@@ -14,5 +15,6 @@ messengerRoutes.get(
   getConversationContextRoute,
 );
 messengerRoutes.get('/conversations/:conversationId', authenticate, getConversationRoute);
+messengerRoutes.post('/conversations/:conversationId/messages', authenticate, sendMessageRoute);
 
 export default messengerRoutes;

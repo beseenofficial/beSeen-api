@@ -1,4 +1,5 @@
 import type { ConversationAccessFailureReason } from '../../utils/messenger/getConversationAccess';
+import type { SendMessageFailureReason } from '../../utils/messenger/sendMessage';
 
 type MessengerConversationErrorReason = ConversationAccessFailureReason | 'active_keys_not_found';
 
@@ -28,5 +29,27 @@ const messengerConversationErrors: Record<
   },
 };
 
-export { messengerConversationErrors };
+const messengerSendErrors: Record<
+  SendMessageFailureReason,
+  { statusCode: number; code: string; message: string }
+> = {
+  ...messengerConversationErrors,
+  reply_not_found: {
+    statusCode: 409,
+    code: 'REPLY_MESSAGE_NOT_FOUND',
+    message: 'The reply target does not belong to this conversation',
+  },
+  invalid_signature: {
+    statusCode: 401,
+    code: 'INVALID_MESSAGE_SIGNATURE',
+    message: 'The encrypted message signature is invalid',
+  },
+  message_conflict: {
+    statusCode: 409,
+    code: 'MESSAGE_ID_CONFLICT',
+    message: 'This client message ID was already used with different encrypted content',
+  },
+};
+
+export { messengerConversationErrors, messengerSendErrors };
 export type { MessengerConversationErrorReason };
