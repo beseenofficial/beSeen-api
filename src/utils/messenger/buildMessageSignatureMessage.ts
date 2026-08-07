@@ -20,10 +20,17 @@ interface MessageSignatureMessageInput {
   senderEncryptedMessageKey: string;
   recipientEncryptedMessageKey: string;
   replyToMessageId: string | null;
+  bounty?: {
+    assetCode: string;
+    amount: string;
+    durationSeconds: number;
+  } | null;
 }
 
-const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): string =>
-  [
+const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): string => {
+  const bounty = input.bounty ?? null;
+
+  return [
     'BeSeen Encrypted Direct Message',
     `Signature Version: ${MESSENGER_SIGNATURE_VERSION}`,
     `Encryption Version: ${input.encryptionVersion}`,
@@ -43,7 +50,11 @@ const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): stri
     `Sender Encrypted Message Key: ${input.senderEncryptedMessageKey}`,
     `Recipient Encrypted Message Key: ${input.recipientEncryptedMessageKey}`,
     `Reply To Message ID: ${input.replyToMessageId?.toLowerCase() ?? 'none'}`,
+    `Bounty Asset Code: ${bounty?.assetCode ?? 'none'}`,
+    `Bounty Amount: ${bounty?.amount ?? 'none'}`,
+    `Bounty Duration Seconds: ${bounty?.durationSeconds ?? 'none'}`,
   ].join('\n');
+};
 
 export default buildMessageSignatureMessage;
 export type { MessageSignatureMessageInput };

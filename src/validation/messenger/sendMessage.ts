@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 import {
+  MESSENGER_BOUNTY_AMOUNT_PATTERN,
+  MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
+  MESSENGER_BOUNTY_MAX_DURATION_SECONDS,
+  MESSENGER_BOUNTY_MIN_DURATION_SECONDS,
   MESSENGER_CONTENT_NONCE_BYTES,
   MESSENGER_MAX_CIPHERTEXT_BYTES,
   MESSENGER_MIN_CIPHERTEXT_BYTES,
@@ -16,6 +20,21 @@ const objectIdSchema = z
   .trim()
   .regex(/^[a-f\d]{24}$/i, 'Reply message ID must be a MongoDB ObjectId')
   .transform((value) => value.toLowerCase());
+
+const bountyTermsSchema = z
+  .object({
+    assetCode: z.string().regex(MESSENGER_BOUNTY_ASSET_CODE_PATTERN),
+    amount: z
+      .string()
+      .regex(MESSENGER_BOUNTY_AMOUNT_PATTERN)
+      .refine((value) => Number(value) > 0, 'Bounty amount must be greater than zero'),
+    durationSeconds: z
+      .number()
+      .int()
+      .min(MESSENGER_BOUNTY_MIN_DURATION_SECONDS)
+      .max(MESSENGER_BOUNTY_MAX_DURATION_SECONDS),
+  })
+  .strict();
 
 const sendMessageBodySchema = z
   .object({
@@ -41,6 +60,7 @@ const sendMessageBodySchema = z
       'Recipient encrypted message key must be a canonical base64 80-byte sealed-box ciphertext',
     ),
     replyToMessageId: objectIdSchema.nullish().transform((value) => value ?? null),
+    bounty: bountyTermsSchema.nullish().transform((value) => value ?? null),
     signature: canonicalBase64Bytes(
       64,
       64,

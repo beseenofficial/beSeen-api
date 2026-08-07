@@ -4,6 +4,8 @@ import {
 } from '../../constant/messenger';
 import Message from '../../models/Message';
 import type { MessageDocument } from '../../models/Message';
+import MessageBounty from '../../models/MessageBounty';
+import type { MessageBountyDocument } from '../../models/MessageBounty';
 import type { MessageHistoryQuery } from '../../validation/messenger/messageHistory';
 import getConversationAccess from './getConversationAccess';
 import type { ConversationAccessFailureReason } from './getConversationAccess';
@@ -30,6 +32,11 @@ interface MessageHistoryItem {
     senderEncryptedMessageKey: string;
     recipientEncryptedMessageKey: string;
     replyToMessageId: string | null;
+    bountyTerms: {
+      assetCode: string;
+      amount: string;
+      durationSeconds: number;
+    } | null;
   };
   viewerKey: {
     source: 'sender' | 'recipient';
@@ -45,6 +52,17 @@ interface MessageHistoryItem {
   delivery: {
     seenByRecipient: boolean;
   };
+  bounty: {
+    id: string;
+    assetCode: string;
+    amount: string;
+    durationSeconds: number;
+    status: string;
+    expiresAt: Date;
+    replyMessageId: string | null;
+    claimableAt: Date | null;
+    claimedAt: Date | null;
+  } | null;
   createdAt: Date;
 }
 
@@ -62,6 +80,7 @@ const serializeMessageHistoryItem = (
   message: MessageDocument,
   viewerId: string,
   recipientReadSequence: number,
+  bounty: MessageBountyDocument | null,
 ): MessageHistoryItem => {
   const viewerIsSender = message.sender.toString() === viewerId;
 
@@ -87,6 +106,13 @@ const serializeMessageHistoryItem = (
       senderEncryptedMessageKey: message.senderEncryptedMessageKey,
       recipientEncryptedMessageKey: message.recipientEncryptedMessageKey,
       replyToMessageId: message.replyToMessage?.toString() ?? null,
+      bountyTerms: message.bountyAssetCode
+        ? {
+            assetCode: message.bountyAssetCode,
+            amount: message.bountyAmount!,
+            durationSeconds: message.bountyDurationSeconds!,
+          }
+        : null,
     },
     viewerKey: viewerIsSender
       ? {
@@ -109,6 +135,19 @@ const serializeMessageHistoryItem = (
     delivery: {
       seenByRecipient: recipientReadSequence >= message.sequence,
     },
+    bounty: bounty
+      ? {
+          id: bounty._id.toString(),
+          assetCode: bounty.assetCode,
+          amount: bounty.amount,
+          durationSeconds: bounty.durationSeconds,
+          status: bounty.status,
+          expiresAt: bounty.expiresAt,
+          replyMessageId: bounty.replyMessage?.toString() ?? null,
+          claimableAt: bounty.claimableAt,
+          claimedAt: bounty.claimedAt,
+        }
+      : null,
     createdAt: message.createdAt,
   };
 };
@@ -136,6 +175,13 @@ const getMessageHistory = async (
     .exec();
   const hasMore = rows.length > query.limit;
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
+  const bounties =
+    pageRows.length > 0
+      ? await MessageBounty.find({
+          message: { $in: pageRows.map((message) => message._id) },
+        }).exec()
+      : [];
+  const bountiesByMessage = new Map(bounties.map((bounty) => [bounty.message.toString(), bounty]));
   const participantAReadSequence = access.conversation.participantAReadSequence ?? 0;
   const participantBReadSequence = access.conversation.participantBReadSequence ?? 0;
   const items = pageRows.map((message) => {
@@ -143,7 +189,12 @@ const getMessageHistory = async (
       ? participantAReadSequence
       : participantBReadSequence;
 
-    return serializeMessageHistoryItem(message, userId, recipientReadSequence);
+    return serializeMessageHistoryItem(
+      message,
+      userId,
+      recipientReadSequence,
+      bountiesByMessage.get(message._id.toString()) ?? null,
+    );
   });
   const oldestItem = items.at(-1);
 

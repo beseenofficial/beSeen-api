@@ -675,7 +675,7 @@ const openApiPaths = {
       tags: ['Messenger'],
       summary: 'Send one signed end-to-end encrypted direct message',
       description:
-        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. The client sends only ciphertext, two wrapped content-key copies, an optional reply target, a UUID, and its Ed25519 signature. Plaintext and private keys are rejected.',
+        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. The client sends ciphertext, two wrapped content-key copies, an optional reply target, an optional demo bounty, a UUID, and its Ed25519 signature. Bounty terms are part of the signed manifest and are created atomically with the message. No real payment occurs. Plaintext and private keys are rejected.',
       operationId: 'sendMessengerMessage',
       security: [{ bearerAuth: [] }],
       parameters: [

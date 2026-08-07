@@ -58,6 +58,14 @@ const sendMessageRoute: RequestHandler = async (req, res) => {
     result: {
       message: {
         ...result.message,
+        bounty: result.message.bounty
+          ? {
+              ...result.message.bounty,
+              expiresAt: result.message.bounty.expiresAt.toISOString(),
+              claimableAt: result.message.bounty.claimableAt?.toISOString() ?? null,
+              claimedAt: result.message.bounty.claimedAt?.toISOString() ?? null,
+            }
+          : null,
         createdAt: result.message.createdAt.toISOString(),
       },
     },

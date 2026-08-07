@@ -60,6 +60,14 @@ const getMessageHistoryRoute: RequestHandler = async (req, res) => {
         ...result.history,
         items: result.history.items.map((item) => ({
           ...item,
+          bounty: item.bounty
+            ? {
+                ...item.bounty,
+                expiresAt: item.bounty.expiresAt.toISOString(),
+                claimableAt: item.bounty.claimableAt?.toISOString() ?? null,
+                claimedAt: item.bounty.claimedAt?.toISOString() ?? null,
+              }
+            : null,
           createdAt: item.createdAt.toISOString(),
         })),
       },

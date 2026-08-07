@@ -270,6 +270,11 @@ const openApiComponents = {
           oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
           description: 'Optional message in this same conversation being replied to.',
         },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
+          description:
+            'Optional demo bounty terms. No payment, balance, escrow, or blockchain transfer occurs.',
+        },
         signature: {
           type: 'string',
           format: 'byte',
@@ -289,6 +294,7 @@ const openApiComponents = {
         'senderId',
         'recipientId',
         'replyToMessageId',
+        'bounty',
         'createdAt',
       ],
       properties: {
@@ -300,6 +306,9 @@ const openApiComponents = {
         recipientId: objectIdSchema,
         replyToMessageId: {
           oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
         },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -326,6 +335,7 @@ const openApiComponents = {
         'senderEncryptedMessageKey',
         'recipientEncryptedMessageKey',
         'replyToMessageId',
+        'bountyTerms',
       ],
       properties: {
         signatureVersion: { type: 'integer', const: 1 },
@@ -350,6 +360,10 @@ const openApiComponents = {
         recipientEncryptedMessageKey: { type: 'string', format: 'byte' },
         replyToMessageId: {
           oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        bountyTerms: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
+          description: 'Immutable bounty terms included in the sender signature manifest.',
         },
       },
     },
@@ -381,7 +395,16 @@ const openApiComponents = {
     MessengerMessageHistoryItem: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'sequence', 'manifest', 'viewerKey', 'integrity', 'delivery', 'createdAt'],
+      required: [
+        'id',
+        'sequence',
+        'manifest',
+        'viewerKey',
+        'integrity',
+        'delivery',
+        'bounty',
+        'createdAt',
+      ],
       properties: {
         id: objectIdSchema,
         sequence: { type: 'integer', minimum: 1 },
@@ -399,6 +422,9 @@ const openApiComponents = {
                 'True when the recipient read cursor has reached or passed this message sequence.',
             },
           },
+        },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
         },
         createdAt: { type: 'string', format: 'date-time' },
       },
@@ -427,6 +453,69 @@ const openApiComponents = {
         conversationId: objectIdSchema,
         readSequence: { type: 'integer', minimum: 1 },
         unreadCount: { type: 'integer', minimum: 0 },
+      },
+    },
+    MessengerBountyTerms: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['assetCode', 'amount', 'durationSeconds'],
+      properties: {
+        assetCode: {
+          type: 'string',
+          pattern: '^[A-Z0-9]{1,12}$',
+          example: 'USDC',
+        },
+        amount: {
+          type: 'string',
+          pattern: '^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,7})?$',
+          description:
+            'Positive canonical decimal string; never send a JSON floating-point number.',
+          example: '10',
+        },
+        durationSeconds: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 31536000,
+          example: 3600,
+        },
+      },
+    },
+    MessengerBounty: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'assetCode',
+        'amount',
+        'durationSeconds',
+        'status',
+        'expiresAt',
+        'replyMessageId',
+        'claimableAt',
+        'claimedAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        assetCode: { type: 'string', pattern: '^[A-Z0-9]{1,12}$' },
+        amount: {
+          type: 'string',
+          pattern: '^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,7})?$',
+        },
+        durationSeconds: { type: 'integer', minimum: 1, maximum: 31536000 },
+        status: {
+          type: 'string',
+          enum: ['offered', 'claimable', 'claimed', 'expired'],
+        },
+        expiresAt: { type: 'string', format: 'date-time' },
+        replyMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        claimableAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
+        claimedAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
       },
     },
     AuthTokens: {

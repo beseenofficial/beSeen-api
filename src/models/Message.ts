@@ -2,6 +2,10 @@ import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
 import {
+  MESSENGER_BOUNTY_AMOUNT_PATTERN,
+  MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
+  MESSENGER_BOUNTY_MAX_DURATION_SECONDS,
+  MESSENGER_BOUNTY_MIN_DURATION_SECONDS,
   MESSENGER_CONTENT_NONCE_BYTES,
   MESSENGER_ENCRYPTION_VERSION,
   MESSENGER_INITIAL_SEQUENCE,
@@ -31,6 +35,9 @@ interface IMessage {
   senderEncryptedMessageKey: string;
   recipientEncryptedMessageKey: string;
   replyToMessage: Types.ObjectId | null;
+  bountyAssetCode: string | null;
+  bountyAmount: string | null;
+  bountyDurationSeconds: number | null;
   signature: string;
   createdAt: Date;
   updatedAt: Date;
@@ -188,6 +195,33 @@ const messageSchema = new Schema<IMessage>(
       default: null,
       immutable: true,
     },
+    bountyAssetCode: {
+      type: String,
+      default: null,
+      immutable: true,
+      match: [MESSENGER_BOUNTY_ASSET_CODE_PATTERN, 'Bounty asset code is invalid'],
+    },
+    bountyAmount: {
+      type: String,
+      default: null,
+      immutable: true,
+      match: [MESSENGER_BOUNTY_AMOUNT_PATTERN, 'Bounty amount must be a canonical decimal string'],
+      validate: {
+        validator: (value: string | null) => value === null || Number(value) > 0,
+        message: 'Bounty amount must be greater than zero',
+      },
+    },
+    bountyDurationSeconds: {
+      type: Number,
+      default: null,
+      immutable: true,
+      min: MESSENGER_BOUNTY_MIN_DURATION_SECONDS,
+      max: MESSENGER_BOUNTY_MAX_DURATION_SECONDS,
+      validate: {
+        validator: (value: number | null) => value === null || Number.isSafeInteger(value),
+        message: 'Bounty duration must be a safe integer',
+      },
+    },
     signature: {
       type: String,
       required: true,
@@ -216,6 +250,13 @@ messageSchema.pre('validate', function validateParticipants() {
 
   if (this.sender.equals(this.recipient)) {
     this.invalidate('recipient', 'A message requires two different users');
+  }
+
+  const bountyTerms = [this.bountyAssetCode, this.bountyAmount, this.bountyDurationSeconds];
+  const suppliedBountyTerms = bountyTerms.filter((value) => value !== null && value !== undefined);
+
+  if (suppliedBountyTerms.length !== 0 && suppliedBountyTerms.length !== bountyTerms.length) {
+    this.invalidate('bountyAssetCode', 'All bounty terms must be supplied together');
   }
 });
 
