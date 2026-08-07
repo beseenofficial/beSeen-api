@@ -7,10 +7,7 @@ import serializeMessageBounty from './serializeMessageBounty';
 import type { SerializedMessageBounty } from './serializeMessageBounty';
 
 type ClaimMessageBountyFailureReason =
-  | 'account_unavailable'
-  | 'bounty_not_found'
-  | 'bounty_not_claimable'
-  | 'bounty_expired';
+  'account_unavailable' | 'bounty_not_found' | 'bounty_not_claimable' | 'bounty_expired';
 
 type ClaimMessageBountyResult =
   | { ok: true; bounty: SerializedMessageBounty; claimedNow: boolean }

@@ -1,0 +1,15 @@
+import { rateLimit } from 'express-rate-limit';
+
+const messengerMutationRateLimit = rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    message: 'Too many Messenger write requests. Please try again shortly.',
+    result: { code: 'RATE_LIMIT_EXCEEDED' },
+  },
+});
+
+export default messengerMutationRateLimit;

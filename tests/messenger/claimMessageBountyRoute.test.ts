@@ -48,10 +48,7 @@ describe('POST /v1/messenger/bounties/:bountyId/claim', () => {
       claimedNow: true,
       bounty: { status: 'claimed', claimedAt: timestamp.toISOString() },
     });
-    expect(claimMessageBountyMock).toHaveBeenCalledWith(
-      userId.toString(),
-      bountyId.toString(),
-    );
+    expect(claimMessageBountyMock).toHaveBeenCalledWith(userId.toString(), bountyId.toString());
   });
 
   it('maps a bounty that was never unlocked to a stable conflict', async () => {
