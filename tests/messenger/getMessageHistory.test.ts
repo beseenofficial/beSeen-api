@@ -5,12 +5,15 @@ import Conversation from '../../src/models/Conversation';
 import Message from '../../src/models/Message';
 import MessageBounty from '../../src/models/MessageBounty';
 import User from '../../src/models/User';
+import expireOfferedMessageBounties from '../../src/utils/messenger/expireOfferedMessageBounties';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 import getMessageHistory from '../../src/utils/messenger/getMessageHistory';
 
 vi.mock('../../src/utils/messenger/getConversationAccess', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/messenger/expireOfferedMessageBounties', () => ({ default: vi.fn() }));
 
 const getConversationAccessMock = vi.mocked(getConversationAccess);
+const expireOfferedMessageBountiesMock = vi.mocked(expireOfferedMessageBounties);
 const senderId = new Types.ObjectId('000000000000000000000001');
 const recipientId = new Types.ObjectId('000000000000000000000002');
 const conversationId = new Types.ObjectId('000000000000000000000003');
@@ -49,6 +52,7 @@ describe('getMessageHistory', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     getConversationAccessMock.mockReset();
+    expireOfferedMessageBountiesMock.mockReset();
   });
 
   it('returns newest-first opaque envelopes with only the viewer decryptable key selected', async () => {
