@@ -30,6 +30,7 @@ describe('message manifest canonicalization', () => {
     expect(message).toContain('Content Suite: XCHACHA20-POLY1305-IETF');
     expect(message).toContain('Conversation ID: 507f1f77bcf86cd799439011');
     expect(message).toContain('Reply To Message ID: none');
+    expect(message).toContain('Bounty Asset Code: none');
     expect(message).toBe(buildMessageSignatureMessage(manifestInput()));
   });
 
@@ -52,6 +53,7 @@ describe('message manifest canonicalization', () => {
       { ...input, senderEncryptedMessageKey: `${input.senderEncryptedMessageKey}changed` },
       { ...input, recipientEncryptedMessageKey: `${input.recipientEncryptedMessageKey}changed` },
       { ...input, replyToMessageId: '507f1f77bcf86cd799439014' },
+      { ...input, bounty: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 } },
     ];
 
     for (const mutation of mutations) {

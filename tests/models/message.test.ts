@@ -61,6 +61,20 @@ describe('Message model', () => {
     );
   });
 
+  it('requires complete valid bounty terms when a signed message carries a bounty', async () => {
+    await expect(
+      new Message({
+        ...messageInput(),
+        bountyAssetCode: 'USDC',
+        bountyAmount: '10',
+        bountyDurationSeconds: 3_600,
+      }).validate(),
+    ).resolves.toBeUndefined();
+    await expect(
+      new Message({ ...messageInput(), bountyAssetCode: 'USDC' }).validate(),
+    ).rejects.toThrow('All bounty terms must be supplied together');
+  });
+
   it('throws instead of storing plaintext, private keys, or raw content keys', () => {
     expect(() => new Message({ ...messageInput(), plaintext: 'secret' })).toThrow();
     expect(() => new Message({ ...messageInput(), privateKey: 'secret' })).toThrow();

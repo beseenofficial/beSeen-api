@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Conversation from '../../src/models/Conversation';
 import Message from '../../src/models/Message';
+import MessageBounty from '../../src/models/MessageBounty';
 import User from '../../src/models/User';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 import getMessageHistory from '../../src/utils/messenger/getMessageHistory';
@@ -20,6 +21,7 @@ const listResult = (value: unknown) => ({
   limit: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
+const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 const createMessage = (sequence: number, sender: Types.ObjectId, recipient: Types.ObjectId) =>
   new Message({
@@ -68,8 +70,21 @@ describe('getMessageHistory', () => {
       participantBReadSequence: 2,
     });
     const sent = createMessage(3, senderId, recipientId);
+    sent.bountyAssetCode = 'USDC';
+    sent.bountyAmount = '10';
+    sent.bountyDurationSeconds = 3_600;
     const received = createMessage(2, recipientId, senderId);
     const extra = createMessage(1, senderId, recipientId);
+    const bounty = new MessageBounty({
+      message: sent._id,
+      conversation: conversationId,
+      sponsor: senderId,
+      beneficiary: recipientId,
+      assetCode: 'USDC',
+      amount: '10',
+      durationSeconds: 3_600,
+      expiresAt: new Date('2026-08-07T13:00:00.000Z'),
+    });
     getConversationAccessMock.mockResolvedValue({
       ok: true,
       conversation,
@@ -77,6 +92,7 @@ describe('getMessageHistory', () => {
       otherParticipant,
     });
     vi.spyOn(Message, 'find').mockReturnValue(listResult([sent, received, extra]) as never);
+    vi.spyOn(MessageBounty, 'find').mockReturnValue(queryResult([bounty]) as never);
 
     const result = await getMessageHistory(senderId.toString(), conversationId.toString(), {
       limit: 2,
@@ -95,6 +111,14 @@ describe('getMessageHistory', () => {
               encryptedMessageKey: sent.senderEncryptedMessageKey,
             },
             delivery: { seenByRecipient: false },
+            manifest: {
+              bountyTerms: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 },
+            },
+            bounty: {
+              assetCode: 'USDC',
+              amount: '10',
+              status: 'offered',
+            },
           },
           {
             sequence: 2,

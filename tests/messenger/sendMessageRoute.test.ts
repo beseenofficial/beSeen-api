@@ -45,6 +45,7 @@ describe('POST /v1/messenger/conversations/:conversationId/messages', () => {
         senderId: userId.toString(),
         recipientId: recipientId.toString(),
         replyToMessageId: null,
+        bounty: null,
         createdAt: new Date('2026-08-07T12:00:00.000Z'),
       },
     });
@@ -60,11 +61,10 @@ describe('POST /v1/messenger/conversations/:conversationId/messages', () => {
       sequence: 1,
       createdAt: '2026-08-07T12:00:00.000Z',
     });
-    expect(sendMessageMock).toHaveBeenCalledWith(
-      userId.toString(),
-      conversationId.toString(),
-      requestBody,
-    );
+    expect(sendMessageMock).toHaveBeenCalledWith(userId.toString(), conversationId.toString(), {
+      ...requestBody,
+      bounty: null,
+    });
   });
 
   it('rejects plaintext, private keys, raw content keys, and server-owned identity fields', async () => {
