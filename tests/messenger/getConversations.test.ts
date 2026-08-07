@@ -43,6 +43,8 @@ describe('getConversations', () => {
     firstConversation.lastMessageSender = firstOther._id;
     firstConversation.lastMessageClientMessageId = '2f2b1762-f0f5-4b1b-8acd-70afcf043365';
     firstConversation.nextSequence = 4;
+    firstConversation.participantAReadSequence = 1;
+    firstConversation.participantBReadSequence = 3;
     if (firstConversation.participantA.equals(viewer._id)) {
       firstConversation.participantAUnreadCount = 2;
     } else {
@@ -70,6 +72,12 @@ describe('getConversations', () => {
             id: firstConversation._id.toString(),
             otherParticipant: { username: 'first_user' },
             unreadCount: 2,
+            readState: expect.objectContaining({
+              viewerReadSequence: firstConversation.participantA.equals(viewer._id) ? 1 : 3,
+              otherParticipantReadSequence: firstConversation.participantA.equals(viewer._id)
+                ? 3
+                : 1,
+            }),
             lastMessage: {
               sequence: 3,
               senderId: firstOther._id.toString(),

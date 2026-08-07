@@ -64,6 +64,8 @@ describe('getMessageHistory', () => {
       _id: conversationId,
       participantA: senderId,
       participantB: recipientId,
+      participantAReadSequence: 2,
+      participantBReadSequence: 2,
     });
     const sent = createMessage(3, senderId, recipientId);
     const received = createMessage(2, recipientId, senderId);
@@ -92,6 +94,7 @@ describe('getMessageHistory', () => {
               source: 'sender',
               encryptedMessageKey: sent.senderEncryptedMessageKey,
             },
+            delivery: { seenByRecipient: false },
           },
           {
             sequence: 2,
@@ -99,6 +102,7 @@ describe('getMessageHistory', () => {
               source: 'recipient',
               encryptedMessageKey: received.recipientEncryptedMessageKey,
             },
+            delivery: { seenByRecipient: true },
           },
         ],
       },

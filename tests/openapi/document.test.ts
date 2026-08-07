@@ -29,6 +29,7 @@ describe('OpenAPI contract', () => {
         '/v1/messenger/conversations/{conversationId}',
         '/v1/messenger/conversations/{conversationId}/context',
         '/v1/messenger/conversations/{conversationId}/messages',
+        '/v1/messenger/conversations/{conversationId}/read',
         '/v1/broadcasts/feed',
         '/v1/broadcasts/drafts',
         '/v1/broadcasts/drafts/{draftId}/recipients',
