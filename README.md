@@ -95,6 +95,13 @@ Authenticated clients can list their conversations, read one conversation, and f
 participants’ current public signing/encryption keys from `/v1/messenger/conversations`. These
 endpoints expose no wallet address, private key, plaintext, or raw content key.
 
+Clients send direct messages with
+`POST /v1/messenger/conversations/:conversationId/messages`. The server derives sender, recipient,
+key snapshots, and protocol versions from authenticated state; the request contains only a UUID,
+ciphertext, nonce, one wrapped content-key copy per participant, an optional reply ID, and the
+sender’s Ed25519 signature. Identical retries are idempotent, while UUID reuse with changed content
+is rejected.
+
 Broadcast encryption is entirely client-side:
 
 1. Create a draft and receive the frozen recipient X25519 public-key snapshot plus the sender's own

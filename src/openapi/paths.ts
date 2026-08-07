@@ -626,6 +626,48 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/messenger/conversations/{conversationId}/messages': {
+    post: {
+      tags: ['Messenger'],
+      summary: 'Send one signed end-to-end encrypted direct message',
+      description:
+        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. The client sends only ciphertext, two wrapped content-key copies, an optional reply target, a UUID, and its Ed25519 signature. Plaintext and private keys are rejected.',
+      operationId: 'sendMessengerMessage',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/MessengerSendMessageRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': jsonResponse('An identical encrypted message retry was already stored.', {
+          type: 'object',
+          required: ['message'],
+          properties: { message: { $ref: '#/components/schemas/MessengerSentMessage' } },
+        }),
+        '201': jsonResponse('Encrypted message sent.', {
+          type: 'object',
+          required: ['message'],
+          properties: { message: { $ref: '#/components/schemas/MessengerSentMessage' } },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
   '/v1/broadcasts/feed': {
     get: {
       tags: ['Broadcasts'],

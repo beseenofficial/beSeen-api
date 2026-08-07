@@ -190,6 +190,83 @@ const openApiComponents = {
         otherParticipant: { $ref: '#/components/schemas/MessengerContextParticipant' },
       },
     },
+    MessengerSendMessageRequest: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'clientMessageId',
+        'contentCiphertext',
+        'contentNonce',
+        'senderEncryptedMessageKey',
+        'recipientEncryptedMessageKey',
+        'signature',
+      ],
+      properties: {
+        clientMessageId: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Client-generated idempotency UUID. Reuse it only for an identical retry.',
+        },
+        contentCiphertext: {
+          type: 'string',
+          format: 'byte',
+          description: 'Client-side XChaCha20-Poly1305 ciphertext. Plaintext is never accepted.',
+        },
+        contentNonce: {
+          type: 'string',
+          format: 'byte',
+          description: 'Canonical base64 24-byte XChaCha20 nonce.',
+        },
+        senderEncryptedMessageKey: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 80-byte sealed-box ciphertext of the content key for the sender.',
+        },
+        recipientEncryptedMessageKey: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 80-byte sealed-box ciphertext of the same content key for the recipient.',
+        },
+        replyToMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+          description: 'Optional message in this same conversation being replied to.',
+        },
+        signature: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 Ed25519 signature over the documented direct-message manifest.',
+        },
+      },
+    },
+    MessengerSentMessage: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'conversationId',
+        'sequence',
+        'clientMessageId',
+        'senderId',
+        'recipientId',
+        'replyToMessageId',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        conversationId: objectIdSchema,
+        sequence: { type: 'integer', minimum: 1 },
+        clientMessageId: { type: 'string', format: 'uuid' },
+        senderId: objectIdSchema,
+        recipientId: objectIdSchema,
+        replyToMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
     AuthTokens: {
       type: 'object',
       additionalProperties: false,
