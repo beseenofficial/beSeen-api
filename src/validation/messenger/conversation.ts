@@ -4,6 +4,7 @@ import {
   MESSENGER_CONVERSATION_LIST_DEFAULT_LIMIT,
   MESSENGER_CONVERSATION_LIST_MAX_LIMIT,
 } from '../../constant/messenger';
+import { decodeConversationCursor } from '../../utils/messenger/conversationCursor';
 
 const objectIdSchema = z
   .string()
@@ -19,7 +20,22 @@ const conversationParamsSchema = z
 
 const conversationListQuerySchema = z
   .object({
-    cursor: objectIdSchema.optional(),
+    cursor: z
+      .string()
+      .trim()
+      .min(1)
+      .max(256)
+      .transform((value, context) => {
+        const cursor = decodeConversationCursor(value);
+
+        if (!cursor) {
+          context.addIssue({ code: 'custom', message: 'Cursor is invalid' });
+          return z.NEVER;
+        }
+
+        return cursor;
+      })
+      .optional(),
     limit: z.coerce
       .number()
       .int()

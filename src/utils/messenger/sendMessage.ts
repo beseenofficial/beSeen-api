@@ -194,14 +194,21 @@ const sendMessageInTransaction = async (
   }
 
   const createdAt = new Date();
+  const recipientUnreadField = conversation.participantA.equals(recipient._id)
+    ? 'participantAUnreadCount'
+    : 'participantBUnreadCount';
   const sequencedConversation = await Conversation.findOneAndUpdate(
     {
       _id: conversation._id,
       $or: [{ participantA: sender._id }, { participantB: sender._id }],
     },
     {
-      $inc: { nextSequence: 1 },
-      $set: { lastMessageAt: createdAt },
+      $inc: { nextSequence: 1, [recipientUnreadField]: 1 },
+      $set: {
+        lastMessageAt: createdAt,
+        lastMessageSender: sender._id,
+        lastMessageClientMessageId: body.clientMessageId,
+      },
     },
     { new: false, session },
   ).exec();

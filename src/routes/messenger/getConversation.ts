@@ -41,6 +41,12 @@ const getConversationRoute: RequestHandler = async (req, res) => {
     result: {
       conversation: {
         ...result.conversation,
+        lastMessage: result.conversation.lastMessage
+          ? {
+              ...result.conversation.lastMessage,
+              createdAt: result.conversation.lastMessage.createdAt.toISOString(),
+            }
+          : null,
         lastMessageAt: result.conversation.lastMessageAt?.toISOString() ?? null,
         createdAt: result.conversation.createdAt.toISOString(),
       },

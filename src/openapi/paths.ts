@@ -534,7 +534,7 @@ const openApiPaths = {
       tags: ['Messenger'],
       summary: 'List conversations belonging to the authenticated user',
       description:
-        'Returns only canonical conversations where the authenticated user is one of the two participants. Message previews and unread counts are added in a later protocol stage.',
+        'Returns only canonical conversations where the authenticated user is one of the two participants, newest activity first. Each item includes ciphertext-safe last-message metadata and the current unread count.',
       operationId: 'listMessengerConversations',
       security: [{ bearerAuth: [] }],
       parameters: [
@@ -542,7 +542,9 @@ const openApiPaths = {
           in: 'query',
           name: 'cursor',
           required: false,
-          schema: { $ref: '#/components/schemas/ObjectId' },
+          description:
+            'Opaque activity cursor returned as nextCursor. Do not construct or modify it.',
+          schema: { type: 'string', maxLength: 256 },
         },
         {
           in: 'query',
@@ -627,6 +629,48 @@ const openApiPaths = {
     },
   },
   '/v1/messenger/conversations/{conversationId}/messages': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get encrypted direct-message history',
+      description:
+        'Returns newest-first signed ciphertext envelopes. viewerKey selects the wrapped content key the authenticated viewer should decrypt. Both wrapped copies remain in the signed manifest for integrity verification; plaintext and private keys are never returned.',
+      operationId: 'getMessengerMessageHistory',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'beforeSequence',
+          required: false,
+          description: 'Exclusive sequence cursor returned as nextBeforeSequence.',
+          schema: { type: 'integer', minimum: 2 },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 30 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Encrypted message history retrieved.', {
+          type: 'object',
+          required: ['history'],
+          properties: {
+            history: { $ref: '#/components/schemas/MessengerMessageHistoryPage' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
     post: {
       tags: ['Messenger'],
       summary: 'Send one signed end-to-end encrypted direct message',

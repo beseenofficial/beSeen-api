@@ -46,6 +46,12 @@ const listConversationsRoute: RequestHandler = async (req, res) => {
         ...result.conversations,
         items: result.conversations.items.map((conversation) => ({
           ...conversation,
+          lastMessage: conversation.lastMessage
+            ? {
+                ...conversation.lastMessage,
+                createdAt: conversation.lastMessage.createdAt.toISOString(),
+              }
+            : null,
           lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
           createdAt: conversation.createdAt.toISOString(),
         })),

@@ -19,7 +19,7 @@ const getConversation = async (
 
   return {
     ok: true,
-    conversation: serializeConversation(access.conversation, access.otherParticipant),
+    conversation: serializeConversation(access.conversation, access.otherParticipant, userId),
   };
 };
 

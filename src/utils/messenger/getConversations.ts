@@ -5,6 +5,7 @@ import User from '../../models/User';
 import type { ConversationListQuery } from '../../validation/messenger/conversation';
 import serializeConversation from './serializeConversation';
 import type { ConversationView } from './serializeConversation';
+import { encodeConversationCursor } from './conversationCursor';
 
 interface ConversationPage {
   items: ConversationView[];
@@ -25,16 +26,25 @@ const getConversations = async (
     return { ok: false, reason: 'account_unavailable' };
   }
 
-  const match: Record<string, unknown> = {
-    $or: [{ participantA: viewer._id }, { participantB: viewer._id }],
-  };
+  const participantMatch = [{ participantA: viewer._id }, { participantB: viewer._id }];
+  const match: Record<string, unknown> = { $or: participantMatch };
 
   if (query.cursor) {
-    match._id = { $lt: new Types.ObjectId(query.cursor) };
+    const cursorId = new Types.ObjectId(query.cursor.id);
+    const activityMatch = query.cursor.lastMessageAt
+      ? [
+          { lastMessageAt: { $lt: query.cursor.lastMessageAt } },
+          { lastMessageAt: query.cursor.lastMessageAt, _id: { $lt: cursorId } },
+          { lastMessageAt: null },
+        ]
+      : [{ lastMessageAt: null, _id: { $lt: cursorId } }];
+
+    match.$and = [{ $or: participantMatch }, { $or: activityMatch }];
+    delete match.$or;
   }
 
   const rows = await Conversation.find(match)
-    .sort({ _id: -1 })
+    .sort({ lastMessageAt: -1, _id: -1 })
     .limit(query.limit + 1)
     .exec();
   const hasMore = rows.length > query.limit;
@@ -60,7 +70,7 @@ const getConversations = async (
       return [];
     }
 
-    return [serializeConversation(conversation, otherParticipant)];
+    return [serializeConversation(conversation, otherParticipant, viewer._id.toString())];
   });
   const lastRow = pageRows.at(-1);
 
@@ -68,7 +78,13 @@ const getConversations = async (
     ok: true,
     conversations: {
       items,
-      nextCursor: hasMore && lastRow ? lastRow._id.toString() : null,
+      nextCursor:
+        hasMore && lastRow
+          ? encodeConversationCursor({
+              lastMessageAt: lastRow.lastMessageAt,
+              id: lastRow._id.toString(),
+            })
+          : null,
       hasMore,
     },
   };
