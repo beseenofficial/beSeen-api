@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import getMeRoute from './me';
+import discoverUsersRoute from './discover';
 import updateMeRoute from './updateMe';
 import getMyTokensRoute from './myTokens';
 import getUserTokenRoute from './userToken';
@@ -17,6 +18,7 @@ const userRoutes = Router();
 
 userRoutes.get('/me', authenticate, getMeRoute);
 userRoutes.patch('/me', authenticate, avatarUpload, updateMeRoute);
+userRoutes.get('/discover', discoverUsersRoute);
 userRoutes.get('/:username', getPublicProfileRoute);
 userRoutes.get('/:username/token', getUserTokenRoute);
 userRoutes.get('/:username/keys', getPublicUserKeysRoute);

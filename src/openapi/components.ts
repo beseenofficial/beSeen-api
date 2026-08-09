@@ -75,6 +75,16 @@ const openApiComponents = {
       required: Object.keys(userProperties),
       properties: userProperties,
     },
+    DiscoverUser: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'username', 'avatar'],
+      properties: {
+        id: objectIdSchema,
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
+      },
+    },
     UserToken: {
       type: 'object',
       additionalProperties: false,

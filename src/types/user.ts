@@ -6,6 +6,18 @@ interface UsernameAvailabilityResult {
   reason: UsernameUnavailabilityReason | null;
 }
 
+interface DiscoverUser {
+  id: string;
+  username: string;
+  avatar: string | null;
+}
+
+interface DiscoverUsersPage {
+  users: DiscoverUser[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
 type UsernameUnavailabilityReason = 'invalid' | 'reserved' | 'taken';
 
 type UpdateProfileFailureReason =
@@ -33,6 +45,8 @@ type GetPublicUserKeysResult =
   | { ok: false; reason: 'user_not_found' | 'active_keys_not_found' };
 
 export type {
+  DiscoverUser,
+  DiscoverUsersPage,
   GetCurrentUserResult,
   GetPublicProfileResult,
   GetPublicUserKeysResult,

@@ -2,6 +2,10 @@ const USER_ROLES = ['user', 'moderator', 'admin'] as const;
 
 const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;
 
+const USER_DISCOVER_DEFAULT_LIMIT = 20;
+
+const USER_DISCOVER_MAX_LIMIT = 50;
+
 const RESERVED_USERNAMES = [
   'admin',
   'administrator',
@@ -17,5 +21,11 @@ const RESERVED_USERNAMES = [
 type UserRole = (typeof USER_ROLES)[number];
 type UserStatus = (typeof USER_STATUSES)[number];
 
-export { RESERVED_USERNAMES, USER_ROLES, USER_STATUSES };
+export {
+  RESERVED_USERNAMES,
+  USER_DISCOVER_DEFAULT_LIMIT,
+  USER_DISCOVER_MAX_LIMIT,
+  USER_ROLES,
+  USER_STATUSES,
+};
 export type { UserRole, UserStatus };

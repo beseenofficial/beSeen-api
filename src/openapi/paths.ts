@@ -331,6 +331,48 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/discover': {
+    get: {
+      tags: ['Profiles'],
+      summary: 'Discover active public user profiles',
+      description:
+        'Returns active users newest first with only their public ID, username, and avatar.',
+      operationId: 'discoverUsers',
+      parameters: [
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          description: 'The nextCursor returned by the previous page.',
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Users discovered.', {
+          type: 'object',
+          additionalProperties: false,
+          required: ['users', 'nextCursor', 'hasMore'],
+          properties: {
+            users: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/DiscoverUser' },
+            },
+            nextCursor: {
+              oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+            },
+            hasMore: { type: 'boolean' },
+          },
+        }),
+        '400': validationError,
+      },
+    },
+  },
   '/v1/users/username/availability': {
     get: {
       tags: ['Profiles'],
