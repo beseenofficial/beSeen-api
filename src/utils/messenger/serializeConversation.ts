@@ -1,5 +1,5 @@
-import type { ConversationDocument } from '../../models/Conversation';
 import type { UserDocument } from '../../models/User';
+import type { ConversationDocument } from '../../models/Conversation';
 
 interface ConversationView {
   id: string;

@@ -1,7 +1,7 @@
-import Conversation from '../../models/Conversation';
-import type { ConversationDocument } from '../../models/Conversation';
 import User from '../../models/User';
+import Conversation from '../../models/Conversation';
 import type { UserDocument } from '../../models/User';
+import type { ConversationDocument } from '../../models/Conversation';
 
 type ConversationAccessFailureReason =
   'account_unavailable' | 'conversation_not_found' | 'participant_unavailable';
@@ -37,6 +37,7 @@ const getConversationAccess = async (
   const otherParticipantId = conversation.participantA.equals(viewer._id)
     ? conversation.participantB
     : conversation.participantA;
+    
   const otherParticipant = await User.findOne({
     _id: otherParticipantId,
     status: 'active',

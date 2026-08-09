@@ -26,11 +26,13 @@ const ensureConversation = async (
   }
 
   const pair = canonicalParticipantPair(firstUserId, secondUserId);
+
   const writeResult = await Conversation.updateOne(
     pair,
     { $setOnInsert: pair },
     { upsert: true, session },
   ).exec();
+  
   const conversation = await Conversation.findOne(pair).session(session).exec();
 
   if (!conversation) {

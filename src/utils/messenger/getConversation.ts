@@ -1,7 +1,7 @@
 import getConversationAccess from './getConversationAccess';
-import type { ConversationAccessFailureReason } from './getConversationAccess';
 import serializeConversation from './serializeConversation';
 import type { ConversationView } from './serializeConversation';
+import type { ConversationAccessFailureReason } from './getConversationAccess';
 
 type GetConversationResult =
   | { ok: true; conversation: ConversationView }

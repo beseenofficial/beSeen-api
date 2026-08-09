@@ -1,15 +1,15 @@
+import Message from '../../models/Message';
+import MessageBounty from '../../models/MessageBounty';
+import getConversationAccess from './getConversationAccess';
+import type { MessageDocument } from '../../models/Message';
+import type { MessageBountyDocument } from '../../models/MessageBounty';
+import expireOfferedMessageBounties from './expireOfferedMessageBounties';
+import type { ConversationAccessFailureReason } from './getConversationAccess';
+import type { MessageHistoryQuery } from '../../validation/messenger/messageHistory';
 import {
   MESSENGER_CONTENT_ENCRYPTION_SUITE,
   MESSENGER_KEY_WRAP_SUITE,
 } from '../../constant/messenger';
-import Message from '../../models/Message';
-import type { MessageDocument } from '../../models/Message';
-import MessageBounty from '../../models/MessageBounty';
-import type { MessageBountyDocument } from '../../models/MessageBounty';
-import type { MessageHistoryQuery } from '../../validation/messenger/messageHistory';
-import expireOfferedMessageBounties from './expireOfferedMessageBounties';
-import getConversationAccess from './getConversationAccess';
-import type { ConversationAccessFailureReason } from './getConversationAccess';
 
 interface MessageHistoryItem {
   id: string;
@@ -174,7 +174,9 @@ const getMessageHistory = async (
     .sort({ sequence: -1 })
     .limit(query.limit + 1)
     .exec();
+
   const hasMore = rows.length > query.limit;
+
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
 
   await expireOfferedMessageBounties(
@@ -188,9 +190,13 @@ const getMessageHistory = async (
           message: { $in: pageRows.map((message) => message._id) },
         }).exec()
       : [];
+
   const bountiesByMessage = new Map(bounties.map((bounty) => [bounty.message.toString(), bounty]));
+
   const participantAReadSequence = access.conversation.participantAReadSequence ?? 0;
+
   const participantBReadSequence = access.conversation.participantBReadSequence ?? 0;
+
   const items = pageRows.map((message) => {
     const recipientReadSequence = access.conversation.participantA.equals(message.recipient)
       ? participantAReadSequence
@@ -203,6 +209,7 @@ const getMessageHistory = async (
       bountiesByMessage.get(message._id.toString()) ?? null,
     );
   });
+  
   const oldestItem = items.at(-1);
 
   return {

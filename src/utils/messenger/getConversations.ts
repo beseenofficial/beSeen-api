@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 
-import Conversation from '../../models/Conversation';
 import User from '../../models/User';
-import type { ConversationListQuery } from '../../validation/messenger/conversation';
+import Conversation from '../../models/Conversation';
 import serializeConversation from './serializeConversation';
-import type { ConversationView } from './serializeConversation';
 import { encodeConversationCursor } from './conversationCursor';
+import type { ConversationView } from './serializeConversation';
+import type { ConversationListQuery } from '../../validation/messenger/conversation';
 
 interface ConversationPage {
   items: ConversationView[];
@@ -27,10 +27,12 @@ const getConversations = async (
   }
 
   const participantMatch = [{ participantA: viewer._id }, { participantB: viewer._id }];
+
   const match: Record<string, unknown> = { $or: participantMatch };
 
   if (query.cursor) {
     const cursorId = new Types.ObjectId(query.cursor.id);
+
     const activityMatch = query.cursor.lastMessageAt
       ? [
           { lastMessageAt: { $lt: query.cursor.lastMessageAt } },
@@ -40,6 +42,7 @@ const getConversations = async (
       : [{ lastMessageAt: null, _id: { $lt: cursorId } }];
 
     match.$and = [{ $or: participantMatch }, { $or: activityMatch }];
+
     delete match.$or;
   }
 
@@ -47,23 +50,30 @@ const getConversations = async (
     .sort({ lastMessageAt: -1, _id: -1 })
     .limit(query.limit + 1)
     .exec();
+
   const hasMore = rows.length > query.limit;
+
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
+
   const otherParticipantIds = pageRows.map((conversation) =>
     conversation.participantA.equals(viewer._id)
       ? conversation.participantB
       : conversation.participantA,
   );
+
   const otherParticipants = await User.find({
     _id: { $in: otherParticipantIds },
     status: 'active',
     deletedAt: null,
   }).exec();
+
   const usersById = new Map(otherParticipants.map((user) => [user._id.toString(), user]));
+  
   const items = pageRows.flatMap((conversation) => {
     const otherParticipantId = conversation.participantA.equals(viewer._id)
       ? conversation.participantB
       : conversation.participantA;
+
     const otherParticipant = usersById.get(otherParticipantId.toString());
 
     if (!otherParticipant) {
@@ -72,6 +82,7 @@ const getConversations = async (
 
     return [serializeConversation(conversation, otherParticipant, viewer._id.toString())];
   });
+  
   const lastRow = pageRows.at(-1);
 
   return {
