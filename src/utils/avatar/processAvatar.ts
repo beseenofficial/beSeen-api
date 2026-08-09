@@ -47,7 +47,9 @@ const processAvatar = async (input: Buffer): Promise<Buffer> => {
       .webp({ quality: AVATAR_WEBP_QUALITY })
       .toBuffer();
   } catch (error: unknown) {
-    if (error instanceof InvalidAvatarError) throw error;
+    if (error instanceof InvalidAvatarError) {
+      throw error;
+    }
     throw new InvalidAvatarError();
   }
 };

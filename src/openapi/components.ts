@@ -110,6 +110,420 @@ const openApiComponents = {
         acquiredAt: { type: 'string', format: 'date-time' },
       },
     },
+    TokenPurchaseConversation: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'created'],
+      properties: {
+        id: objectIdSchema,
+        created: {
+          type: 'boolean',
+          description: 'True only when this token purchase created the pair conversation.',
+        },
+      },
+    },
+    MessengerParticipant: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'username', 'avatar'],
+      properties: {
+        id: objectIdSchema,
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
+      },
+    },
+    MessengerConversation: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'otherParticipant',
+        'unreadCount',
+        'readState',
+        'lastMessage',
+        'lastMessageAt',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        otherParticipant: { $ref: '#/components/schemas/MessengerParticipant' },
+        unreadCount: { type: 'integer', minimum: 0 },
+        readState: { $ref: '#/components/schemas/MessengerConversationReadState' },
+        lastMessage: {
+          oneOf: [
+            { $ref: '#/components/schemas/MessengerConversationLastMessage' },
+            { type: 'null' },
+          ],
+        },
+        lastMessageAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerConversationLastMessage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['sequence', 'clientMessageId', 'senderId', 'createdAt'],
+      properties: {
+        sequence: { type: 'integer', minimum: 1 },
+        clientMessageId: { type: 'string', format: 'uuid' },
+        senderId: objectIdSchema,
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerConversationReadState: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['viewerReadSequence', 'otherParticipantReadSequence'],
+      properties: {
+        viewerReadSequence: { type: 'integer', minimum: 0 },
+        otherParticipantReadSequence: { type: 'integer', minimum: 0 },
+      },
+    },
+    MessengerConversationPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextCursor', 'hasMore'],
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/MessengerConversation' },
+        },
+        nextCursor: {
+          oneOf: [{ type: 'string', maxLength: 256 }, { type: 'null' }],
+          description: 'Opaque activity cursor. Clients must not construct or modify it.',
+        },
+        hasMore: { type: 'boolean' },
+      },
+    },
+    MessengerContextParticipant: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'username',
+        'avatar',
+        'keyVersion',
+        'signingPublicKey',
+        'encryptionPublicKey',
+      ],
+      properties: {
+        id: objectIdSchema,
+        username: userProperties.username,
+        avatar: nullableUrlSchema,
+        keyVersion: { type: 'integer', minimum: 1 },
+        signingPublicKey: { type: 'string', pattern: '^[A-Za-z0-9+/]{43}=$' },
+        encryptionPublicKey: { type: 'string', pattern: '^[A-Za-z0-9+/]{43}=$' },
+      },
+    },
+    MessengerConversationContext: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['conversationId', 'viewer', 'otherParticipant'],
+      properties: {
+        conversationId: objectIdSchema,
+        viewer: { $ref: '#/components/schemas/MessengerContextParticipant' },
+        otherParticipant: { $ref: '#/components/schemas/MessengerContextParticipant' },
+      },
+    },
+    MessengerSendMessageRequest: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'clientMessageId',
+        'contentCiphertext',
+        'contentNonce',
+        'senderEncryptedMessageKey',
+        'recipientEncryptedMessageKey',
+        'signature',
+      ],
+      properties: {
+        clientMessageId: {
+          type: 'string',
+          format: 'uuid',
+          description: 'Client-generated idempotency UUID. Reuse it only for an identical retry.',
+        },
+        contentCiphertext: {
+          type: 'string',
+          format: 'byte',
+          description: 'Client-side XChaCha20-Poly1305 ciphertext. Plaintext is never accepted.',
+        },
+        contentNonce: {
+          type: 'string',
+          format: 'byte',
+          description: 'Canonical base64 24-byte XChaCha20 nonce.',
+        },
+        senderEncryptedMessageKey: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 80-byte sealed-box ciphertext of the content key for the sender.',
+        },
+        recipientEncryptedMessageKey: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 80-byte sealed-box ciphertext of the same content key for the recipient.',
+        },
+        replyToMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+          description: 'Optional message in this same conversation being replied to.',
+        },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
+          description:
+            'Optional demo bounty terms. No payment, balance, escrow, or blockchain transfer occurs.',
+        },
+        signature: {
+          type: 'string',
+          format: 'byte',
+          description:
+            'Canonical base64 Ed25519 signature over the documented direct-message manifest.',
+        },
+      },
+    },
+    MessengerSentMessage: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'conversationId',
+        'sequence',
+        'clientMessageId',
+        'senderId',
+        'recipientId',
+        'replyToMessageId',
+        'bounty',
+        'unlockedBounty',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        conversationId: objectIdSchema,
+        sequence: { type: 'integer', minimum: 1 },
+        clientMessageId: { type: 'string', format: 'uuid' },
+        senderId: objectIdSchema,
+        recipientId: objectIdSchema,
+        replyToMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
+        },
+        unlockedBounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
+          description:
+            'The original bounty unlocked by this direct reply, or null. Useful for immediate client feedback.',
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerMessageManifest: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'signatureVersion',
+        'encryptionVersion',
+        'contentSuite',
+        'keyWrapSuite',
+        'conversationId',
+        'clientMessageId',
+        'senderId',
+        'recipientId',
+        'senderKeyVersion',
+        'recipientKeyVersion',
+        'senderSigningPublicKey',
+        'senderEncryptionPublicKey',
+        'recipientEncryptionPublicKey',
+        'contentCiphertext',
+        'contentNonce',
+        'senderEncryptedMessageKey',
+        'recipientEncryptedMessageKey',
+        'replyToMessageId',
+        'bountyTerms',
+      ],
+      properties: {
+        signatureVersion: { type: 'integer', const: 1 },
+        encryptionVersion: { type: 'integer', const: 1 },
+        contentSuite: { type: 'string', const: 'XCHACHA20-POLY1305-IETF' },
+        keyWrapSuite: {
+          type: 'string',
+          const: 'X25519-XSALSA20-POLY1305-SEALEDBOX',
+        },
+        conversationId: objectIdSchema,
+        clientMessageId: { type: 'string', format: 'uuid' },
+        senderId: objectIdSchema,
+        recipientId: objectIdSchema,
+        senderKeyVersion: { type: 'integer', minimum: 1 },
+        recipientKeyVersion: { type: 'integer', minimum: 1 },
+        senderSigningPublicKey: { type: 'string', format: 'byte' },
+        senderEncryptionPublicKey: { type: 'string', format: 'byte' },
+        recipientEncryptionPublicKey: { type: 'string', format: 'byte' },
+        contentCiphertext: { type: 'string', format: 'byte' },
+        contentNonce: { type: 'string', format: 'byte' },
+        senderEncryptedMessageKey: { type: 'string', format: 'byte' },
+        recipientEncryptedMessageKey: { type: 'string', format: 'byte' },
+        replyToMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        bountyTerms: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
+          description: 'Immutable bounty terms included in the sender signature manifest.',
+        },
+      },
+    },
+    MessengerMessageViewerKey: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['source', 'keyVersion', 'encryptionPublicKey', 'encryptedMessageKey'],
+      properties: {
+        source: { type: 'string', enum: ['sender', 'recipient'] },
+        keyVersion: { type: 'integer', minimum: 1 },
+        encryptionPublicKey: { type: 'string', format: 'byte' },
+        encryptedMessageKey: {
+          type: 'string',
+          format: 'byte',
+          description: 'The wrapped content key intended for the authenticated viewer.',
+        },
+      },
+    },
+    MessengerMessageIntegrity: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['algorithm', 'signingPublicKey', 'signature'],
+      properties: {
+        algorithm: { type: 'string', const: 'Ed25519' },
+        signingPublicKey: { type: 'string', format: 'byte' },
+        signature: { type: 'string', format: 'byte' },
+      },
+    },
+    MessengerMessageHistoryItem: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'sequence',
+        'manifest',
+        'viewerKey',
+        'integrity',
+        'delivery',
+        'bounty',
+        'createdAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        sequence: { type: 'integer', minimum: 1 },
+        manifest: { $ref: '#/components/schemas/MessengerMessageManifest' },
+        viewerKey: { $ref: '#/components/schemas/MessengerMessageViewerKey' },
+        integrity: { $ref: '#/components/schemas/MessengerMessageIntegrity' },
+        delivery: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['seenByRecipient'],
+          properties: {
+            seenByRecipient: {
+              type: 'boolean',
+              description:
+                'True when the recipient read cursor has reached or passed this message sequence.',
+            },
+          },
+        },
+        bounty: {
+          oneOf: [{ $ref: '#/components/schemas/MessengerBounty' }, { type: 'null' }],
+        },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    MessengerMessageHistoryPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextBeforeSequence', 'hasMore'],
+      properties: {
+        items: {
+          type: 'array',
+          description: 'Newest-first encrypted message envelopes.',
+          items: { $ref: '#/components/schemas/MessengerMessageHistoryItem' },
+        },
+        nextBeforeSequence: {
+          oneOf: [{ type: 'integer', minimum: 2 }, { type: 'null' }],
+        },
+        hasMore: { type: 'boolean' },
+      },
+    },
+    MessengerReadReceipt: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['conversationId', 'readSequence', 'unreadCount'],
+      properties: {
+        conversationId: objectIdSchema,
+        readSequence: { type: 'integer', minimum: 1 },
+        unreadCount: { type: 'integer', minimum: 0 },
+      },
+    },
+    MessengerBountyTerms: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['assetCode', 'amount', 'durationSeconds'],
+      properties: {
+        assetCode: {
+          type: 'string',
+          pattern: '^[A-Z0-9]{1,12}$',
+          example: 'USDC',
+        },
+        amount: {
+          type: 'string',
+          pattern: '^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,7})?$',
+          description:
+            'Positive canonical decimal string; never send a JSON floating-point number.',
+          example: '10',
+        },
+        durationSeconds: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 31536000,
+          example: 3600,
+        },
+      },
+    },
+    MessengerBounty: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'id',
+        'assetCode',
+        'amount',
+        'durationSeconds',
+        'status',
+        'expiresAt',
+        'replyMessageId',
+        'claimableAt',
+        'claimedAt',
+      ],
+      properties: {
+        id: objectIdSchema,
+        assetCode: { type: 'string', pattern: '^[A-Z0-9]{1,12}$' },
+        amount: {
+          type: 'string',
+          pattern: '^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,7})?$',
+        },
+        durationSeconds: { type: 'integer', minimum: 1, maximum: 31536000 },
+        status: {
+          type: 'string',
+          enum: ['offered', 'claimable', 'claimed', 'expired'],
+        },
+        expiresAt: { type: 'string', format: 'date-time' },
+        replyMessageId: {
+          oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+        },
+        claimableAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
+        claimedAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+        },
+      },
+    },
     AuthTokens: {
       type: 'object',
       additionalProperties: false,

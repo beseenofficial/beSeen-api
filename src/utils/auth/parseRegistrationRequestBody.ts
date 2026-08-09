@@ -1,5 +1,7 @@
 const parseRegistrationRequestBody = (body: unknown): unknown => {
-  if (!body || typeof body !== 'object') return body;
+  if (!body || typeof body !== 'object') {
+    return body;
+  }
 
   const fields = body as Record<string, unknown>;
   if (typeof fields.payload === 'string') {

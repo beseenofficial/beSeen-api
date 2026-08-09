@@ -13,10 +13,7 @@ import { LOGIN_PROOF_MAX_AGE_SECONDS } from '../../constant/auth';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 
 type LoginFailureReason =
-  | 'proof_expired'
-  | 'proof_replayed'
-  | 'invalid_signature'
-  | 'account_unavailable';
+  'proof_expired' | 'proof_replayed' | 'invalid_signature' | 'account_unavailable';
 
 type LoginUserResult =
   | { ok: true; user: AuthenticatedUser; auth: AuthTokens }
@@ -67,14 +64,18 @@ const loginUser = async (body: LoginBody): Promise<LoginUserResult> => {
     deletedAt: null,
   }).exec();
 
-  if (!user) return { ok: false, reason: 'account_unavailable' };
+  if (!user) {
+    return { ok: false, reason: 'account_unavailable' };
+  }
 
   const key = await UserKey.findOne({ user: user._id, status: 'active', revokedAt: null }).exec();
 
-  if (!key) return { ok: false, reason: 'account_unavailable' };
+  if (!key) {
+    return { ok: false, reason: 'account_unavailable' };
+  }
 
   const message = buildLoginProofMessage(body);
-  
+
   if (!verifyEd25519Signature(key.signingPublicKey, message, body.signature)) {
     return { ok: false, reason: 'invalid_signature' };
   }
@@ -82,7 +83,9 @@ const loginUser = async (body: LoginBody): Promise<LoginUserResult> => {
   try {
     return await withDatabaseTransaction((session) => createLoginSession(user, body, session));
   } catch (error: unknown) {
-    if (isDuplicateKeyError(error)) return { ok: false, reason: 'proof_replayed' };
+    if (isDuplicateKeyError(error)) {
+      return { ok: false, reason: 'proof_replayed' };
+    }
     throw error;
   }
 };

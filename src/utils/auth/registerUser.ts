@@ -113,7 +113,9 @@ const registerUserInTransaction = async (
 };
 
 const removeUploadedAvatar = async (avatar: StoredAvatar | null): Promise<void> => {
-  if (!avatar) return;
+  if (!avatar) {
+    return;
+  }
 
   try {
     await deleteAvatar(avatar.objectKey);
@@ -127,8 +129,12 @@ const registerUser = async (
   avatarFile?: Express.Multer.File,
 ): Promise<RegisterUserResult> => {
   const verification = await verifyBluxWallet(body.walletAddress);
-  if (!verification.ok) return { ok: false, reason: 'blux_verification_unavailable' };
-  if (!verification.verified) return { ok: false, reason: 'wallet_not_verified_by_blux' };
+  if (!verification.ok) {
+    return { ok: false, reason: 'blux_verification_unavailable' };
+  }
+  if (!verification.verified) {
+    return { ok: false, reason: 'wallet_not_verified_by_blux' };
+  }
 
   const userId = new Types.ObjectId();
   let avatar: StoredAvatar | null = null;
@@ -138,7 +144,9 @@ const registerUser = async (
     try {
       processedAvatar = await processAvatar(avatarFile.buffer);
     } catch (error: unknown) {
-      if (error instanceof InvalidAvatarError) return { ok: false, reason: 'invalid_avatar' };
+      if (error instanceof InvalidAvatarError) {
+        return { ok: false, reason: 'invalid_avatar' };
+      }
       throw error;
     }
 
@@ -154,7 +162,9 @@ const registerUser = async (
     const result = await withDatabaseTransaction((session) =>
       registerUserInTransaction(body, session, userId, avatar),
     );
-    if (!result.ok) await removeUploadedAvatar(avatar);
+    if (!result.ok) {
+      await removeUploadedAvatar(avatar);
+    }
     return result;
   } catch (error: unknown) {
     await removeUploadedAvatar(avatar);

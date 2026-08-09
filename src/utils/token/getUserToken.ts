@@ -14,7 +14,9 @@ type GetUserTokenResult =
 
 const getUserToken = async (username: string): Promise<GetUserTokenResult> => {
   const owner = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
-  if (!owner) return { ok: false, reason: 'user_not_found' };
+  if (!owner) {
+    return { ok: false, reason: 'user_not_found' };
+  }
 
   const token = await getOrCreateUserToken(owner._id);
   return {

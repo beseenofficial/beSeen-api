@@ -47,7 +47,7 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
         lastUsedAt: now,
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).exec();
 
   if (!rotatedSession) {

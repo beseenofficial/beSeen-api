@@ -400,20 +400,26 @@ const openApiPaths = {
       tags: ['Tokens'],
       summary: 'Acquire a user’s token in demo mode',
       description:
-        'No payment or blockchain transaction occurs. Repeating the request is safe and does not create duplicate holdings.',
+        'No payment or blockchain transaction occurs. The existing token holding also grants Broadcast access and ensures exactly one shared Messenger conversation for the buyer/owner pair. Repeating or reverse purchases do not create duplicate conversations.',
       operationId: 'purchaseUserToken',
       security: [{ bearerAuth: [] }],
       parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
       responses: {
         '201': jsonResponse('Token purchased.', {
           type: 'object',
-          required: ['holding'],
-          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+          required: ['holding', 'conversation'],
+          properties: {
+            holding: { $ref: '#/components/schemas/TokenHolding' },
+            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+          },
         }),
         '200': jsonResponse('Token already owned.', {
           type: 'object',
-          required: ['holding'],
-          properties: { holding: { $ref: '#/components/schemas/TokenHolding' } },
+          required: ['holding', 'conversation'],
+          properties: {
+            holding: { $ref: '#/components/schemas/TokenHolding' },
+            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+          },
         }),
         '400': validationError,
         '401': unauthorized,
@@ -520,6 +526,275 @@ const openApiPaths = {
         }),
         '400': validationError,
         '404': genericError,
+      },
+    },
+  },
+  '/v1/messenger/bounties/{bountyId}/claim': {
+    post: {
+      tags: ['Messenger'],
+      summary: 'Claim an unlocked demo message bounty',
+      description:
+        'Only the bounty beneficiary can call this endpoint. A timely direct reply first changes the bounty from offered to claimable. Claiming is idempotent and records demo state only; it performs no payment, balance change, escrow action, or blockchain transfer.',
+      operationId: 'claimMessengerMessageBounty',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'bountyId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Demo bounty claimed or was already claimed.', {
+          type: 'object',
+          required: ['bounty', 'claimedNow'],
+          properties: {
+            bounty: { $ref: '#/components/schemas/MessengerBounty' },
+            claimedNow: {
+              type: 'boolean',
+              description: 'True only for the request that performed the claim transition.',
+            },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '410': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
+  '/v1/messenger/conversations': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'List conversations belonging to the authenticated user',
+      description:
+        'Returns only canonical conversations where the authenticated user is one of the two participants, newest activity first. Each item includes ciphertext-safe last-message metadata and the current unread count.',
+      operationId: 'listMessengerConversations',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'query',
+          name: 'cursor',
+          required: false,
+          description:
+            'Opaque activity cursor returned as nextCursor. Do not construct or modify it.',
+          schema: { type: 'string', maxLength: 256 },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversations retrieved.', {
+          type: 'object',
+          required: ['conversations'],
+          properties: {
+            conversations: { $ref: '#/components/schemas/MessengerConversationPage' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get one conversation belonging to the authenticated user',
+      description:
+        'Returns 404 when the conversation does not exist or the authenticated user is not one of its participants.',
+      operationId: 'getMessengerConversation',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversation retrieved.', {
+          type: 'object',
+          required: ['conversation'],
+          properties: {
+            conversation: { $ref: '#/components/schemas/MessengerConversation' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}/context': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get current public encryption context for a conversation',
+      description:
+        'Returns active public signing/encryption keys for the two participants. Wallet addresses, private keys, plaintext, and content keys are never returned.',
+      operationId: 'getMessengerConversationContext',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Conversation encryption context retrieved.', {
+          type: 'object',
+          required: ['context'],
+          properties: {
+            context: { $ref: '#/components/schemas/MessengerConversationContext' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}/messages': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get encrypted direct-message history',
+      description:
+        'Returns newest-first signed ciphertext envelopes. viewerKey selects the wrapped content key the authenticated viewer should decrypt. Both wrapped copies remain in the signed manifest for integrity verification; plaintext and private keys are never returned.',
+      operationId: 'getMessengerMessageHistory',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+        {
+          in: 'query',
+          name: 'beforeSequence',
+          required: false,
+          description: 'Exclusive sequence cursor returned as nextBeforeSequence.',
+          schema: { type: 'integer', minimum: 2 },
+        },
+        {
+          in: 'query',
+          name: 'limit',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 30 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Encrypted message history retrieved.', {
+          type: 'object',
+          required: ['history'],
+          properties: {
+            history: { $ref: '#/components/schemas/MessengerMessageHistoryPage' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+      },
+    },
+    post: {
+      tags: ['Messenger'],
+      summary: 'Send one signed end-to-end encrypted direct message',
+      description:
+        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. The client sends ciphertext, two wrapped content-key copies, an optional reply target, an optional demo bounty, a UUID, and its Ed25519 signature. Bounty terms are part of the signed manifest and are created atomically with the message. No real payment occurs. Plaintext and private keys are rejected.',
+      operationId: 'sendMessengerMessage',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/MessengerSendMessageRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': jsonResponse('An identical encrypted message retry was already stored.', {
+          type: 'object',
+          required: ['message'],
+          properties: { message: { $ref: '#/components/schemas/MessengerSentMessage' } },
+        }),
+        '201': jsonResponse('Encrypted message sent.', {
+          type: 'object',
+          required: ['message'],
+          properties: { message: { $ref: '#/components/schemas/MessengerSentMessage' } },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '429': rateLimited,
+      },
+    },
+  },
+  '/v1/messenger/conversations/{conversationId}/read': {
+    put: {
+      tags: ['Messenger'],
+      summary: 'Advance the authenticated user read cursor',
+      description:
+        'Marks every message through the supplied sequence as seen by the authenticated participant. The cursor is monotonic, identical or older retries are safe, and unreadCount is recalculated atomically. This endpoint changes no encrypted content and requires no message-key signature.',
+      operationId: 'markMessengerConversationRead',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          in: 'path',
+          name: 'conversationId',
+          required: true,
+          schema: { $ref: '#/components/schemas/ObjectId' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['throughSequence'],
+              properties: {
+                throughSequence: { type: 'integer', minimum: 1 },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': jsonResponse('Conversation read cursor updated or already current.', {
+          type: 'object',
+          required: ['readState', 'updated'],
+          properties: {
+            readState: { $ref: '#/components/schemas/MessengerReadReceipt' },
+            updated: { type: 'boolean' },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+        '404': genericError,
+        '409': genericError,
+        '429': rateLimited,
       },
     },
   },

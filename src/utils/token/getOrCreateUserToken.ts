@@ -10,10 +10,17 @@ const getOrCreateUserToken = async (
   const token = await UserToken.findOneAndUpdate(
     { owner: ownerId },
     { $setOnInsert: { owner: ownerId } },
-    { new: true, upsert: true, setDefaultsOnInsert: true, ...(session ? { session } : {}) },
+    {
+      returnDocument: 'after',
+      upsert: true,
+      setDefaultsOnInsert: true,
+      ...(session ? { session } : {}),
+    },
   ).exec();
 
-  if (!token) throw new Error('User token could not be created');
+  if (!token) {
+    throw new Error('User token could not be created');
+  }
   return token;
 };
 
