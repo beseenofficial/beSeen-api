@@ -83,7 +83,7 @@ describe('markConversationRead', () => {
           participantBUnreadCount: 1,
         },
       },
-      { new: true, session, runValidators: true },
+      { returnDocument: 'after', session, runValidators: true },
     );
   });
 

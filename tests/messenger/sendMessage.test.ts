@@ -154,7 +154,7 @@ describe('sendMessage', () => {
           lastMessageClientMessageId: requestBody.clientMessageId,
         },
       },
-      { new: false, session },
+      { returnDocument: 'before', session },
     );
     expect(resolveReplyBountyMock).toHaveBeenCalledWith(
       expect.objectContaining({

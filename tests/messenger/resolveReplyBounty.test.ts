@@ -63,7 +63,7 @@ describe('resolveReplyBounty', () => {
           claimableAt: repliedAt,
         },
       },
-      { new: true, runValidators: true, session },
+      { returnDocument: 'after', runValidators: true, session },
     );
     expect(expireSpy).not.toHaveBeenCalled();
   });
