@@ -1,14 +1,6 @@
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
-
-type CancelBroadcastDraftResult =
-  | {
-      ok: true;
-      canceledNow: boolean;
-      canceledAt: Date;
-      removedRecipientCount: number;
-    }
-  | { ok: false; reason: 'draft_not_found' | 'published_broadcast' };
+import type { CancelBroadcastDraftResult } from '../../types/broadcast';
 
 const cancelBroadcastDraft = async (
   creatorId: string,
@@ -63,4 +55,3 @@ const cancelBroadcastDraft = async (
 };
 
 export default cancelBroadcastDraft;
-export type { CancelBroadcastDraftResult };

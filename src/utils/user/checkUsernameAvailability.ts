@@ -1,14 +1,7 @@
-import { RESERVED_USERNAMES } from '../../constant/user';
 import User from '../../models/User';
+import { RESERVED_USERNAMES } from '../../constant/user';
+import type { UsernameAvailabilityResult } from '../../types/user';
 import { usernameSchema } from '../../validation/user/profileFields';
-
-type UsernameUnavailabilityReason = 'invalid' | 'reserved' | 'taken';
-
-interface UsernameAvailabilityResult {
-  username: string;
-  available: boolean;
-  reason: UsernameUnavailabilityReason | null;
-}
 
 const checkUsernameAvailability = async (input: string): Promise<UsernameAvailabilityResult> => {
   const normalizedUsername = input.trim().toLowerCase();
@@ -33,4 +26,3 @@ const checkUsernameAvailability = async (input: string): Promise<UsernameAvailab
 };
 
 export default checkUsernameAvailability;
-export type { UsernameAvailabilityResult, UsernameUnavailabilityReason };

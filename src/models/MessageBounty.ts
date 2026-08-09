@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
+import type { MessengerBountyStatus } from '../constant/messenger';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
@@ -8,7 +9,6 @@ import {
   MESSENGER_BOUNTY_MIN_DURATION_SECONDS,
   MESSENGER_BOUNTY_STATUSES,
 } from '../constant/messenger';
-import type { MessengerBountyStatus } from '../constant/messenger';
 
 interface IMessageBounty {
   message: Types.ObjectId;

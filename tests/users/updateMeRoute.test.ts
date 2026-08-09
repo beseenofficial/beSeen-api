@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,8 +10,11 @@ import updateCurrentUser from '../../src/utils/user/updateCurrentUser';
 vi.mock('../../src/utils/user/updateCurrentUser', () => ({ default: vi.fn() }));
 
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const token = signAccessToken({ id: userId, role: 'user' }, sessionId);
+
 const updateCurrentUserMock = vi.mocked(updateCurrentUser);
 
 describe('PATCH /v1/users/me', () => {
@@ -125,6 +128,7 @@ describe('PATCH /v1/users/me', () => {
       .patch('/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({});
+
     const removed = await request(app)
       .patch('/v1/users/me')
       .set('Authorization', `Bearer ${token}`)

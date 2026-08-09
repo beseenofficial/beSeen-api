@@ -1,22 +1,27 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Conversation from '../../src/models/Conversation';
-import Message from '../../src/models/Message';
-import MessageBounty from '../../src/models/MessageBounty';
 import User from '../../src/models/User';
-import expireOfferedMessageBounties from '../../src/utils/messenger/expireOfferedMessageBounties';
-import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
+import Message from '../../src/models/Message';
+import Conversation from '../../src/models/Conversation';
+import MessageBounty from '../../src/models/MessageBounty';
 import getMessageHistory from '../../src/utils/messenger/getMessageHistory';
+import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
+import expireOfferedMessageBounties from '../../src/utils/messenger/expireOfferedMessageBounties';
 
 vi.mock('../../src/utils/messenger/getConversationAccess', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/expireOfferedMessageBounties', () => ({ default: vi.fn() }));
 
 const getConversationAccessMock = vi.mocked(getConversationAccess);
+
 const expireOfferedMessageBountiesMock = vi.mocked(expireOfferedMessageBounties);
+
 const senderId = new Types.ObjectId('000000000000000000000001');
+
 const recipientId = new Types.ObjectId('000000000000000000000002');
+
 const conversationId = new Types.ObjectId('000000000000000000000003');
+
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 const listResult = (value: unknown) => ({
@@ -24,6 +29,7 @@ const listResult = (value: unknown) => ({
   limit: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
+
 const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 const createMessage = (sequence: number, sender: Types.ObjectId, recipient: Types.ObjectId) =>
@@ -61,11 +67,13 @@ describe('getMessageHistory', () => {
       walletAddress,
       username: 'sender_user',
     });
+
     const otherParticipant = new User({
       _id: recipientId,
       walletAddress,
       username: 'recipient_user',
     });
+
     const conversation = new Conversation({
       _id: conversationId,
       participantA: senderId,
@@ -73,12 +81,15 @@ describe('getMessageHistory', () => {
       participantAReadSequence: 2,
       participantBReadSequence: 2,
     });
+
     const sent = createMessage(3, senderId, recipientId);
     sent.bountyAssetCode = 'USDC';
     sent.bountyAmount = '10';
     sent.bountyDurationSeconds = 3_600;
     const received = createMessage(2, recipientId, senderId);
+
     const extra = createMessage(1, senderId, recipientId);
+
     const bounty = new MessageBounty({
       message: sent._id,
       conversation: conversationId,
@@ -146,7 +157,9 @@ describe('getMessageHistory', () => {
       participantA: senderId,
       participantB: recipientId,
     });
+
     const viewer = new User({ _id: senderId, walletAddress, username: 'sender_user' });
+
     const otherParticipant = new User({
       _id: recipientId,
       walletAddress,

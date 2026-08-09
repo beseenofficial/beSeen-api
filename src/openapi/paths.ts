@@ -21,8 +21,11 @@ const jsonResponse = (description: string, resultSchema: Record<string, unknown>
 });
 
 const validationError = { $ref: '#/components/responses/ValidationError' };
+
 const unauthorized = { $ref: '#/components/responses/Unauthorized' };
+
 const rateLimited = { $ref: '#/components/responses/RateLimited' };
+
 const genericError = {
   description: 'The request could not be completed.',
   content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },

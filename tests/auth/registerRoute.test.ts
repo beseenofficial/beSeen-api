@@ -7,7 +7,9 @@ import registerUser from '../../src/utils/auth/registerUser';
 vi.mock('../../src/utils/auth/registerUser', () => ({ default: vi.fn() }));
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const registerUserMock = vi.mocked(registerUser);
+
 const validBody = () => ({
   walletAddress: WALLET.toLowerCase(),
   username: '  New_User  ',
@@ -149,6 +151,7 @@ describe('POST /v1/auth/register', () => {
 
   it('rejects a client-supplied derivation version', async () => {
     const requestBody = validBody();
+
     const response = await request(app)
       .post('/v1/auth/register')
       .send({

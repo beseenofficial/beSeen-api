@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import env from '../../src/env';
 import AuthSession from '../../src/models/AuthSession';
-import createAuthSession from '../../src/utils/auth/createAuthSession';
 import { hashRefreshToken } from '../../src/utils/auth/refreshToken';
+import createAuthSession from '../../src/utils/auth/createAuthSession';
 
 describe('createAuthSession', () => {
   beforeEach(() => {
@@ -27,6 +27,7 @@ describe('createAuthSession', () => {
     const userId = new Types.ObjectId();
 
     const auth = await createAuthSession({ id: userId, role: 'user' });
+
     const payload = jwt.verify(auth.accessToken, env.ACCESS_TOKEN_SECRET, {
       algorithms: ['HS256'],
       issuer: env.AUTH_DOMAIN,

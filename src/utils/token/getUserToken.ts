@@ -1,16 +1,6 @@
 import User from '../../models/User';
 import getOrCreateUserToken from './getOrCreateUserToken';
-
-type GetUserTokenResult =
-  | {
-      ok: true;
-      token: {
-        id: string;
-        owner: { id: string; username: string; avatar: string | null };
-        createdAt: Date;
-      };
-    }
-  | { ok: false; reason: 'user_not_found' };
+import type { GetUserTokenResult } from '../../types/token';
 
 const getUserToken = async (username: string): Promise<GetUserTokenResult> => {
   const owner = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
@@ -30,4 +20,3 @@ const getUserToken = async (username: string): Promise<GetUserTokenResult> => {
 };
 
 export default getUserToken;
-export type { GetUserTokenResult };

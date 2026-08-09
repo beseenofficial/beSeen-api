@@ -1,5 +1,5 @@
-import { generateKeyPairSync, sign } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { generateKeyPairSync, sign } from 'node:crypto';
 
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
 import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
@@ -36,7 +36,9 @@ describe('message manifest canonicalization', () => {
 
   it('binds every security-sensitive envelope field to the signature', () => {
     const input = manifestInput();
+
     const original = buildMessageSignatureMessage(input);
+
     const mutations = [
       { ...input, conversationId: `${input.conversationId}changed` },
       { ...input, clientMessageId: `${input.clientMessageId}changed` },
@@ -65,11 +67,14 @@ describe('message manifest canonicalization', () => {
 
   it('can be verified with the sender Ed25519 public key', () => {
     const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+
     const rawPublicKey = publicKey.export({ format: 'der', type: 'spki' }).subarray(-32);
+
     const message = buildMessageSignatureMessage({
       ...manifestInput(),
       senderSigningPublicKey: rawPublicKey.toString('base64'),
     });
+
     const signature = sign(null, Buffer.from(message, 'utf8'), privateKey).toString('base64');
 
     expect(verifyEd25519Signature(rawPublicKey.toString('base64'), message, signature)).toBe(true);

@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
-import { KEY_DERIVATION_VERSION, USER_KEY_STATUSES } from '../constant/auth';
 import type { UserKeyStatus } from '../constant/auth';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
+import { KEY_DERIVATION_VERSION, USER_KEY_STATUSES } from '../constant/auth';
 
 interface IUserKey {
   user: Types.ObjectId;

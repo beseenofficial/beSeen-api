@@ -22,7 +22,7 @@ const loginRoute: RequestHandler = async (req, res) => {
   }
 
   const result = await loginUser(parsedBody.data);
-  
+
   if (!result.ok) {
     const error = loginErrors[result.reason];
     return res.status(error.statusCode).j({

@@ -1,21 +1,28 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
-import signAccessToken from '../../src/utils/auth/signAccessToken';
 import sendMessage from '../../src/utils/messenger/sendMessage';
+import signAccessToken from '../../src/utils/auth/signAccessToken';
 
 vi.mock('../../src/utils/messenger/sendMessage', () => ({ default: vi.fn() }));
 
 const sendMessageMock = vi.mocked(sendMessage);
+
 const userId = new Types.ObjectId();
+
 const recipientId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const messageId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
+
 const validBody = () => ({
   clientMessageId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
   contentCiphertext: Buffer.alloc(32, 1).toString('base64'),

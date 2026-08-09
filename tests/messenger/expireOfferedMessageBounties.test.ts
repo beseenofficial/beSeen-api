@@ -11,6 +11,7 @@ describe('expireOfferedMessageBounties', () => {
 
   it('persists expired state only for offered bounties in the requested message page', async () => {
     const now = new Date('2026-08-07T12:00:00.000Z');
+
     const messageIds = [new Types.ObjectId(), new Types.ObjectId()];
     vi.spyOn(MessageBounty, 'updateMany').mockReturnValue({
       exec: vi.fn().mockResolvedValue({ modifiedCount: 2 }),

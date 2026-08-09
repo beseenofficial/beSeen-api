@@ -1,41 +1,11 @@
 import Broadcast from '../../models/Broadcast';
 import type { BroadcastDocument } from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
-import type { FinalizeBroadcastBody } from '../../validation/broadcast/finalize';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
-import buildBroadcastRecipientKeysDigest from './buildBroadcastRecipientKeysDigest';
 import buildBroadcastSignatureMessage from './buildBroadcastSignatureMessage';
-import type { BroadcastAudienceType } from '../../constant/broadcast';
-
-type FinalizeBroadcastFailure =
-  | { reason: 'draft_not_found' }
-  | { reason: 'draft_expired' }
-  | { reason: 'recipient_keys_incomplete'; remainingCount: number }
-  | { reason: 'audience_snapshot_mismatch' }
-  | { reason: 'invalid_signature' }
-  | { reason: 'finalization_conflict' };
-
-interface PublishedBroadcast {
-  id: string;
-  clientBroadcastId: string;
-  creatorId: string;
-  status: 'published';
-  audience: {
-    type: BroadcastAudienceType;
-    count: number;
-  };
-  encryptionVersion: number;
-  contentCiphertext: string;
-  contentNonce: string;
-  creatorEncryptedBroadcastKey: string;
-  recipientKeysDigest: string;
-  signature: string;
-  publishedAt: Date;
-}
-
-type FinalizeBroadcastResult =
-  | { ok: true; broadcast: PublishedBroadcast; publishedNow: boolean }
-  | ({ ok: false } & FinalizeBroadcastFailure);
+import type { FinalizeBroadcastBody } from '../../validation/broadcast/finalize';
+import buildBroadcastRecipientKeysDigest from './buildBroadcastRecipientKeysDigest';
+import type { FinalizeBroadcastResult, PublishedBroadcast } from '../../types/broadcast';
 
 interface FinalizedFields {
   contentCiphertext: string;
@@ -127,6 +97,7 @@ const finalizeBroadcast = async (
       encryptedBroadcastKey: row.encryptedBroadcastKey!,
     })),
   );
+
   const signatureMessage = buildBroadcastSignatureMessage({
     broadcastId: draft._id.toString(),
     clientBroadcastId: draft.clientBroadcastId,
@@ -153,6 +124,7 @@ const finalizeBroadcast = async (
     signature: body.signature,
     publishedAt: new Date(),
   };
+
   const updateResult = await Broadcast.updateOne(
     { _id: draft._id, creator: creatorId, status: 'draft' },
     { $set: { status: 'published', ...finalizedFields } },
@@ -187,4 +159,3 @@ const finalizeBroadcast = async (
 };
 
 export default finalizeBroadcast;
-export type { FinalizeBroadcastFailure, FinalizeBroadcastResult, PublishedBroadcast };

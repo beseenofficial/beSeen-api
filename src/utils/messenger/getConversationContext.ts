@@ -1,25 +1,6 @@
 import UserKey from '../../models/UserKey';
 import getConversationAccess from './getConversationAccess';
-import type { ConversationAccessFailureReason } from './getConversationAccess';
-
-interface ConversationContextParticipant {
-  id: string;
-  username: string;
-  avatar: string | null;
-  keyVersion: number;
-  signingPublicKey: string;
-  encryptionPublicKey: string;
-}
-
-interface ConversationContext {
-  conversationId: string;
-  viewer: ConversationContextParticipant;
-  otherParticipant: ConversationContextParticipant;
-}
-
-type GetConversationContextResult =
-  | { ok: true; context: ConversationContext }
-  | { ok: false; reason: ConversationAccessFailureReason | 'active_keys_not_found' };
+import type { GetConversationContextResult } from '../../types/messenger/conversation';
 
 const getConversationContext = async (
   userId: string,
@@ -69,4 +50,3 @@ const getConversationContext = async (
 };
 
 export default getConversationContext;
-export type { ConversationContext, ConversationContextParticipant, GetConversationContextResult };

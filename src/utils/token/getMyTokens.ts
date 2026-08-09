@@ -1,18 +1,7 @@
-import TokenHolding from '../../models/TokenHolding';
 import User from '../../models/User';
 import UserToken from '../../models/UserToken';
-
-type MyTokensResult =
-  | {
-      ok: true;
-      tokens: Array<{
-        id: string;
-        owner: { id: string; username: string; avatar: string | null };
-        createdAt: Date;
-        acquiredAt: Date;
-      }>;
-    }
-  | { ok: false; reason: 'account_unavailable' };
+import TokenHolding from '../../models/TokenHolding';
+import type { MyTokensResult } from '../../types/token';
 
 const getMyTokens = async (userId: string): Promise<MyTokensResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
@@ -26,18 +15,22 @@ const getMyTokens = async (userId: string): Promise<MyTokensResult> => {
   }
 
   const tokens = await UserToken.find({ _id: { $in: holdings.map((item) => item.token) } }).exec();
+
   const tokenById = new Map(tokens.map((token) => [token._id.toString(), token]));
+
   const owners = await User.find({
     _id: { $in: tokens.map((token) => token.owner) },
     status: 'active',
     deletedAt: null,
   }).exec();
+
   const ownerById = new Map(owners.map((owner) => [owner._id.toString(), owner]));
 
   return {
     ok: true,
     tokens: holdings.flatMap((holding) => {
       const token = tokenById.get(holding.token.toString());
+
       const owner = token ? ownerById.get(token.owner.toString()) : undefined;
       return token && owner
         ? [
@@ -54,4 +47,3 @@ const getMyTokens = async (userId: string): Promise<MyTokensResult> => {
 };
 
 export default getMyTokens;
-export type { MyTokensResult };

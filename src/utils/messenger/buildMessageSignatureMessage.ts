@@ -1,31 +1,9 @@
+import type { MessageSignatureMessageInput } from '../../types/messenger/message';
 import {
   MESSENGER_CONTENT_ENCRYPTION_SUITE,
   MESSENGER_KEY_WRAP_SUITE,
   MESSENGER_SIGNATURE_VERSION,
 } from '../../constant/messenger';
-
-interface MessageSignatureMessageInput {
-  conversationId: string;
-  clientMessageId: string;
-  senderId: string;
-  recipientId: string;
-  encryptionVersion: number;
-  senderKeyVersion: number;
-  recipientKeyVersion: number;
-  senderSigningPublicKey: string;
-  senderEncryptionPublicKey: string;
-  recipientEncryptionPublicKey: string;
-  contentCiphertext: string;
-  contentNonce: string;
-  senderEncryptedMessageKey: string;
-  recipientEncryptedMessageKey: string;
-  replyToMessageId: string | null;
-  bounty?: {
-    assetCode: string;
-    amount: string;
-    durationSeconds: number;
-  } | null;
-}
 
 const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): string => {
   const bounty = input.bounty ?? null;
@@ -57,4 +35,3 @@ const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): stri
 };
 
 export default buildMessageSignatureMessage;
-export type { MessageSignatureMessageInput };

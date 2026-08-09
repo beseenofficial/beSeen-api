@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { RESERVED_USERNAMES } from '../../constant/user';
 import isHttpUrl from '../../utils/profile/isHttpUrl';
+import { RESERVED_USERNAMES } from '../../constant/user';
 
 const usernameSchema = z
   .string()

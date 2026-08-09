@@ -1,12 +1,7 @@
 import type { ClientSession, Types } from 'mongoose';
 
 import Conversation from '../../models/Conversation';
-import type { ConversationDocument } from '../../models/Conversation';
-
-interface EnsuredConversation {
-  conversation: ConversationDocument;
-  created: boolean;
-}
+import type { EnsuredConversation } from '../../types/messenger/conversation';
 
 const canonicalParticipantPair = (
   firstUserId: Types.ObjectId,
@@ -32,7 +27,7 @@ const ensureConversation = async (
     { $setOnInsert: pair },
     { upsert: true, session },
   ).exec();
-  
+
   const conversation = await Conversation.findOne(pair).session(session).exec();
 
   if (!conversation) {
@@ -47,4 +42,3 @@ const ensureConversation = async (
 
 export default ensureConversation;
 export { canonicalParticipantPair };
-export type { EnsuredConversation };

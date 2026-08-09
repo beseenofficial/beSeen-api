@@ -1,23 +1,7 @@
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
+import type { UploadBroadcastRecipientKeysResult } from '../../types/broadcast';
 import type { UploadBroadcastRecipientKeysBody } from '../../validation/broadcast/uploadRecipientKeys';
-
-type UploadBroadcastRecipientKeysFailureReason =
-  | 'draft_not_found'
-  | 'recipient_not_in_audience'
-  | 'encrypted_key_conflict';
-
-interface BroadcastKeyUploadProgress {
-  acceptedCount: number;
-  uploadedCount: number;
-  audienceCount: number;
-  remainingCount: number;
-  complete: boolean;
-}
-
-type UploadBroadcastRecipientKeysResult =
-  | { ok: true; progress: BroadcastKeyUploadProgress }
-  | { ok: false; reason: UploadBroadcastRecipientKeysFailureReason };
 
 const uploadBroadcastRecipientKeys = async (
   creatorId: string,
@@ -88,6 +72,7 @@ const uploadBroadcastRecipientKeys = async (
     broadcast: draft._id,
     encryptedBroadcastKey: { $ne: null },
   }).exec();
+
   const remainingCount = Math.max(0, draft.audienceSnapshotCount - uploadedCount);
 
   return {
@@ -103,8 +88,3 @@ const uploadBroadcastRecipientKeys = async (
 };
 
 export default uploadBroadcastRecipientKeys;
-export type {
-  BroadcastKeyUploadProgress,
-  UploadBroadcastRecipientKeysFailureReason,
-  UploadBroadcastRecipientKeysResult,
-};

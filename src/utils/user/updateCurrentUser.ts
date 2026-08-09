@@ -1,15 +1,10 @@
-import User from '../../models/User';
 import log from '../../logger';
-import type { AuthenticatedUser } from '../../types/auth';
-import type { UpdateProfileBody } from '../../validation/user/updateProfile';
-import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
+import User from '../../models/User';
+import type { StoredAvatar } from '../../types/avatar';
+import type { UpdateCurrentUserResult } from '../../types/user';
 import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
-import type { StoredAvatar } from '../avatar/avatarStorage';
-
-type UpdateProfileFailureReason =
-  'account_unavailable' | 'username_taken' | 'invalid_avatar' | 'avatar_storage_unavailable';
-type UpdateCurrentUserResult =
-  { ok: true; user: AuthenticatedUser } | { ok: false; reason: UpdateProfileFailureReason };
+import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
+import type { UpdateProfileBody } from '../../validation/user/updateProfile';
 
 const isUsernameDuplicateError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 11_000;
@@ -105,4 +100,3 @@ const updateCurrentUser = async (
 };
 
 export default updateCurrentUser;
-export type { UpdateCurrentUserResult, UpdateProfileFailureReason };

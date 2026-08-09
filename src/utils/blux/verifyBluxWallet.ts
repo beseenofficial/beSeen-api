@@ -25,6 +25,7 @@ type VerifyBluxWalletResult =
 
 const verifyBluxWallet = async (walletAddress: string): Promise<VerifyBluxWalletResult> => {
   const controller = new AbortController();
+
   const timeout = setTimeout(() => controller.abort(), env.BLUX_VERIFICATION_TIMEOUT_MS);
 
   try {
@@ -66,4 +67,3 @@ const verifyBluxWallet = async (walletAddress: string): Promise<VerifyBluxWallet
 };
 
 export default verifyBluxWallet;
-export type { VerifyBluxWalletResult };

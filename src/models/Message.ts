@@ -1,6 +1,8 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
+import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
+import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
@@ -14,8 +16,6 @@ import {
   MESSENGER_SIGNATURE_VERSION,
   MESSENGER_WRAPPED_KEY_BYTES,
 } from '../constant/messenger';
-import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
-import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 
 interface IMessage {
   conversation: Types.ObjectId;
@@ -253,6 +253,7 @@ messageSchema.pre('validate', function validateParticipants() {
   }
 
   const bountyTerms = [this.bountyAssetCode, this.bountyAmount, this.bountyDurationSeconds];
+
   const suppliedBountyTerms = bountyTerms.filter((value) => value !== null && value !== undefined);
 
   if (suppliedBountyTerms.length !== 0 && suppliedBountyTerms.length !== bountyTerms.length) {

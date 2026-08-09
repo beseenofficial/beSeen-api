@@ -1,17 +1,5 @@
-import type { MessengerBountyStatus } from '../../constant/messenger';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
-
-interface SerializedMessageBounty {
-  id: string;
-  assetCode: string;
-  amount: string;
-  durationSeconds: number;
-  status: MessengerBountyStatus;
-  expiresAt: Date;
-  replyMessageId: string | null;
-  claimableAt: Date | null;
-  claimedAt: Date | null;
-}
+import type { SerializedMessageBounty } from '../../types/messenger/bounty';
 
 const serializeMessageBounty = (bounty: MessageBountyDocument): SerializedMessageBounty => ({
   id: bounty._id.toString(),
@@ -26,4 +14,3 @@ const serializeMessageBounty = (bounty: MessageBountyDocument): SerializedMessag
 });
 
 export default serializeMessageBounty;
-export type { SerializedMessageBounty };

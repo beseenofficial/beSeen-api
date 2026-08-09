@@ -22,7 +22,9 @@ const unauthorized = (res: Parameters<RequestHandler>[1]) =>
 
 const authenticate: RequestHandler = async (req, res, next) => {
   const authorization = req.header('authorization');
+
   const match = authorization?.match(/^Bearer ([^\s]+)$/i);
+
   const accessToken = match?.[1];
 
   if (!accessToken) {

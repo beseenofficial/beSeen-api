@@ -1,17 +1,17 @@
 import { Router } from 'express';
 
-import authenticate from '../../middleware/authenticate';
-import authConfigRateLimit from '../../middleware/authConfigRateLimit';
-import loginRateLimit from '../../middleware/loginRateLimit';
-import noStore from '../../middleware/noStore';
-import registrationRateLimit from '../../middleware/registrationRateLimit';
-import avatarUpload from '../../middleware/avatarUpload';
-import refreshRateLimit from '../../middleware/refreshRateLimit';
-import getAuthConfigRoute from './config';
 import loginRoute from './login';
 import logoutRoute from './logout';
-import registerRoute from './register';
 import refreshRoute from './refresh';
+import registerRoute from './register';
+import getAuthConfigRoute from './config';
+import noStore from '../../middleware/noStore';
+import authenticate from '../../middleware/authenticate';
+import avatarUpload from '../../middleware/avatarUpload';
+import loginRateLimit from '../../middleware/loginRateLimit';
+import refreshRateLimit from '../../middleware/refreshRateLimit';
+import authConfigRateLimit from '../../middleware/authConfigRateLimit';
+import registrationRateLimit from '../../middleware/registrationRateLimit';
 
 const authRoutes = Router();
 

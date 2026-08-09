@@ -1,20 +1,23 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Broadcast from '../../src/models/Broadcast';
-import BroadcastRecipient from '../../src/models/BroadcastRecipient';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
+import Broadcast from '../../src/models/Broadcast';
+import BroadcastRecipient from '../../src/models/BroadcastRecipient';
 import createBroadcastDraft from '../../src/utils/broadcast/createBroadcastDraft';
-import getBroadcastDraftRecipients from '../../src/utils/broadcast/getBroadcastDraftRecipients';
 import resolveBroadcastAudience from '../../src/utils/broadcast/resolveBroadcastAudience';
+import getBroadcastDraftRecipients from '../../src/utils/broadcast/getBroadcastDraftRecipients';
 
 vi.mock('../../src/utils/broadcast/getBroadcastDraftRecipients', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/broadcast/resolveBroadcastAudience', () => ({ default: vi.fn() }));
 
 const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const getRecipientsMock = vi.mocked(getBroadcastDraftRecipients);
+
 const resolveAudienceMock = vi.mocked(resolveBroadcastAudience);
 
 describe('createBroadcastDraft', () => {
@@ -30,12 +33,14 @@ describe('createBroadcastDraft', () => {
       walletAddress: WALLET_ADDRESS,
       username: 'creator_user',
     });
+
     const creatorKey = new UserKey({
       user: creator._id,
       derivationVersion: 1,
       signingPublicKey: Buffer.alloc(32, 1).toString('base64'),
       encryptionPublicKey: Buffer.alloc(32, 2).toString('base64'),
     });
+
     const audience = [
       {
         recipientId: new Types.ObjectId().toString(),

@@ -1,21 +1,14 @@
 import { Types } from 'mongoose';
 
-import TokenHolding from '../../models/TokenHolding';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import TokenHolding from '../../models/TokenHolding';
 import getOrCreateUserToken from '../token/getOrCreateUserToken';
-
-interface BroadcastAudienceMember {
-  recipientId: string;
-  username: string;
-  keyVersion: number;
-  encryptionPublicKey: string;
-  accessMode: 'token';
-  tokenId: string;
-}
+import type { BroadcastAudienceMember } from '../../types/broadcast';
 
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {
   const token = await getOrCreateUserToken(new Types.ObjectId(creatorId));
+
   const holdings = await TokenHolding.find({ token: token._id }).sort({ _id: 1 }).exec();
   if (holdings.length === 0) {
     return [];
@@ -38,6 +31,7 @@ const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAud
     status: 'active',
     revokedAt: null,
   }).exec();
+
   const keysByUserId = new Map(keys.map((key) => [key.user.toString(), key]));
 
   return users.flatMap((user) => {
@@ -59,4 +53,3 @@ const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAud
 };
 
 export default resolveBroadcastAudience;
-export type { BroadcastAudienceMember };

@@ -1,25 +1,33 @@
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
 import { withDatabaseTransaction } from '../../src/db';
 import TokenHolding from '../../src/models/TokenHolding';
-import User from '../../src/models/User';
+import purchaseUserToken from '../../src/utils/token/purchaseUserToken';
 import ensureConversation from '../../src/utils/messenger/ensureConversation';
 import getOrCreateUserToken from '../../src/utils/token/getOrCreateUserToken';
-import purchaseUserToken from '../../src/utils/token/purchaseUserToken';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/token/getOrCreateUserToken', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/ensureConversation', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const getOrCreateUserTokenMock = vi.mocked(getOrCreateUserToken);
+
 const ensureConversationMock = vi.mocked(ensureConversation);
+
 const buyerId = new Types.ObjectId();
+
 const ownerId = new Types.ObjectId();
+
 const tokenId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const acquiredAt = new Date('2026-08-07T12:00:00.000Z');
+
 const session = {} as never;
 
 const queryResult = (value: unknown) => ({

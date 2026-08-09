@@ -16,6 +16,7 @@ const getBroadcastDraftRecipientsRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = broadcastDraftParamsSchema.safeParse(req.params);
+
   const parsedQuery = broadcastRecipientPageQuerySchema.safeParse(req.query);
 
   if (!parsedParams.success || !parsedQuery.success) {

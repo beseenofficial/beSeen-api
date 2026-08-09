@@ -1,49 +1,14 @@
 import type { Types } from 'mongoose';
 
+import User from '../../models/User';
+import Broadcast from '../../models/Broadcast';
+import BroadcastRecipient from '../../models/BroadcastRecipient';
+import type { BroadcastDraftListQuery } from '../../validation/broadcast/draft';
+import type { BroadcastDraftListItem, GetBroadcastDraftsResult } from '../../types/broadcast';
 import {
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_KEY_WRAP_SUITE,
 } from '../../constant/broadcast';
-import type { BroadcastAudienceType } from '../../constant/broadcast';
-import Broadcast from '../../models/Broadcast';
-import BroadcastRecipient from '../../models/BroadcastRecipient';
-import User from '../../models/User';
-import type { BroadcastDraftListQuery } from '../../validation/broadcast/draft';
-
-interface BroadcastDraftListItem {
-  id: string;
-  clientBroadcastId: string;
-  status: 'draft';
-  audience: {
-    type: BroadcastAudienceType;
-    count: number;
-  };
-  progress: {
-    uploadedCount: number;
-    remainingCount: number;
-    complete: boolean;
-  };
-  encryption: {
-    version: number;
-    contentSuite: string;
-    keyWrapSuite: string;
-  };
-  creatorKey: {
-    keyVersion: number;
-    encryptionPublicKey: string;
-  };
-  createdAt: Date;
-  expiresAt: Date;
-}
-
-interface BroadcastDraftListPage {
-  items: BroadcastDraftListItem[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-type GetBroadcastDraftsResult =
-  { ok: true; drafts: BroadcastDraftListPage } | { ok: false; reason: 'account_unavailable' };
 
 interface UploadedKeyCount {
   _id: Types.ObjectId;
@@ -78,8 +43,11 @@ const getBroadcastDrafts = async (
     .sort({ _id: -1 })
     .limit(query.limit + 1)
     .exec();
+
   const hasMore = allDrafts.length > query.limit;
+
   const drafts = hasMore ? allDrafts.slice(0, query.limit) : allDrafts;
+
   const uploadedCounts =
     drafts.length === 0
       ? []
@@ -92,11 +60,14 @@ const getBroadcastDrafts = async (
           },
           { $group: { _id: '$broadcast', uploadedCount: { $sum: 1 } } },
         ]).exec();
+
   const uploadedCountByDraftId = new Map(
     uploadedCounts.map((count) => [count._id.toString(), count.uploadedCount]),
   );
+
   const items = drafts.map((draft): BroadcastDraftListItem => {
     const uploadedCount = uploadedCountByDraftId.get(draft._id.toString()) ?? 0;
+
     const remainingCount = Math.max(0, draft.audienceSnapshotCount - uploadedCount);
 
     return {
@@ -122,6 +93,7 @@ const getBroadcastDrafts = async (
       expiresAt: draft.expiresAt,
     };
   });
+
   const lastItem = items.at(-1);
 
   return {
@@ -135,4 +107,3 @@ const getBroadcastDrafts = async (
 };
 
 export default getBroadcastDrafts;
-export type { BroadcastDraftListItem, BroadcastDraftListPage, GetBroadcastDraftsResult };

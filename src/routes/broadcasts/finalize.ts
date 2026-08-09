@@ -15,6 +15,7 @@ const finalizeBroadcastRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = broadcastDraftParamsSchema.safeParse(req.params);
+
   const parsedBody = finalizeBroadcastBodySchema.safeParse(req.body);
 
   if (!parsedParams.success || !parsedBody.success) {
@@ -54,7 +55,6 @@ const finalizeBroadcastRoute: RequestHandler = async (req, res) => {
       });
     }
 
-    
     const error = finalizeErrors[result.reason];
 
     return res.status(error.statusCode).j({

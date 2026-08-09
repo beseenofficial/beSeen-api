@@ -25,6 +25,7 @@ const purchaseUserTokenRoute: RequestHandler = async (req, res) => {
   if (!result.ok) {
     const status =
       result.reason === 'user_not_found' ? 404 : result.reason === 'own_token' ? 409 : 401;
+
     const code =
       result.reason === 'user_not_found'
         ? 'USER_NOT_FOUND'

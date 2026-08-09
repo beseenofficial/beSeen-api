@@ -4,78 +4,12 @@ import getConversationAccess from './getConversationAccess';
 import type { MessageDocument } from '../../models/Message';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import expireOfferedMessageBounties from './expireOfferedMessageBounties';
-import type { ConversationAccessFailureReason } from './getConversationAccess';
 import type { MessageHistoryQuery } from '../../validation/messenger/messageHistory';
+import type { GetMessageHistoryResult, MessageHistoryItem } from '../../types/messenger/message';
 import {
   MESSENGER_CONTENT_ENCRYPTION_SUITE,
   MESSENGER_KEY_WRAP_SUITE,
 } from '../../constant/messenger';
-
-interface MessageHistoryItem {
-  id: string;
-  sequence: number;
-  manifest: {
-    signatureVersion: number;
-    encryptionVersion: number;
-    contentSuite: string;
-    keyWrapSuite: string;
-    conversationId: string;
-    clientMessageId: string;
-    senderId: string;
-    recipientId: string;
-    senderKeyVersion: number;
-    recipientKeyVersion: number;
-    senderSigningPublicKey: string;
-    senderEncryptionPublicKey: string;
-    recipientEncryptionPublicKey: string;
-    contentCiphertext: string;
-    contentNonce: string;
-    senderEncryptedMessageKey: string;
-    recipientEncryptedMessageKey: string;
-    replyToMessageId: string | null;
-    bountyTerms: {
-      assetCode: string;
-      amount: string;
-      durationSeconds: number;
-    } | null;
-  };
-  viewerKey: {
-    source: 'sender' | 'recipient';
-    keyVersion: number;
-    encryptionPublicKey: string;
-    encryptedMessageKey: string;
-  };
-  integrity: {
-    algorithm: 'Ed25519';
-    signingPublicKey: string;
-    signature: string;
-  };
-  delivery: {
-    seenByRecipient: boolean;
-  };
-  bounty: {
-    id: string;
-    assetCode: string;
-    amount: string;
-    durationSeconds: number;
-    status: string;
-    expiresAt: Date;
-    replyMessageId: string | null;
-    claimableAt: Date | null;
-    claimedAt: Date | null;
-  } | null;
-  createdAt: Date;
-}
-
-interface MessageHistoryPage {
-  items: MessageHistoryItem[];
-  nextBeforeSequence: number | null;
-  hasMore: boolean;
-}
-
-type GetMessageHistoryResult =
-  | { ok: true; history: MessageHistoryPage }
-  | { ok: false; reason: ConversationAccessFailureReason };
 
 const serializeMessageHistoryItem = (
   message: MessageDocument,
@@ -209,7 +143,7 @@ const getMessageHistory = async (
       bountiesByMessage.get(message._id.toString()) ?? null,
     );
   });
-  
+
   const oldestItem = items.at(-1);
 
   return {
@@ -223,4 +157,3 @@ const getMessageHistory = async (
 };
 
 export default getMessageHistory;
-export type { GetMessageHistoryResult, MessageHistoryItem, MessageHistoryPage };

@@ -1,10 +1,10 @@
-import { Types } from 'mongoose';
 import sharp from 'sharp';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import User from '../../src/models/User';
-import { deleteAvatar, uploadAvatar } from '../../src/utils/avatar/avatarStorage';
 import updateCurrentUser from '../../src/utils/user/updateCurrentUser';
+import { deleteAvatar, uploadAvatar } from '../../src/utils/avatar/avatarStorage';
 
 vi.mock('../../src/utils/avatar/avatarStorage', () => ({
   uploadAvatar: vi.fn(),
@@ -12,8 +12,11 @@ vi.mock('../../src/utils/avatar/avatarStorage', () => ({
 }));
 
 const uploadAvatarMock = vi.mocked(uploadAvatar);
+
 const deleteAvatarMock = vi.mocked(deleteAvatar);
+
 const userId = new Types.ObjectId();
+
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 const createUser = () => {
@@ -65,6 +68,7 @@ describe('updateCurrentUser', () => {
 
   it('uploads a replacement and deletes the previous object after saving', async () => {
     const user = createUser();
+
     const input = await sharp({
       create: { width: 256, height: 256, channels: 3, background: '#123456' },
     })
@@ -104,6 +108,7 @@ describe('updateCurrentUser', () => {
 
   it('deletes a newly uploaded object if the database save fails', async () => {
     const user = createUser();
+
     const input = await sharp({
       create: { width: 128, height: 128, channels: 3, background: '#ffffff' },
     })

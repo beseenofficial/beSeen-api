@@ -18,6 +18,7 @@ describe('getBroadcastDraftRecipients', () => {
 
   it('returns a stable recipient cursor and does not expose private data', async () => {
     const creatorId = new Types.ObjectId();
+
     const draft = new Broadcast({
       _id: new Types.ObjectId(),
       clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -28,6 +29,7 @@ describe('getBroadcastDraftRecipients', () => {
       creatorSigningPublicKey: Buffer.alloc(32, 2).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
+
     const rows = [1, 2].map(
       (value) =>
         new BroadcastRecipient({
@@ -80,6 +82,7 @@ describe('getBroadcastDraftRecipients', () => {
       exec: vi.fn().mockResolvedValue(null),
     } as never);
     const findRecipientsSpy = vi.spyOn(BroadcastRecipient, 'find');
+
     const countRecipientsSpy = vi.spyOn(BroadcastRecipient, 'countDocuments');
 
     await expect(

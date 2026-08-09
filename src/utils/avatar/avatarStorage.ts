@@ -1,14 +1,10 @@
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import type { Types } from 'mongoose';
 import { randomUUID } from 'node:crypto';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 import env from '../../env';
 import r2Client from '../../storage/r2Client';
-
-interface StoredAvatar {
-  objectKey: string;
-  publicUrl: string;
-}
+import type { StoredAvatar } from '../../types/avatar';
 
 const buildAvatarObjectKey = (userId: Types.ObjectId): string =>
   `avatars/${userId.toString()}/${randomUUID()}.webp`;
@@ -42,4 +38,3 @@ const deleteAvatar = async (objectKey: string): Promise<void> => {
 };
 
 export { deleteAvatar, uploadAvatar };
-export type { StoredAvatar };

@@ -2,8 +2,8 @@ import type { RequestHandler } from 'express';
 
 import { updateErrors } from '../../types/errors/users';
 import updateCurrentUser from '../../utils/user/updateCurrentUser';
-import parseProfileUpdateRequestBody from '../../utils/user/parseProfileUpdateRequestBody';
 import updateProfileBodySchema from '../../validation/user/updateProfile';
+import parseProfileUpdateRequestBody from '../../utils/user/parseProfileUpdateRequestBody';
 
 const updateMeRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {

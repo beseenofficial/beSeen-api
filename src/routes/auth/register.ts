@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
 
 import registerUser from '../../utils/auth/registerUser';
-import parseRegistrationRequestBody from '../../utils/auth/parseRegistrationRequestBody';
 import { registrationErrors } from '../../types/errors/auth';
 import registerBodySchema from '../../validation/auth/register';
+import parseRegistrationRequestBody from '../../utils/auth/parseRegistrationRequestBody';
 
 const registerRoute: RequestHandler = async (req, res) => {
   const parsedBody = registerBodySchema.safeParse(parseRegistrationRequestBody(req.body));

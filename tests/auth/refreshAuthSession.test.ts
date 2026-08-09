@@ -1,10 +1,10 @@
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import AuthSession from '../../src/models/AuthSession';
 import User from '../../src/models/User';
-import refreshAuthSession from '../../src/utils/auth/refreshAuthSession';
+import AuthSession from '../../src/models/AuthSession';
 import { hashRefreshToken } from '../../src/utils/auth/refreshToken';
+import refreshAuthSession from '../../src/utils/auth/refreshAuthSession';
 
 const REFRESH_TOKEN = 'r'.repeat(43);
 
@@ -25,7 +25,9 @@ describe('refreshAuthSession', () => {
 
   it('atomically rotates a valid refresh token', async () => {
     const authSessionId = new Types.ObjectId();
+
     const userId = new Types.ObjectId();
+
     const expiresAt = new Date('2026-08-26T12:00:00.000Z');
     vi.spyOn(AuthSession, 'findOne').mockReturnValue(
       queryResult({ _id: authSessionId, user: userId, expiresAt }) as never,
@@ -63,6 +65,7 @@ describe('refreshAuthSession', () => {
   it('rejects an unknown, expired, revoked, or already-rotated token', async () => {
     vi.spyOn(AuthSession, 'findOne').mockReturnValue(queryResult(null) as never);
     const rotateSpy = vi.spyOn(AuthSession, 'findOneAndUpdate');
+
     const userLookupSpy = vi.spyOn(User, 'findOne');
 
     const result = await refreshAuthSession(REFRESH_TOKEN);

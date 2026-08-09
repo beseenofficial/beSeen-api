@@ -1,25 +1,32 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
 import signAccessToken from '../../src/utils/auth/signAccessToken';
 import getConversation from '../../src/utils/messenger/getConversation';
-import getConversationContext from '../../src/utils/messenger/getConversationContext';
 import getConversations from '../../src/utils/messenger/getConversations';
+import getConversationContext from '../../src/utils/messenger/getConversationContext';
 
 vi.mock('../../src/utils/messenger/getConversation', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/getConversationContext', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/getConversations', () => ({ default: vi.fn() }));
 
 const getConversationMock = vi.mocked(getConversation);
+
 const getConversationContextMock = vi.mocked(getConversationContext);
+
 const getConversationsMock = vi.mocked(getConversations);
+
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const otherUserId = new Types.ObjectId();
+
 const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('Messenger conversation routes', () => {

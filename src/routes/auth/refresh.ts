@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 
-import refreshAuthSession from '../../utils/auth/refreshAuthSession';
 import refreshBodySchema from '../../validation/auth/refresh';
+import refreshAuthSession from '../../utils/auth/refreshAuthSession';
 
 const refreshRoute: RequestHandler = async (req, res) => {
   const parsedBody = refreshBodySchema.safeParse(req.body);

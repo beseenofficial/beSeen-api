@@ -6,6 +6,7 @@ import BroadcastRecipient from '../../src/models/BroadcastRecipient';
 import uploadBroadcastRecipientKeys from '../../src/utils/broadcast/uploadBroadcastRecipientKeys';
 
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const wrappedKey = (value: number) => Buffer.alloc(80, value).toString('base64');
 
 describe('uploadBroadcastRecipientKeys', () => {
@@ -15,6 +16,7 @@ describe('uploadBroadcastRecipientKeys', () => {
 
   it('stores a guarded idempotent batch and returns total progress', async () => {
     const creatorId = new Types.ObjectId();
+
     const draft = new Broadcast({
       _id: new Types.ObjectId(),
       clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -25,6 +27,7 @@ describe('uploadBroadcastRecipientKeys', () => {
       creatorSigningPublicKey: Buffer.alloc(32, 3).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
+
     const rows = [1, 2].map(
       (value) =>
         new BroadcastRecipient({
@@ -35,6 +38,7 @@ describe('uploadBroadcastRecipientKeys', () => {
           encryptionPublicKey: Buffer.alloc(32, value).toString('base64'),
         }),
     );
+
     const body = {
       keys: rows.map((row, index) => ({
         recipientId: row.recipient.toString(),
@@ -80,6 +84,7 @@ describe('uploadBroadcastRecipientKeys', () => {
 
   it('rejects a ciphertext change without overwriting the stored value', async () => {
     const creatorId = new Types.ObjectId();
+
     const draft = new Broadcast({
       _id: new Types.ObjectId(),
       clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -90,6 +95,7 @@ describe('uploadBroadcastRecipientKeys', () => {
       creatorSigningPublicKey: Buffer.alloc(32, 3).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
+
     const row = new BroadcastRecipient({
       broadcast: draft._id,
       recipient: new Types.ObjectId(),

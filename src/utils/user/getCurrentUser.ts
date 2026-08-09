@@ -1,8 +1,5 @@
 import User from '../../models/User';
-import type { AuthenticatedUser } from '../../types/auth';
-
-type GetCurrentUserResult =
-  { ok: true; user: AuthenticatedUser } | { ok: false; reason: 'account_unavailable' };
+import type { GetCurrentUserResult } from '../../types/user';
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
@@ -22,4 +19,3 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
 };
 
 export default getCurrentUser;
-export type { GetCurrentUserResult };

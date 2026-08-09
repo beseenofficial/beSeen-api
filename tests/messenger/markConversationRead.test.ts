@@ -1,18 +1,22 @@
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
+import Message from '../../src/models/Message';
 import { withDatabaseTransaction } from '../../src/db';
 import Conversation from '../../src/models/Conversation';
-import Message from '../../src/models/Message';
-import User from '../../src/models/User';
 import markConversationRead from '../../src/utils/messenger/markConversationRead';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const participantA = new Types.ObjectId('000000000000000000000001');
+
 const participantB = new Types.ObjectId('000000000000000000000002');
+
 const conversationId = new Types.ObjectId('000000000000000000000003');
+
 const session = {} as never;
 
 const sessionQuery = (value: unknown) => ({
@@ -100,6 +104,7 @@ describe('markConversationRead', () => {
       }) as never,
     );
     const countSpy = vi.spyOn(Message, 'countDocuments');
+
     const updateSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
 
     await expect(

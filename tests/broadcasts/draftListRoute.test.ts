@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,13 +10,14 @@ import getBroadcastDrafts from '../../src/utils/broadcast/getBroadcastDrafts';
 vi.mock('../../src/utils/broadcast/getBroadcastDrafts', () => ({ default: vi.fn() }));
 
 const getBroadcastDraftsMock = vi.mocked(getBroadcastDrafts);
+
 const creatorId = new Types.ObjectId();
+
 const draftId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: creatorId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: creatorId, role: 'user' }, sessionId);
 
 describe('GET /v1/broadcasts/drafts', () => {
   beforeEach(() => {

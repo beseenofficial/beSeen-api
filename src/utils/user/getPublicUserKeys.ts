@@ -1,17 +1,6 @@
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
-
-type GetPublicUserKeysResult =
-  | {
-      ok: true;
-      user: { id: string; username: string };
-      keys: {
-        derivationVersion: number;
-        signing: { algorithm: 'Ed25519'; publicKey: string };
-        encryption: { algorithm: 'X25519'; publicKey: string };
-      };
-    }
-  | { ok: false; reason: 'user_not_found' | 'active_keys_not_found' };
+import type { GetPublicUserKeysResult } from '../../types/user';
 
 const getPublicUserKeys = async (username: string): Promise<GetPublicUserKeysResult> => {
   const user = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
@@ -42,4 +31,3 @@ const getPublicUserKeys = async (username: string): Promise<GetPublicUserKeysRes
 };
 
 export default getPublicUserKeys;
-export type { GetPublicUserKeysResult };

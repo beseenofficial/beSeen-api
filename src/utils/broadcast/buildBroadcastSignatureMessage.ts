@@ -1,22 +1,9 @@
+import type { BroadcastSignatureMessageInput } from '../../types/broadcast';
 import {
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_KEY_WRAP_SUITE,
   BROADCAST_SIGNATURE_VERSION,
 } from '../../constant/broadcast';
-
-interface BroadcastSignatureMessageInput {
-  broadcastId: string;
-  clientBroadcastId: string;
-  creatorId: string;
-  creatorKeyVersion: number;
-  encryptionVersion: number;
-  contentCiphertext: string;
-  contentNonce: string;
-  creatorEncryptedBroadcastKey: string;
-  audienceType: string;
-  audienceCount: number;
-  recipientKeysDigest: string;
-}
 
 const buildBroadcastSignatureMessage = (input: BroadcastSignatureMessageInput): string =>
   [
@@ -38,4 +25,3 @@ const buildBroadcastSignatureMessage = (input: BroadcastSignatureMessageInput): 
   ].join('\n');
 
 export default buildBroadcastSignatureMessage;
-export type { BroadcastSignatureMessageInput };

@@ -1,21 +1,23 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
-import signAccessToken from '../../src/utils/auth/signAccessToken';
 import getCurrentUser from '../../src/utils/user/getCurrentUser';
+import signAccessToken from '../../src/utils/auth/signAccessToken';
 
 vi.mock('../../src/utils/user/getCurrentUser', () => ({
   default: vi.fn(),
 }));
 
 const getCurrentUserMock = vi.mocked(getCurrentUser);
+
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = () =>
-  signAccessToken({ id: userId, role: 'user' }, sessionId);
+
+const accessToken = () => signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('GET /v1/users/me', () => {
   beforeEach(() => {
@@ -64,9 +66,11 @@ describe('GET /v1/users/me', () => {
     const sessionSpy = vi.spyOn(AuthSession, 'exists');
 
     const missingResponse = await request(app).get('/v1/users/me');
+
     const malformedResponse = await request(app)
       .get('/v1/users/me')
       .set('Authorization', 'Token invalid');
+
     const invalidResponse = await request(app)
       .get('/v1/users/me')
       .set('Authorization', 'Bearer invalid');

@@ -1,18 +1,19 @@
 import { Types } from 'mongoose';
 import type { PipelineStage } from 'mongoose';
 
+import User from '../../models/User';
+import Broadcast from '../../models/Broadcast';
+import type { UserDocument } from '../../models/User';
+import type { BroadcastDocument } from '../../models/Broadcast';
+import BroadcastRecipient from '../../models/BroadcastRecipient';
+import type { BroadcastAudienceType } from '../../constant/broadcast';
+import type { BroadcastFeedQuery } from '../../validation/broadcast/feed';
+import type { BroadcastFeedItem, GetBroadcastFeedResult } from '../../types/broadcast';
 import {
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_KEY_WRAP_SUITE,
   BROADCAST_SIGNATURE_VERSION,
 } from '../../constant/broadcast';
-import type { BroadcastAudienceType } from '../../constant/broadcast';
-import Broadcast from '../../models/Broadcast';
-import type { BroadcastDocument } from '../../models/Broadcast';
-import BroadcastRecipient from '../../models/BroadcastRecipient';
-import User from '../../models/User';
-import type { UserDocument } from '../../models/User';
-import type { BroadcastFeedQuery } from '../../validation/broadcast/feed';
 
 interface FeedBroadcastRecord {
   _id: Types.ObjectId;
@@ -43,51 +44,6 @@ interface ReceivedFeedRecord {
   broadcastDocument: FeedBroadcastRecord;
   creatorDocument: FeedCreatorRecord;
 }
-
-interface BroadcastFeedItem {
-  id: string;
-  clientBroadcastId: string;
-  creator: {
-    id: string;
-    username: string;
-    avatar: string | null;
-  };
-  manifest: {
-    signatureVersion: number;
-    encryptionVersion: number;
-    contentSuite: string;
-    keyWrapSuite: string;
-    creatorId: string;
-    creatorKeyVersion: number;
-    contentCiphertext: string;
-    contentNonce: string;
-    creatorEncryptedBroadcastKey: string;
-    audienceType: BroadcastAudienceType;
-    audienceCount: number;
-    recipientKeysDigest: string;
-  };
-  viewerKey: {
-    source: 'recipient' | 'creator';
-    keyVersion: number;
-    encryptedBroadcastKey: string;
-  };
-  integrity: {
-    algorithm: 'Ed25519';
-    signingPublicKey: string;
-    signature: string;
-  };
-  publishedAt: Date;
-}
-
-interface BroadcastFeedPage {
-  view: 'received' | 'sent';
-  items: BroadcastFeedItem[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-type GetBroadcastFeedResult =
-  { ok: true; feed: BroadcastFeedPage } | { ok: false; reason: 'account_unavailable' };
 
 type BroadcastLike = BroadcastDocument | FeedBroadcastRecord;
 type CreatorLike = UserDocument | FeedCreatorRecord;
@@ -164,6 +120,7 @@ const getReceivedFeed = async (
     { $unwind: '$creatorDocument' },
     { $limit: query.limit + 1 },
   ];
+
   const rows = await BroadcastRecipient.aggregate<ReceivedFeedRecord>(pipeline).exec();
 
   return rows.map((row) =>
@@ -220,8 +177,11 @@ const getBroadcastFeed = async (
     query.view === 'received'
       ? await getReceivedFeed(userId, query)
       : await getSentFeed(viewer, query);
+
   const hasMore = allItems.length > query.limit;
+
   const items = hasMore ? allItems.slice(0, query.limit) : allItems;
+
   const lastItem = items.at(-1);
 
   return {
@@ -236,4 +196,3 @@ const getBroadcastFeed = async (
 };
 
 export default getBroadcastFeed;
-export type { BroadcastFeedItem, BroadcastFeedPage, GetBroadcastFeedResult };

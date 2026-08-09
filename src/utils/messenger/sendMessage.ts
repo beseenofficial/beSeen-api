@@ -1,8 +1,8 @@
 import type { ClientSession } from 'mongoose';
 
 import User from '../../models/User';
-import UserKey from '../../models/UserKey';
 import Message from '../../models/Message';
+import UserKey from '../../models/UserKey';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
 import resolveReplyBounty from './resolveReplyBounty';
@@ -11,39 +11,13 @@ import type { MessageDocument } from '../../models/Message';
 import serializeMessageBounty from './serializeMessageBounty';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
-import type { SerializedMessageBounty } from './serializeMessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
+import type { SendMessageResult, SentMessage } from '../../types/messenger/message';
 import {
   MESSENGER_ENCRYPTION_VERSION,
   MESSENGER_SIGNATURE_VERSION,
 } from '../../constant/messenger';
-
-type SendMessageFailureReason =
-  | 'account_unavailable'
-  | 'conversation_not_found'
-  | 'participant_unavailable'
-  | 'active_keys_not_found'
-  | 'reply_not_found'
-  | 'invalid_signature'
-  | 'message_conflict';
-
-interface SentMessage {
-  id: string;
-  conversationId: string;
-  sequence: number;
-  clientMessageId: string;
-  senderId: string;
-  recipientId: string;
-  replyToMessageId: string | null;
-  bounty: SerializedMessageBounty | null;
-  unlockedBounty: SerializedMessageBounty | null;
-  createdAt: Date;
-}
-
-type SendMessageResult =
-  | { ok: true; message: SentMessage; created: boolean }
-  | { ok: false; reason: SendMessageFailureReason };
 
 interface MongoDuplicateKeyError extends Error {
   code: number;
@@ -76,6 +50,7 @@ const hasSameClientEnvelope = (
   body: SendMessageBody,
 ): boolean => {
   const replyToMessageId = message.replyToMessage?.toString() ?? null;
+
   const bounty = body.bounty ?? null;
 
   return (
@@ -132,6 +107,7 @@ const idempotentResult = async (
   }
 
   const bounty = await findMessageBounty(message, session);
+
   const unlockedBounty = await findUnlockedBounty(message, session);
 
   return {
@@ -184,6 +160,7 @@ const sendMessageInTransaction = async (
   const recipientId = conversation.participantA.equals(sender._id)
     ? conversation.participantB
     : conversation.participantA;
+
   const recipient = await User.findOne({
     _id: recipientId,
     status: 'active',
@@ -257,7 +234,7 @@ const sendMessageInTransaction = async (
   const recipientUnreadField = conversation.participantA.equals(recipient._id)
     ? 'participantAUnreadCount'
     : 'participantBUnreadCount';
-    
+
   const sequencedConversation = await Conversation.findOneAndUpdate(
     {
       _id: conversation._id,
@@ -308,6 +285,7 @@ const sendMessageInTransaction = async (
     ],
     { session },
   );
+
   const createdMessage = createdMessages[0];
 
   if (!createdMessage) {
@@ -319,6 +297,7 @@ const sendMessageInTransaction = async (
 
   if (body.bounty) {
     const expiresAt = new Date(createdAt.getTime() + body.bounty.durationSeconds * 1_000);
+
     const createdBounties = await MessageBounty.create(
       [
         {
@@ -391,4 +370,3 @@ const sendMessage = async (
 };
 
 export default sendMessage;
-export type { SendMessageFailureReason, SendMessageResult, SentMessage };

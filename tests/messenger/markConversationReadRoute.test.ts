@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,9 +10,13 @@ import markConversationRead from '../../src/utils/messenger/markConversationRead
 vi.mock('../../src/utils/messenger/markConversationRead', () => ({ default: vi.fn() }));
 
 const markConversationReadMock = vi.mocked(markConversationRead);
+
 const userId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('PUT /v1/messenger/conversations/:conversationId/read', () => {

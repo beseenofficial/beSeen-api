@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import Message from '../../src/models/Message';
 
 const sender = new Types.ObjectId('000000000000000000000001');
+
 const recipient = new Types.ObjectId('000000000000000000000002');
 
 const messageInput = () => ({

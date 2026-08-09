@@ -1,7 +1,4 @@
-interface ConversationCursor {
-  lastMessageAt: Date | null;
-  id: string;
-}
+import type { ConversationCursor } from '../../types/messenger/conversation';
 
 interface EncodedConversationCursor {
   lastMessageAt: string | null;
@@ -28,6 +25,7 @@ const decodeConversationCursor = (value: string): ConversationCursor | null => {
     }
 
     const record = decoded as Record<string, unknown>;
+
     const keys = Object.keys(record).sort();
 
     if (keys.length !== 2 || keys[0] !== 'id' || keys[1] !== 'lastMessageAt') {
@@ -62,4 +60,3 @@ const decodeConversationCursor = (value: string): ConversationCursor | null => {
 };
 
 export { decodeConversationCursor, encodeConversationCursor };
-export type { ConversationCursor };

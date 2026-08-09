@@ -1,19 +1,11 @@
 import type { ClientSession } from 'mongoose';
 
+import User from '../../models/User';
 import { withDatabaseTransaction } from '../../db';
 import TokenHolding from '../../models/TokenHolding';
-import User from '../../models/User';
-import ensureConversation from '../messenger/ensureConversation';
 import getOrCreateUserToken from './getOrCreateUserToken';
-
-type PurchaseUserTokenResult =
-  | {
-      ok: true;
-      created: boolean;
-      holding: { tokenId: string; ownerId: string; ownerUsername: string; acquiredAt: Date };
-      conversation: { id: string; created: boolean };
-    }
-  | { ok: false; reason: 'buyer_unavailable' | 'user_not_found' | 'own_token' };
+import ensureConversation from '../messenger/ensureConversation';
+import type { PurchaseUserTokenResult } from '../../types/token';
 
 const purchaseUserTokenInTransaction = async (
   buyerId: string,
@@ -27,6 +19,7 @@ const purchaseUserTokenInTransaction = async (
   })
     .session(session)
     .exec();
+
   const owner = await User.findOne({
     username: ownerUsername,
     status: 'active',
@@ -48,6 +41,7 @@ const purchaseUserTokenInTransaction = async (
   }
 
   const token = await getOrCreateUserToken(owner._id, session);
+
   const writeResult = await TokenHolding.updateOne(
     { token: token._id, holder: buyer._id },
     { $setOnInsert: { token: token._id, holder: buyer._id } },
@@ -57,7 +51,7 @@ const purchaseUserTokenInTransaction = async (
   const holding = await TokenHolding.findOne({ token: token._id, holder: buyer._id })
     .session(session)
     .exec();
-    
+
   const ensuredConversation = await ensureConversation(buyer._id, owner._id, session);
 
   if (!holding) {
@@ -89,4 +83,3 @@ const purchaseUserToken = async (
   );
 
 export default purchaseUserToken;
-export type { PurchaseUserTokenResult };

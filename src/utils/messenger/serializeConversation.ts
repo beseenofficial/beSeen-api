@@ -1,27 +1,6 @@
 import type { UserDocument } from '../../models/User';
 import type { ConversationDocument } from '../../models/Conversation';
-
-interface ConversationView {
-  id: string;
-  otherParticipant: {
-    id: string;
-    username: string;
-    avatar: string | null;
-  };
-  unreadCount: number;
-  readState: {
-    viewerReadSequence: number;
-    otherParticipantReadSequence: number;
-  };
-  lastMessage: {
-    sequence: number;
-    clientMessageId: string;
-    senderId: string;
-    createdAt: Date;
-  } | null;
-  lastMessageAt: Date | null;
-  createdAt: Date;
-}
+import type { ConversationView } from '../../types/messenger/conversation';
 
 const serializeConversation = (
   conversation: ConversationDocument,
@@ -64,4 +43,3 @@ const serializeConversation = (
 });
 
 export default serializeConversation;
-export type { ConversationView };

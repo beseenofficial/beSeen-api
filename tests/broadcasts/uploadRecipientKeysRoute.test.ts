@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,14 +10,17 @@ import uploadBroadcastRecipientKeys from '../../src/utils/broadcast/uploadBroadc
 vi.mock('../../src/utils/broadcast/uploadBroadcastRecipientKeys', () => ({ default: vi.fn() }));
 
 const uploadKeysMock = vi.mocked(uploadBroadcastRecipientKeys);
+
 const creatorId = new Types.ObjectId();
+
 const draftId = new Types.ObjectId();
+
 const recipientId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: creatorId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: creatorId, role: 'user' }, sessionId);
+
 const validBody = () => ({
   keys: [
     {
@@ -64,6 +67,7 @@ describe('PUT /v1/broadcasts/drafts/:draftId/recipient-keys', () => {
 
   it('rejects malformed wrapped keys, duplicate recipients, and secret fields', async () => {
     const key = validBody().keys[0]!;
+
     const response = await request(app)
       .put(`/v1/broadcasts/drafts/${draftId.toString()}/recipient-keys`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -80,6 +84,7 @@ describe('PUT /v1/broadcasts/drafts/:draftId/recipient-keys', () => {
 
   it('rejects a client-supplied key version', async () => {
     const key = validBody().keys[0]!;
+
     const response = await request(app)
       .put(`/v1/broadcasts/drafts/${draftId.toString()}/recipient-keys`)
       .set('Authorization', `Bearer ${accessToken}`)

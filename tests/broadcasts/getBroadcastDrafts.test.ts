@@ -1,13 +1,15 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
 import Broadcast from '../../src/models/Broadcast';
 import BroadcastRecipient from '../../src/models/BroadcastRecipient';
-import User from '../../src/models/User';
 import getBroadcastDrafts from '../../src/utils/broadcast/getBroadcastDrafts';
 
 const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const listQueryResult = <T>(value: T) => ({
   sort: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
@@ -39,7 +41,9 @@ describe('getBroadcastDrafts', () => {
       username: 'creator_user',
       avatar: null,
     });
+
     const first = createDraft(creator._id);
+
     const second = createDraft(creator._id);
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(creator) as never);
     const draftQuery = listQueryResult([first, second]);

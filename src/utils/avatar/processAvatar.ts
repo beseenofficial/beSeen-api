@@ -22,6 +22,7 @@ const processAvatar = async (input: Buffer): Promise<Buffer> => {
       failOn: 'warning',
       limitInputPixels: AVATAR_MAX_INPUT_PIXELS,
     });
+
     const metadata = await image.metadata();
 
     if (

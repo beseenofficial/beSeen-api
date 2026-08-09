@@ -1,3 +1,5 @@
+import env from '../../env';
+import networkPassphraseFor from '../stellar/networkPassphraseFor';
 import {
   KEY_DERIVATION_ENCRYPTION_INFO,
   KEY_DERIVATION_INPUT,
@@ -18,8 +20,6 @@ import {
   LOGIN_PROOF_MAX_AGE_SECONDS,
   LOGIN_PROOF_VERSION,
 } from '../../constant/auth';
-import env from '../../env';
-import networkPassphraseFor from '../stellar/networkPassphraseFor';
 
 const getAuthClientConfig = () => ({
   stellarNetwork: env.STELLAR_NETWORK,
@@ -90,4 +90,3 @@ const getAuthClientConfig = () => ({
 });
 
 export default getAuthClientConfig;
-export type AuthClientConfig = ReturnType<typeof getAuthClientConfig>;

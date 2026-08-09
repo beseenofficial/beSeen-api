@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -7,10 +7,12 @@ import AuthSession from '../../src/models/AuthSession';
 import signAccessToken from '../../src/utils/auth/signAccessToken';
 
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
-const accessToken = () =>
-  signAccessToken({ id: userId, role: 'user' }, sessionId);
+
+const accessToken = () => signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('POST /v1/auth/logout', () => {
   afterEach(() => {
@@ -24,11 +26,13 @@ describe('POST /v1/auth/logout', () => {
     const updateSpy = vi
       .spyOn(AuthSession, 'updateOne')
       .mockReturnValue(queryResult({ modifiedCount: 1 }) as never);
+
     const token = accessToken();
 
     const logoutResponse = await request(app)
       .post('/v1/auth/logout')
       .set('Authorization', `Bearer ${token}`);
+
     const reuseResponse = await request(app)
       .post('/v1/auth/logout')
       .set('Authorization', `Bearer ${token}`);

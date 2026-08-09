@@ -1,17 +1,17 @@
 import { Router } from 'express';
 
+import getMeRoute from './me';
+import updateMeRoute from './updateMe';
+import getMyTokensRoute from './myTokens';
+import getUserTokenRoute from './userToken';
+import getPublicUserKeysRoute from './publicKeys';
+import getFollowerCountRoute from './followerCount';
+import getPublicProfileRoute from './publicProfile';
+import purchaseUserTokenRoute from './purchaseToken';
 import authenticate from '../../middleware/authenticate';
 import avatarUpload from '../../middleware/avatarUpload';
-import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
-import getFollowerCountRoute from './followerCount';
-import getMeRoute from './me';
-import getMyTokensRoute from './myTokens';
-import purchaseUserTokenRoute from './purchaseToken';
-import getPublicProfileRoute from './publicProfile';
-import getPublicUserKeysRoute from './publicKeys';
-import getUserTokenRoute from './userToken';
-import updateMeRoute from './updateMe';
 import getUsernameAvailabilityRoute from './usernameAvailability';
+import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
 
 const userRoutes = Router();
 

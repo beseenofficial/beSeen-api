@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import MessageBounty from '../../src/models/MessageBounty';
 
 const sponsor = new Types.ObjectId('000000000000000000000001');
+
 const beneficiary = new Types.ObjectId('000000000000000000000002');
 
 const bountyInput = () => ({

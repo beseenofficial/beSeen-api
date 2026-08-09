@@ -1,10 +1,10 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
 
-import { BROADCAST_ACCESS_MODES, BROADCAST_WRAPPED_KEY_BYTES } from '../constant/broadcast';
-import type { BroadcastAccessMode } from '../constant/broadcast';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
+import type { BroadcastAccessMode } from '../constant/broadcast';
 import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
+import { BROADCAST_ACCESS_MODES, BROADCAST_WRAPPED_KEY_BYTES } from '../constant/broadcast';
 
 interface IBroadcastRecipient {
   broadcast: Types.ObjectId;
