@@ -18,6 +18,7 @@ describe('OpenAPI contract', () => {
         '/v1/auth/refresh',
         '/v1/auth/logout',
         '/v1/users/me',
+        '/v1/users/discover',
         '/v1/users/me/tokens',
         '/v1/users/username/availability',
         '/v1/users/{username}/token',
