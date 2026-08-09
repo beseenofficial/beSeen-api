@@ -4,14 +4,7 @@ import User from '../../models/User';
 import { withDatabaseTransaction } from '../../db';
 import MessageBounty from '../../models/MessageBounty';
 import serializeMessageBounty from './serializeMessageBounty';
-import type { SerializedMessageBounty } from './serializeMessageBounty';
-
-type ClaimMessageBountyFailureReason =
-  'account_unavailable' | 'bounty_not_found' | 'bounty_not_claimable' | 'bounty_expired';
-
-type ClaimMessageBountyResult =
-  | { ok: true; bounty: SerializedMessageBounty; claimedNow: boolean }
-  | { ok: false; reason: ClaimMessageBountyFailureReason };
+import type { ClaimMessageBountyResult } from '../../types/messenger/bounty';
 
 const claimMessageBountyInTransaction = async (
   beneficiaryId: string,
@@ -117,4 +110,3 @@ const claimMessageBounty = async (
   );
 
 export default claimMessageBounty;
-export type { ClaimMessageBountyFailureReason, ClaimMessageBountyResult };

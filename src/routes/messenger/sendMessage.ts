@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
 
-import { messengerSendErrors } from '../../types/errors/messenger';
 import sendMessage from '../../utils/messenger/sendMessage';
-import { conversationParamsSchema } from '../../validation/messenger/conversation';
+import { messengerSendErrors } from '../../types/errors/messenger';
 import sendMessageBodySchema from '../../validation/messenger/sendMessage';
+import { conversationParamsSchema } from '../../validation/messenger/conversation';
 
 const sendMessageRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {
@@ -15,6 +15,7 @@ const sendMessageRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = conversationParamsSchema.safeParse(req.params);
+
   const parsedBody = sendMessageBodySchema.safeParse(req.body);
 
   if (!parsedParams.success || !parsedBody.success) {

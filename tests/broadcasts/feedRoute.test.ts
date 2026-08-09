@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,12 +10,12 @@ import getBroadcastFeed from '../../src/utils/broadcast/getBroadcastFeed';
 vi.mock('../../src/utils/broadcast/getBroadcastFeed', () => ({ default: vi.fn() }));
 
 const getBroadcastFeedMock = vi.mocked(getBroadcastFeed);
+
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: userId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('GET /v1/broadcasts/feed', () => {
   beforeEach(() => {

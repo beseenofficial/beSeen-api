@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
 
-import { messengerConversationErrors } from '../../types/errors/messenger';
 import getMessageHistory from '../../utils/messenger/getMessageHistory';
-import { conversationParamsSchema } from '../../validation/messenger/conversation';
+import { messengerConversationErrors } from '../../types/errors/messenger';
 import messageHistoryQuerySchema from '../../validation/messenger/messageHistory';
+import { conversationParamsSchema } from '../../validation/messenger/conversation';
 
 const getMessageHistoryRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {
@@ -15,6 +15,7 @@ const getMessageHistoryRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = conversationParamsSchema.safeParse(req.params);
+
   const parsedQuery = messageHistoryQuerySchema.safeParse(req.query);
 
   if (!parsedParams.success || !parsedQuery.success) {

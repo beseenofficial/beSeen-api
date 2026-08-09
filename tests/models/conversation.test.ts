@@ -1,10 +1,11 @@
 import { Types } from 'mongoose';
 import { describe, expect, it } from 'vitest';
 
-import { MESSENGER_INITIAL_SEQUENCE } from '../../src/constant/messenger';
 import Conversation from '../../src/models/Conversation';
+import { MESSENGER_INITIAL_SEQUENCE } from '../../src/constant/messenger';
 
 const participantA = new Types.ObjectId('000000000000000000000001');
+
 const participantB = new Types.ObjectId('000000000000000000000002');
 
 describe('Conversation model', () => {

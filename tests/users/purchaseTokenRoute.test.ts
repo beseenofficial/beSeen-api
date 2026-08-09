@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,9 +10,13 @@ import purchaseUserToken from '../../src/utils/token/purchaseUserToken';
 vi.mock('../../src/utils/token/purchaseUserToken', () => ({ default: vi.fn() }));
 
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const token = signAccessToken({ id: userId, role: 'user' }, sessionId);
+
 const purchaseUserTokenMock = vi.mocked(purchaseUserToken);
 
 describe('POST /v1/users/:username/token/purchase', () => {

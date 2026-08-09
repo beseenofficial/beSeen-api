@@ -4,19 +4,7 @@ import User from '../../models/User';
 import Message from '../../models/Message';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
-
-type MarkConversationReadFailureReason =
-  'account_unavailable' | 'conversation_not_found' | 'read_sequence_not_found';
-
-interface ConversationReadState {
-  conversationId: string;
-  readSequence: number;
-  unreadCount: number;
-}
-
-type MarkConversationReadResult =
-  | { ok: true; readState: ConversationReadState; updated: boolean }
-  | { ok: false; reason: MarkConversationReadFailureReason };
+import type { MarkConversationReadResult } from '../../types/messenger/conversation';
 
 const markConversationReadInTransaction = async (
   userId: string,
@@ -62,9 +50,9 @@ const markConversationReadInTransaction = async (
   const unreadCountField = viewerIsParticipantA
     ? 'participantAUnreadCount'
     : 'participantBUnreadCount';
-    
+
   const currentReadSequence = conversation[readSequenceField] ?? 0;
-  
+
   const currentUnreadCount = conversation[unreadCountField] ?? 0;
 
   if (throughSequence <= currentReadSequence) {
@@ -86,6 +74,7 @@ const markConversationReadInTransaction = async (
   })
     .session(session)
     .exec();
+
   const updatedConversation = await Conversation.findOneAndUpdate(
     {
       _id: conversation._id,
@@ -125,8 +114,3 @@ const markConversationRead = async (
   );
 
 export default markConversationRead;
-export type {
-  ConversationReadState,
-  MarkConversationReadFailureReason,
-  MarkConversationReadResult,
-};

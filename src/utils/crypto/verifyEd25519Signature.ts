@@ -1,7 +1,7 @@
 import { createPublicKey, verify } from 'node:crypto';
 
-import isBase64PublicKey from '../auth/isBase64PublicKey';
 import isCanonicalBase64 from './isCanonicalBase64';
+import isBase64PublicKey from '../auth/isBase64PublicKey';
 
 const ED25519_SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
 

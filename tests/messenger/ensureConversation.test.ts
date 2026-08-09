@@ -7,7 +7,9 @@ import ensureConversation, {
 } from '../../src/utils/messenger/ensureConversation';
 
 const lowerId = new Types.ObjectId('000000000000000000000001');
+
 const higherId = new Types.ObjectId('000000000000000000000002');
+
 const session = {} as never;
 
 const updateResult = (upsertedCount: number) => ({

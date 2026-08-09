@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
+import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
 import {
   BROADCAST_KEY_BATCH_MAX_ITEMS,
   BROADCAST_WRAPPED_KEY_BYTES,
 } from '../../constant/broadcast';
-import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
 
 const recipientKeySchema = z
   .object({

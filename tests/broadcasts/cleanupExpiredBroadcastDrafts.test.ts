@@ -10,6 +10,7 @@ const listQueryResult = <T>(value: T) => ({
   limit: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 describe('cleanupExpiredBroadcastDrafts', () => {
@@ -25,12 +26,15 @@ describe('cleanupExpiredBroadcastDrafts', () => {
     const updateSpy = vi
       .spyOn(Broadcast, 'updateMany')
       .mockReturnValue(queryResult({ modifiedCount: 1 }) as never);
+
     const recipientDeleteSpy = vi
       .spyOn(BroadcastRecipient, 'deleteMany')
       .mockReturnValue(queryResult({ deletedCount: 4 }) as never);
+
     const draftDeleteSpy = vi
       .spyOn(Broadcast, 'deleteMany')
       .mockReturnValue(queryResult({ deletedCount: 1 }) as never);
+
     const now = new Date('2026-07-27T12:00:00.000Z');
 
     const result = await cleanupExpiredBroadcastDrafts(now);

@@ -1,9 +1,9 @@
 import type { Server } from 'node:http';
 
 import app from './app';
-import { connectDatabase, disconnectDatabase } from './db';
 import env from './env';
 import log from './logger';
+import { connectDatabase, disconnectDatabase } from './db';
 import {
   startBroadcastDraftCleanup,
   stopBroadcastDraftCleanup,

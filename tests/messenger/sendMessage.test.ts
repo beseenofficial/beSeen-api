@@ -1,31 +1,41 @@
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
+import Message from '../../src/models/Message';
+import UserKey from '../../src/models/UserKey';
 import { withDatabaseTransaction } from '../../src/db';
 import Conversation from '../../src/models/Conversation';
-import Message from '../../src/models/Message';
 import MessageBounty from '../../src/models/MessageBounty';
-import User from '../../src/models/User';
-import UserKey from '../../src/models/UserKey';
+import sendMessage from '../../src/utils/messenger/sendMessage';
+import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
 import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
-import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
-import sendMessage from '../../src/utils/messenger/sendMessage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/crypto/verifyEd25519Signature', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/resolveReplyBounty', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const verifySignatureMock = vi.mocked(verifyEd25519Signature);
+
 const resolveReplyBountyMock = vi.mocked(resolveReplyBounty);
+
 const senderId = new Types.ObjectId('000000000000000000000001');
+
 const recipientId = new Types.ObjectId('000000000000000000000002');
+
 const conversationId = new Types.ObjectId('000000000000000000000003');
+
 const session = {} as never;
+
 const senderSigningPublicKey = Buffer.alloc(32, 1).toString('base64');
+
 const senderEncryptionPublicKey = Buffer.alloc(32, 2).toString('base64');
+
 const recipientEncryptionPublicKey = Buffer.alloc(32, 3).toString('base64');
+
 const createdAt = new Date('2026-08-07T12:00:00.000Z');
 
 const body = () => ({
@@ -90,6 +100,7 @@ describe('sendMessage', () => {
 
   it('verifies the server-owned conversation context and creates the next encrypted message', async () => {
     const replyToMessageId = new Types.ObjectId('000000000000000000000009').toString();
+
     const requestBody = { ...body(), replyToMessageId };
     setupNewMessageReads();
     vi.spyOn(Message, 'exists').mockReturnValue(sessionQuery({ _id: replyToMessageId }) as never);
@@ -240,6 +251,7 @@ describe('sendMessage', () => {
     setupNewMessageReads();
     verifySignatureMock.mockReturnValue(false);
     const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
+
     const createSpy = vi.spyOn(Message, 'create');
 
     await expect(
@@ -267,6 +279,7 @@ describe('sendMessage', () => {
 
   it('returns an identical retry without creating a second message', async () => {
     const requestBody = body();
+
     const existing = new Message({
       conversation: conversationId,
       sequence: 4,
@@ -298,6 +311,7 @@ describe('sendMessage', () => {
 
   it('rejects reuse of a client message UUID with different ciphertext', async () => {
     const requestBody = body();
+
     const existing = new Message({
       conversation: conversationId,
       sequence: 4,

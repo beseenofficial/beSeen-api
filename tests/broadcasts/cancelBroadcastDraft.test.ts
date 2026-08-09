@@ -26,11 +26,13 @@ describe('cancelBroadcastDraft', () => {
 
   it('atomically marks a draft canceled before removing recipient rows', async () => {
     const creatorId = new Types.ObjectId();
+
     const draft = createDraft(creatorId);
     vi.spyOn(Broadcast, 'findOne').mockReturnValue(queryResult(draft) as never);
     const updateSpy = vi
       .spyOn(Broadcast, 'updateOne')
       .mockReturnValue(queryResult({ modifiedCount: 1 }) as never);
+
     const deleteRecipientsSpy = vi
       .spyOn(BroadcastRecipient, 'deleteMany')
       .mockReturnValue(queryResult({ deletedCount: 2 }) as never);
@@ -52,6 +54,7 @@ describe('cancelBroadcastDraft', () => {
 
   it('never removes recipient rows from an already published broadcast', async () => {
     const creatorId = new Types.ObjectId();
+
     const published = createDraft(creatorId);
     published.status = 'published';
     vi.spyOn(Broadcast, 'findOne').mockReturnValue(queryResult(published) as never);

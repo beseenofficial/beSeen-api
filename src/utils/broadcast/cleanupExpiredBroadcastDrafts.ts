@@ -1,11 +1,6 @@
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
-
-interface BroadcastDraftCleanupResult {
-  expiredDraftCount: number;
-  deletedDraftCount: number;
-  deletedRecipientCount: number;
-}
+import type { BroadcastDraftCleanupResult } from '../../types/broadcast';
 
 const cleanupExpiredBroadcastDrafts = async (
   now = new Date(),
@@ -18,6 +13,7 @@ const cleanupExpiredBroadcastDrafts = async (
     .sort({ expiresAt: 1 })
     .limit(batchLimit)
     .exec();
+
   const expiredDraftIds = expiredDrafts.map((draft) => draft._id);
   let expiredDraftCount = 0;
 
@@ -36,6 +32,7 @@ const cleanupExpiredBroadcastDrafts = async (
     .sort({ canceledAt: 1 })
     .limit(batchLimit)
     .exec();
+
   const canceledDraftIds = canceledDrafts.map((draft) => draft._id);
 
   if (canceledDraftIds.length === 0) {
@@ -45,6 +42,7 @@ const cleanupExpiredBroadcastDrafts = async (
   const recipientResult = await BroadcastRecipient.deleteMany({
     broadcast: { $in: canceledDraftIds },
   }).exec();
+
   const draftResult = await Broadcast.deleteMany({
     _id: { $in: canceledDraftIds },
     status: 'canceled',
@@ -58,4 +56,3 @@ const cleanupExpiredBroadcastDrafts = async (
 };
 
 export default cleanupExpiredBroadcastDrafts;
-export type { BroadcastDraftCleanupResult };

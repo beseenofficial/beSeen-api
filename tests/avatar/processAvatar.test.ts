@@ -13,6 +13,7 @@ describe('processAvatar', () => {
       .toBuffer();
 
     const output = await processAvatar(input);
+
     const metadata = await sharp(output).metadata();
 
     expect(metadata).toMatchObject({ format: 'webp', width: 512, height: 512 });

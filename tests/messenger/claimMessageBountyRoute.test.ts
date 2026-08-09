@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,10 +10,15 @@ import claimMessageBounty from '../../src/utils/messenger/claimMessageBounty';
 vi.mock('../../src/utils/messenger/claimMessageBounty', () => ({ default: vi.fn() }));
 
 const claimMessageBountyMock = vi.mocked(claimMessageBounty);
+
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const bountyId = new Types.ObjectId();
+
 const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
+
 const timestamp = new Date('2026-08-07T12:00:00.000Z');
 
 describe('POST /v1/messenger/bounties/:bountyId/claim', () => {

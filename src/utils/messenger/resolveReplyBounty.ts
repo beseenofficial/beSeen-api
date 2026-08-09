@@ -1,17 +1,6 @@
-import type { ClientSession, Types } from 'mongoose';
-
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
-
-interface ResolveReplyBountyInput {
-  conversationId: Types.ObjectId;
-  replyToMessageId: string;
-  replyMessageId: Types.ObjectId;
-  senderId: Types.ObjectId;
-  recipientId: Types.ObjectId;
-  repliedAt: Date;
-  session: ClientSession;
-}
+import type { ResolveReplyBountyInput } from '../../types/messenger/bounty';
 
 const resolveReplyBounty = async (
   input: ResolveReplyBountyInput,
@@ -56,4 +45,3 @@ const resolveReplyBounty = async (
 };
 
 export default resolveReplyBounty;
-export type { ResolveReplyBountyInput };

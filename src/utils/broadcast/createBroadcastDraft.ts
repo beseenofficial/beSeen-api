@@ -1,51 +1,18 @@
+import User from '../../models/User';
+import UserKey from '../../models/UserKey';
+import Broadcast from '../../models/Broadcast';
+import type { BroadcastDocument } from '../../models/Broadcast';
+import BroadcastRecipient from '../../models/BroadcastRecipient';
+import resolveBroadcastAudience from './resolveBroadcastAudience';
+import getBroadcastDraftRecipients from './getBroadcastDraftRecipients';
+import type { CreateBroadcastDraftBody } from '../../validation/broadcast/draft';
+import type { CreatedBroadcastDraft, CreateBroadcastDraftResult } from '../../types/broadcast';
 import {
   BROADCAST_CONTENT_ENCRYPTION_SUITE,
   BROADCAST_ENCRYPTION_VERSION,
   BROADCAST_KEY_WRAP_SUITE,
   BROADCAST_RECIPIENT_PAGE_DEFAULT_LIMIT,
 } from '../../constant/broadcast';
-import Broadcast from '../../models/Broadcast';
-import type { BroadcastDocument } from '../../models/Broadcast';
-import BroadcastRecipient from '../../models/BroadcastRecipient';
-import User from '../../models/User';
-import UserKey from '../../models/UserKey';
-import type { CreateBroadcastDraftBody } from '../../validation/broadcast/draft';
-import getBroadcastDraftRecipients from './getBroadcastDraftRecipients';
-import type { BroadcastRecipientPage } from './getBroadcastDraftRecipients';
-import resolveBroadcastAudience from './resolveBroadcastAudience';
-
-type CreateBroadcastDraftFailureReason = 'user_unavailable' | 'active_keys_not_found';
-
-interface CreatedBroadcastDraft {
-  id: string;
-  clientBroadcastId: string;
-  status: 'draft';
-  audience: {
-    type: 'token_holders';
-    count: number;
-  };
-  encryption: {
-    version: number;
-    contentSuite: string;
-    keyWrapSuite: string;
-  };
-  creatorKey: {
-    keyVersion: number;
-    encryptionPublicKey: string;
-  };
-  progress: {
-    uploadedCount: number;
-    remainingCount: number;
-    complete: boolean;
-  };
-  recipients: BroadcastRecipientPage;
-  createdAt: Date;
-  expiresAt: Date;
-}
-
-type CreateBroadcastDraftResult =
-  | { ok: true; draft: CreatedBroadcastDraft; created: boolean }
-  | { ok: false; reason: CreateBroadcastDraftFailureReason };
 
 interface MongoDuplicateKeyError extends Error {
   code: number;
@@ -133,6 +100,7 @@ const createBroadcastDraft = async (
   }
 
   const audience = await resolveBroadcastAudience(creatorId);
+
   const draft = new Broadcast({
     clientBroadcastId: body.clientBroadcastId,
     creator: creator._id,
@@ -180,8 +148,3 @@ const createBroadcastDraft = async (
 };
 
 export default createBroadcastDraft;
-export type {
-  CreatedBroadcastDraft,
-  CreateBroadcastDraftFailureReason,
-  CreateBroadcastDraftResult,
-};

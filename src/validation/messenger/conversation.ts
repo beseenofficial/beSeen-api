@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
+import { decodeConversationCursor } from '../../utils/messenger/conversationCursor';
 import {
   MESSENGER_CONVERSATION_LIST_DEFAULT_LIMIT,
   MESSENGER_CONVERSATION_LIST_MAX_LIMIT,
 } from '../../constant/messenger';
-import { decodeConversationCursor } from '../../utils/messenger/conversationCursor';
 
 const objectIdSchema = z
   .string()

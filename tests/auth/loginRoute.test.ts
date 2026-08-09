@@ -7,6 +7,7 @@ import loginUser from '../../src/utils/auth/loginUser';
 vi.mock('../../src/utils/auth/loginUser', () => ({ default: vi.fn() }));
 
 const loginUserMock = vi.mocked(loginUser);
+
 const validBody = () => ({
   walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
   requestId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',

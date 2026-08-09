@@ -1,19 +1,6 @@
 import User from '../../models/User';
 import Conversation from '../../models/Conversation';
-import type { UserDocument } from '../../models/User';
-import type { ConversationDocument } from '../../models/Conversation';
-
-type ConversationAccessFailureReason =
-  'account_unavailable' | 'conversation_not_found' | 'participant_unavailable';
-
-type GetConversationAccessResult =
-  | {
-      ok: true;
-      conversation: ConversationDocument;
-      viewer: UserDocument;
-      otherParticipant: UserDocument;
-    }
-  | { ok: false; reason: ConversationAccessFailureReason };
+import type { GetConversationAccessResult } from '../../types/messenger/conversation';
 
 const getConversationAccess = async (
   userId: string,
@@ -37,7 +24,7 @@ const getConversationAccess = async (
   const otherParticipantId = conversation.participantA.equals(viewer._id)
     ? conversation.participantB
     : conversation.participantA;
-    
+
   const otherParticipant = await User.findOne({
     _id: otherParticipantId,
     status: 'active',
@@ -52,4 +39,3 @@ const getConversationAccess = async (
 };
 
 export default getConversationAccess;
-export type { ConversationAccessFailureReason, GetConversationAccessResult };

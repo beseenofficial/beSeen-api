@@ -1,16 +1,18 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Conversation from '../../src/models/Conversation';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
+import Conversation from '../../src/models/Conversation';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 import getConversationContext from '../../src/utils/messenger/getConversationContext';
 
 vi.mock('../../src/utils/messenger/getConversationAccess', () => ({ default: vi.fn() }));
 
 const getConversationAccessMock = vi.mocked(getConversationAccess);
+
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 describe('getConversationContext', () => {
@@ -26,12 +28,14 @@ describe('getConversationContext', () => {
       username: 'viewer_user',
       avatar: null,
     });
+
     const otherParticipant = new User({
       _id: new Types.ObjectId(),
       walletAddress,
       username: 'other_user',
       avatar: null,
     });
+
     const conversation = new Conversation({
       participantA: viewer._id,
       participantB: otherParticipant._id,
@@ -74,11 +78,13 @@ describe('getConversationContext', () => {
 
   it('fails when either participant lacks active keys', async () => {
     const viewer = new User({ _id: new Types.ObjectId(), walletAddress, username: 'viewer_user' });
+
     const otherParticipant = new User({
       _id: new Types.ObjectId(),
       walletAddress,
       username: 'other_user',
     });
+
     const conversation = new Conversation({
       participantA: viewer._id,
       participantB: otherParticipant._id,

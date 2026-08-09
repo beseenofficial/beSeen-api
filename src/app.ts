@@ -1,11 +1,11 @@
-import compression from 'compression';
 import cors from 'cors';
-import express from 'express';
 import helmet from 'helmet';
+import express from 'express';
+import compression from 'compression';
 
 import './env';
-import jsonResponse from './middleware/jsonResponse';
 import router from './routes';
+import jsonResponse from './middleware/jsonResponse';
 
 const app = express();
 

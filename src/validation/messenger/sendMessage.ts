@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
@@ -10,7 +11,6 @@ import {
   MESSENGER_MIN_CIPHERTEXT_BYTES,
   MESSENGER_WRAPPED_KEY_BYTES,
 } from '../../constant/messenger';
-import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
 
 const canonicalBase64Bytes = (minBytes: number, maxBytes: number, message: string) =>
   z.string().refine((value) => isCanonicalBase64(value, { minBytes, maxBytes }), message);

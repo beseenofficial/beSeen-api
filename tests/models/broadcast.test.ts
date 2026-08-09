@@ -43,6 +43,7 @@ describe('Broadcast model', () => {
 
   it('requires a complete encrypted envelope when published', async () => {
     const incomplete = new Broadcast({ ...broadcastInput(), status: 'published' });
+
     const complete = new Broadcast({
       ...broadcastInput(),
       status: 'published',

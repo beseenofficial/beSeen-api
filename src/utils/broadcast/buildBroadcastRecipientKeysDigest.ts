@@ -1,11 +1,5 @@
 import { createHash } from 'node:crypto';
-
-interface BroadcastRecipientKeyDigestEntry {
-  recipientId: string;
-  keyVersion: number;
-  encryptionPublicKey: string;
-  encryptedBroadcastKey: string;
-}
+import type { BroadcastRecipientKeyDigestEntry } from '../../types/broadcast';
 
 const buildBroadcastRecipientKeysDigest = (entries: BroadcastRecipientKeyDigestEntry[]): string => {
   const canonicalEntries = entries
@@ -17,6 +11,7 @@ const buildBroadcastRecipientKeysDigest = (entries: BroadcastRecipientKeyDigestE
     ])
     .sort(([firstRecipientId], [secondRecipientId]) => {
       const first = String(firstRecipientId);
+
       const second = String(secondRecipientId);
 
       return first < second ? -1 : first > second ? 1 : 0;
@@ -26,4 +21,3 @@ const buildBroadcastRecipientKeysDigest = (entries: BroadcastRecipientKeyDigestE
 };
 
 export default buildBroadcastRecipientKeysDigest;
-export type { BroadcastRecipientKeyDigestEntry };

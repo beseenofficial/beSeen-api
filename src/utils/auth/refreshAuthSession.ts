@@ -2,15 +2,14 @@ import env from '../../env';
 import User from '../../models/User';
 import signAccessToken from './signAccessToken';
 import AuthSession from '../../models/AuthSession';
-import type { AuthTokens } from './createAuthSession';
+import type { RefreshAuthSessionResult } from '../../types/auth';
 import { generateRefreshToken, hashRefreshToken } from './refreshToken';
-
-type RefreshAuthSessionResult =
-  { ok: true; auth: AuthTokens } | { ok: false; reason: 'refresh_token_invalid' };
 
 const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSessionResult> => {
   const now = new Date();
+
   const currentRefreshTokenHash = hashRefreshToken(refreshToken);
+
   const authSession = await AuthSession.findOne({
     refreshTokenHash: currentRefreshTokenHash,
     revokedAt: null,
@@ -33,7 +32,7 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
   }
 
   const nextRefreshToken = generateRefreshToken();
-  
+
   const rotatedSession = await AuthSession.findOneAndUpdate(
     {
       _id: authSession._id,
@@ -57,10 +56,7 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
   return {
     ok: true,
     auth: {
-      accessToken: signAccessToken(
-        { id: user._id, role: user.role },
-        rotatedSession._id,
-      ),
+      accessToken: signAccessToken({ id: user._id, role: user.role }, rotatedSession._id),
       refreshToken: nextRefreshToken,
       tokenType: 'Bearer',
       expiresIn: env.ACCESS_TOKEN_TTL_SECONDS,
@@ -70,4 +66,3 @@ const refreshAuthSession = async (refreshToken: string): Promise<RefreshAuthSess
 };
 
 export default refreshAuthSession;
-export type { RefreshAuthSessionResult };

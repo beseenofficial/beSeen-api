@@ -1,5 +1,7 @@
 const USER_ROLES = ['user', 'moderator', 'admin'] as const;
+
 const USER_STATUSES = ['active', 'suspended', 'deleted'] as const;
+
 const RESERVED_USERNAMES = [
   'admin',
   'administrator',

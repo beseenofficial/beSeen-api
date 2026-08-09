@@ -1,7 +1,9 @@
-import type { ConversationAccessFailureReason } from '../../utils/messenger/getConversationAccess';
-import type { SendMessageFailureReason } from '../../utils/messenger/sendMessage';
-import type { MarkConversationReadFailureReason } from '../../utils/messenger/markConversationRead';
-import type { ClaimMessageBountyFailureReason } from '../../utils/messenger/claimMessageBounty';
+import type { SendMessageFailureReason } from '../messenger/message';
+import type { ClaimMessageBountyFailureReason } from '../messenger/bounty';
+import type {
+  ConversationAccessFailureReason,
+  MarkConversationReadFailureReason,
+} from '../messenger/conversation';
 
 type MessengerConversationErrorReason = ConversationAccessFailureReason | 'active_keys_not_found';
 

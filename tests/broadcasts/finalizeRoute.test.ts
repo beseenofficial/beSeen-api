@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,13 +10,15 @@ import finalizeBroadcast from '../../src/utils/broadcast/finalizeBroadcast';
 vi.mock('../../src/utils/broadcast/finalizeBroadcast', () => ({ default: vi.fn() }));
 
 const finalizeBroadcastMock = vi.mocked(finalizeBroadcast);
+
 const creatorId = new Types.ObjectId();
+
 const draftId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: creatorId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: creatorId, role: 'user' }, sessionId);
+
 const validBody = () => ({
   contentCiphertext: Buffer.alloc(32, 1).toString('base64'),
   contentNonce: Buffer.alloc(24, 2).toString('base64'),

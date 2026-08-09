@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -12,15 +12,19 @@ vi.mock('../../src/utils/broadcast/createBroadcastDraft', () => ({ default: vi.f
 vi.mock('../../src/utils/broadcast/getBroadcastDraftRecipients', () => ({ default: vi.fn() }));
 
 const createDraftMock = vi.mocked(createBroadcastDraft);
+
 const getRecipientsMock = vi.mocked(getBroadcastDraftRecipients);
+
 const creatorId = new Types.ObjectId();
+
 const draftId = new Types.ObjectId();
+
 const recipientId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: creatorId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: creatorId, role: 'user' }, sessionId);
+
 const encryptionPublicKey = Buffer.alloc(32, 2).toString('base64');
 
 describe('broadcast draft routes', () => {

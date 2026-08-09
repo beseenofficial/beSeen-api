@@ -1,14 +1,14 @@
 import { Router } from 'express';
 
-import authenticate from '../../middleware/authenticate';
-import messengerMutationRateLimit from '../../middleware/messengerMutationRateLimit';
-import claimMessageBountyRoute from './claimMessageBounty';
+import sendMessageRoute from './sendMessage';
 import getConversationRoute from './getConversation';
-import getConversationContextRoute from './getConversationContext';
+import authenticate from '../../middleware/authenticate';
 import getMessageHistoryRoute from './getMessageHistory';
 import listConversationsRoute from './listConversations';
+import claimMessageBountyRoute from './claimMessageBounty';
 import markConversationReadRoute from './markConversationRead';
-import sendMessageRoute from './sendMessage';
+import getConversationContextRoute from './getConversationContext';
+import messengerMutationRateLimit from '../../middleware/messengerMutationRateLimit';
 
 const messengerRoutes = Router();
 

@@ -3,24 +3,32 @@ import { generateKeyPairSync, sign } from 'node:crypto';
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { withDatabaseTransaction } from '../../src/db';
-import AuthProof from '../../src/models/AuthProof';
-import AuthSession from '../../src/models/AuthSession';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
-import buildLoginProofMessage from '../../src/utils/auth/buildLoginProofMessage';
+import AuthProof from '../../src/models/AuthProof';
+import { withDatabaseTransaction } from '../../src/db';
+import AuthSession from '../../src/models/AuthSession';
 import loginUser from '../../src/utils/auth/loginUser';
+import buildLoginProofMessage from '../../src/utils/auth/buildLoginProofMessage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const REQUEST_ID = '2f2b1762-f0f5-4b1b-8acd-70afcf043365';
+
 const NOW = new Date('2026-07-28T12:00:00.000Z');
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const transactionMock = vi.mocked(withDatabaseTransaction);
 
 const { privateKey, publicKey } = generateKeyPairSync('ed25519');
-const rawPublicKey = publicKey.export({ type: 'spki', format: 'der' }).subarray(-32).toString('base64');
+
+const rawPublicKey = publicKey
+  .export({ type: 'spki', format: 'der' })
+  .subarray(-32)
+  .toString('base64');
 
 const signedBody = (issuedAt = NOW.toISOString()) => {
   const unsigned = {
@@ -31,9 +39,11 @@ const signedBody = (issuedAt = NOW.toISOString()) => {
 
   return {
     ...unsigned,
-    signature: sign(null, Buffer.from(buildLoginProofMessage(unsigned), 'utf8'), privateKey).toString(
-      'base64',
-    ),
+    signature: sign(
+      null,
+      Buffer.from(buildLoginProofMessage(unsigned), 'utf8'),
+      privateKey,
+    ).toString('base64'),
   };
 };
 

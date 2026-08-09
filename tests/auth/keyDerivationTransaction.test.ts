@@ -1,5 +1,5 @@
-import { Account, Keypair, Networks, Operation, TransactionBuilder } from '@stellar/stellar-sdk';
 import { describe, expect, it } from 'vitest';
+import { Account, Keypair, Networks, Operation, TransactionBuilder } from '@stellar/stellar-sdk';
 
 const wallet = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 9));
 

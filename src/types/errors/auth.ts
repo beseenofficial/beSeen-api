@@ -1,5 +1,4 @@
-import type { LoginFailureReason } from '../../utils/auth/loginUser';
-import type { RegistrationFailureReason } from '../../utils/auth/registerUser';
+import type { LoginFailureReason, RegistrationFailureReason } from '../auth';
 
 export const loginErrors: Record<
   LoginFailureReason,

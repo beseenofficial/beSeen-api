@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import UserKey from '../../src/models/UserKey';
 
 const SIGNING_PUBLIC_KEY = Buffer.alloc(32, 1).toString('base64');
+
 const ENCRYPTION_PUBLIC_KEY = Buffer.alloc(32, 2).toString('base64');
 
 describe('UserKey model', () => {

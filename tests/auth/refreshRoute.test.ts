@@ -9,6 +9,7 @@ vi.mock('../../src/utils/auth/refreshAuthSession', () => ({
 }));
 
 const refreshAuthSessionMock = vi.mocked(refreshAuthSession);
+
 const REFRESH_TOKEN = 'r'.repeat(43);
 
 describe('POST /v1/auth/refresh', () => {

@@ -1,27 +1,36 @@
 import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
 import { withDatabaseTransaction } from '../../src/db';
 import MessageBounty from '../../src/models/MessageBounty';
-import User from '../../src/models/User';
 import claimMessageBounty from '../../src/utils/messenger/claimMessageBounty';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const beneficiaryId = new Types.ObjectId('000000000000000000000001');
+
 const sponsorId = new Types.ObjectId('000000000000000000000002');
+
 const bountyId = new Types.ObjectId('000000000000000000000003');
+
 const messageId = new Types.ObjectId('000000000000000000000004');
+
 const conversationId = new Types.ObjectId('000000000000000000000005');
+
 const replyMessageId = new Types.ObjectId('000000000000000000000006');
+
 const now = new Date('2026-08-07T12:00:00.000Z');
+
 const session = {} as never;
 
 const sessionQuery = (value: unknown) => ({
   session: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
+
 const execQuery = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 const bounty = (status: 'offered' | 'claimable' | 'claimed' | 'expired') =>
@@ -57,6 +66,7 @@ describe('claimMessageBounty', () => {
 
   it('atomically claims a claimable bounty for its beneficiary', async () => {
     const claimable = bounty('claimable');
+
     const claimed = bounty('claimed');
     vi.spyOn(MessageBounty, 'findOne').mockReturnValue(sessionQuery(claimable) as never);
     vi.spyOn(MessageBounty, 'findOneAndUpdate').mockReturnValue(execQuery(claimed) as never);

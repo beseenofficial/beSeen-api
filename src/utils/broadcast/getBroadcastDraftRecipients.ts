@@ -1,42 +1,7 @@
 import Broadcast from '../../models/Broadcast';
 import BroadcastRecipient from '../../models/BroadcastRecipient';
+import type { GetBroadcastDraftRecipientsResult } from '../../types/broadcast';
 import type { BroadcastRecipientPageQuery } from '../../validation/broadcast/draft';
-import type { BroadcastAudienceType } from '../../constant/broadcast';
-
-interface BroadcastRecipientPublicKey {
-  userId: string;
-  username: string;
-  keyVersion: number;
-  encryptionPublicKey: string;
-  keyUploaded: boolean;
-  encryptedBroadcastKey: string | null;
-}
-
-interface BroadcastRecipientPage {
-  items: BroadcastRecipientPublicKey[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-type GetBroadcastDraftRecipientsResult =
-  | {
-      ok: true;
-      draft: {
-        id: string;
-        clientBroadcastId: string;
-        status: 'draft';
-        audienceType: BroadcastAudienceType;
-        audienceCount: number;
-        progress: {
-          uploadedCount: number;
-          remainingCount: number;
-          complete: boolean;
-        };
-        expiresAt: Date;
-      };
-      recipients: BroadcastRecipientPage;
-    }
-  | { ok: false; reason: 'draft_not_found' };
 
 const getBroadcastDraftRecipients = async (
   creatorId: string,
@@ -70,8 +35,11 @@ const getBroadcastDraftRecipients = async (
       encryptedBroadcastKey: { $ne: null },
     }).exec(),
   ]);
+
   const hasMore = rows.length > page.limit;
+
   const visibleRows = hasMore ? rows.slice(0, page.limit) : rows;
+
   const lastRow = visibleRows.at(-1);
 
   return {
@@ -105,8 +73,3 @@ const getBroadcastDraftRecipients = async (
 };
 
 export default getBroadcastDraftRecipients;
-export type {
-  BroadcastRecipientPage,
-  BroadcastRecipientPublicKey,
-  GetBroadcastDraftRecipientsResult,
-};

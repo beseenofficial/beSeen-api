@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,13 +10,14 @@ import cancelBroadcastDraft from '../../src/utils/broadcast/cancelBroadcastDraft
 vi.mock('../../src/utils/broadcast/cancelBroadcastDraft', () => ({ default: vi.fn() }));
 
 const cancelDraftMock = vi.mocked(cancelBroadcastDraft);
+
 const creatorId = new Types.ObjectId();
+
 const draftId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
-const accessToken = signAccessToken(
-  { id: creatorId, role: 'user' },
-  sessionId,
-);
+
+const accessToken = signAccessToken({ id: creatorId, role: 'user' }, sessionId);
 
 describe('DELETE /v1/broadcasts/drafts/:draftId', () => {
   beforeEach(() => {

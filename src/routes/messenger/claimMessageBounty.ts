@@ -1,8 +1,8 @@
 import type { RequestHandler } from 'express';
 
+import { bountyParamsSchema } from '../../validation/messenger/bounty';
 import { messengerBountyClaimErrors } from '../../types/errors/messenger';
 import claimMessageBounty from '../../utils/messenger/claimMessageBounty';
-import { bountyParamsSchema } from '../../validation/messenger/bounty';
 
 const claimMessageBountyRoute: RequestHandler = async (req, res) => {
   if (!req.auth) {

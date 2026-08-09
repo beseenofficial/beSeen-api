@@ -5,11 +5,17 @@ import MessageBounty from '../../src/models/MessageBounty';
 import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
 
 const conversationId = new Types.ObjectId('000000000000000000000001');
+
 const originalMessageId = new Types.ObjectId('000000000000000000000002');
+
 const replyMessageId = new Types.ObjectId('000000000000000000000003');
+
 const sponsorId = new Types.ObjectId('000000000000000000000004');
+
 const beneficiaryId = new Types.ObjectId('000000000000000000000005');
+
 const repliedAt = new Date('2026-08-07T12:00:00.000Z');
+
 const session = {} as never;
 
 const execQuery = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });

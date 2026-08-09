@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 
-import { messengerConversationErrors } from '../../types/errors/messenger';
 import getConversation from '../../utils/messenger/getConversation';
+import { messengerConversationErrors } from '../../types/errors/messenger';
 import { conversationParamsSchema } from '../../validation/messenger/conversation';
 
 const getConversationRoute: RequestHandler = async (req, res) => {

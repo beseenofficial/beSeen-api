@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 import { describe, expect, it } from 'vitest';
 
-import TokenHolding from '../../src/models/TokenHolding';
 import UserToken from '../../src/models/UserToken';
+import TokenHolding from '../../src/models/TokenHolding';
 
 describe('demo token models', () => {
   it('allows only one token per user', async () => {

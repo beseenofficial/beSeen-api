@@ -5,19 +5,11 @@ import UserKey from '../../models/UserKey';
 import AuthProof from '../../models/AuthProof';
 import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
-import type { AuthTokens } from './createAuthSession';
-import type { AuthenticatedUser } from '../../types/auth';
+import type { LoginUserResult } from '../../types/auth';
 import type { LoginBody } from '../../validation/auth/login';
 import buildLoginProofMessage from './buildLoginProofMessage';
 import { LOGIN_PROOF_MAX_AGE_SECONDS } from '../../constant/auth';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
-
-type LoginFailureReason =
-  'proof_expired' | 'proof_replayed' | 'invalid_signature' | 'account_unavailable';
-
-type LoginUserResult =
-  | { ok: true; user: AuthenticatedUser; auth: AuthTokens }
-  | { ok: false; reason: LoginFailureReason };
 
 const isDuplicateKeyError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 11_000;
@@ -91,4 +83,3 @@ const loginUser = async (body: LoginBody): Promise<LoginUserResult> => {
 };
 
 export default loginUser;
-export type { LoginFailureReason, LoginUserResult };

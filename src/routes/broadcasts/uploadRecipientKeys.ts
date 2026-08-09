@@ -15,6 +15,7 @@ const uploadBroadcastRecipientKeysRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = broadcastDraftParamsSchema.safeParse(req.params);
+
   const parsedBody = uploadBroadcastRecipientKeysBodySchema.safeParse(req.body);
 
   if (!parsedParams.success || !parsedBody.success) {

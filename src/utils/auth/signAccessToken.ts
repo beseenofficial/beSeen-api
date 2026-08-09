@@ -2,12 +2,7 @@ import jwt from 'jsonwebtoken';
 import type { Types } from 'mongoose';
 
 import env from '../../env';
-import type { UserRole } from '../../constant/user';
-
-interface AccessTokenUser {
-  id: Types.ObjectId;
-  role: UserRole;
-}
+import type { AccessTokenUser } from '../../types/auth';
 
 const signAccessToken = (user: AccessTokenUser, authSessionId: Types.ObjectId): string =>
   jwt.sign(
@@ -27,4 +22,3 @@ const signAccessToken = (user: AccessTokenUser, authSessionId: Types.ObjectId): 
   );
 
 export default signAccessToken;
-export type { AccessTokenUser };

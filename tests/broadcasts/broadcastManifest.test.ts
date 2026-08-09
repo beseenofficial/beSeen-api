@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import buildBroadcastRecipientKeysDigest from '../../src/utils/broadcast/buildBroadcastRecipientKeysDigest';
 import buildBroadcastSignatureMessage from '../../src/utils/broadcast/buildBroadcastSignatureMessage';
+import buildBroadcastRecipientKeysDigest from '../../src/utils/broadcast/buildBroadcastRecipientKeysDigest';
 
 describe('broadcast manifest canonicalization', () => {
   it('produces the same recipient digest regardless of input order', () => {

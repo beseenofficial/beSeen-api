@@ -1,14 +1,15 @@
-import { generateKeyPairSync, sign } from 'node:crypto';
 import { Types } from 'mongoose';
+import { generateKeyPairSync, sign } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Broadcast from '../../src/models/Broadcast';
 import BroadcastRecipient from '../../src/models/BroadcastRecipient';
-import buildBroadcastRecipientKeysDigest from '../../src/utils/broadcast/buildBroadcastRecipientKeysDigest';
-import buildBroadcastSignatureMessage from '../../src/utils/broadcast/buildBroadcastSignatureMessage';
 import finalizeBroadcast from '../../src/utils/broadcast/finalizeBroadcast';
+import buildBroadcastSignatureMessage from '../../src/utils/broadcast/buildBroadcastSignatureMessage';
+import buildBroadcastRecipientKeysDigest from '../../src/utils/broadcast/buildBroadcastRecipientKeysDigest';
 
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const sortedQueryResult = <T>(value: T) => ({
   sort: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
@@ -21,11 +22,14 @@ describe('finalizeBroadcast', () => {
 
   it('verifies the complete encrypted manifest and atomically publishes it', async () => {
     const creatorId = new Types.ObjectId();
+
     const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+
     const signingPublicKey = publicKey
       .export({ format: 'der', type: 'spki' })
       .subarray(-32)
       .toString('base64');
+
     const draft = new Broadcast({
       _id: new Types.ObjectId(),
       clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -36,6 +40,7 @@ describe('finalizeBroadcast', () => {
       creatorSigningPublicKey: signingPublicKey,
       creatorEncryptionPublicKey: Buffer.alloc(32, 1).toString('base64'),
     });
+
     const recipient = new BroadcastRecipient({
       broadcast: draft._id,
       recipient: new Types.ObjectId(),
@@ -44,11 +49,13 @@ describe('finalizeBroadcast', () => {
       encryptionPublicKey: Buffer.alloc(32, 2).toString('base64'),
       encryptedBroadcastKey: Buffer.alloc(80, 3).toString('base64'),
     });
+
     const unsignedBody = {
       contentCiphertext: Buffer.alloc(32, 4).toString('base64'),
       contentNonce: Buffer.alloc(24, 5).toString('base64'),
       creatorEncryptedBroadcastKey: Buffer.alloc(80, 6).toString('base64'),
     };
+
     const recipientKeysDigest = buildBroadcastRecipientKeysDigest([
       {
         recipientId: recipient.recipient.toString(),
@@ -57,6 +64,7 @@ describe('finalizeBroadcast', () => {
         encryptedBroadcastKey: recipient.encryptedBroadcastKey!,
       },
     ]);
+
     const signatureMessage = buildBroadcastSignatureMessage({
       broadcastId: draft._id.toString(),
       clientBroadcastId: draft.clientBroadcastId,
@@ -64,10 +72,11 @@ describe('finalizeBroadcast', () => {
       creatorKeyVersion: 1,
       encryptionVersion: 1,
       ...unsignedBody,
-    audienceType: 'token_holders',
+      audienceType: 'token_holders',
       audienceCount: 1,
       recipientKeysDigest,
     });
+
     const body = {
       ...unsignedBody,
       signature: sign(null, Buffer.from(signatureMessage), privateKey).toString('base64'),
@@ -104,6 +113,7 @@ describe('finalizeBroadcast', () => {
 
   it('returns the remaining count without attempting publication', async () => {
     const creatorId = new Types.ObjectId();
+
     const draft = new Broadcast({
       _id: new Types.ObjectId(),
       clientBroadcastId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -114,6 +124,7 @@ describe('finalizeBroadcast', () => {
       creatorSigningPublicKey: Buffer.alloc(32, 1).toString('base64'),
       creatorEncryptionPublicKey: Buffer.alloc(32, 2).toString('base64'),
     });
+
     const recipient = new BroadcastRecipient({
       broadcast: draft._id,
       recipient: new Types.ObjectId(),

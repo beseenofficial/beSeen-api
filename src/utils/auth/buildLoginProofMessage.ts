@@ -1,10 +1,5 @@
 import { LOGIN_PROOF_VERSION } from '../../constant/auth';
-
-interface LoginProofMessageInput {
-  walletAddress: string;
-  requestId: string;
-  issuedAt: string;
-}
+import type { LoginProofMessageInput } from '../../types/auth';
 
 const buildLoginProofMessage = (input: LoginProofMessageInput): string =>
   [
@@ -16,4 +11,3 @@ const buildLoginProofMessage = (input: LoginProofMessageInput): string =>
   ].join('\n');
 
 export default buildLoginProofMessage;
-export type { LoginProofMessageInput };

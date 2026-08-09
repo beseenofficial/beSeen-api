@@ -1,30 +1,19 @@
-import type { ClientSession, Types } from 'mongoose';
+import type { ClientSession } from 'mongoose';
 
 import env from '../../env';
 import signAccessToken from './signAccessToken';
 import AuthSession from '../../models/AuthSession';
-import type { UserRole } from '../../constant/user';
+import type { AuthTokens, SessionUser } from '../../types/auth';
 import { generateRefreshToken, hashRefreshToken } from './refreshToken';
-
-interface SessionUser {
-  id: Types.ObjectId;
-  role: UserRole;
-}
-
-interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  tokenType: 'Bearer';
-  expiresIn: number;
-  refreshTokenExpiresAt: Date;
-}
 
 const createAuthSession = async (
   user: SessionUser,
   databaseSession?: ClientSession,
 ): Promise<AuthTokens> => {
   const refreshToken = generateRefreshToken();
+
   const refreshTokenExpiresAt = new Date(Date.now() + env.REFRESH_TOKEN_TTL_SECONDS * 1_000);
+
   const authSession = new AuthSession({
     user: user.id,
     refreshTokenHash: hashRefreshToken(refreshToken),
@@ -45,4 +34,3 @@ const createAuthSession = async (
 };
 
 export default createAuthSession;
-export type { AuthTokens, SessionUser };

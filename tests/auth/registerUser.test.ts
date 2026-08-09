@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { withDatabaseTransaction } from '../../src/db';
-import AuthSession from '../../src/models/AuthSession';
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
 import UserToken from '../../src/models/UserToken';
+import { withDatabaseTransaction } from '../../src/db';
+import AuthSession from '../../src/models/AuthSession';
 import registerUser from '../../src/utils/auth/registerUser';
 import verifyBluxWallet from '../../src/utils/blux/verifyBluxWallet';
 import { deleteAvatar, uploadAvatar } from '../../src/utils/avatar/avatarStorage';
@@ -18,9 +18,13 @@ vi.mock('../../src/utils/avatar/avatarStorage', () => ({
 }));
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const verifyBluxWalletMock = vi.mocked(verifyBluxWallet);
+
 const uploadAvatarMock = vi.mocked(uploadAvatar);
+
 const deleteAvatarMock = vi.mocked(deleteAvatar);
 let savedDerivationVersion: number | undefined;
 const body = {

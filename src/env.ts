@@ -2,10 +2,15 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const DEVELOPMENT_ACCESS_TOKEN_SECRET = 'development-only-change-this-access-token-secret';
+
 const DEVELOPMENT_BLUX_APP_ID = 'development-blux-app-id';
+
 const DEVELOPMENT_BLUX_APP_SECRET = 'development-blux-app-secret';
+
 const DEVELOPMENT_R2_ACCESS_KEY_ID = 'development-r2-access-key-id';
+
 const DEVELOPMENT_R2_SECRET_ACCESS_KEY = 'development-r2-secret-access-key';
+
 const DEVELOPMENT_R2_PUBLIC_BASE_URL = 'https://avatars.example.invalid';
 
 const envSchema = z

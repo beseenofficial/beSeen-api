@@ -1,11 +1,12 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Conversation from '../../src/models/Conversation';
 import User from '../../src/models/User';
+import Conversation from '../../src/models/Conversation';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 const createUser = (id: Types.ObjectId, username: string) =>
@@ -18,7 +19,9 @@ describe('getConversationAccess', () => {
 
   it('returns both participants only when the viewer belongs to the conversation', async () => {
     const viewer = createUser(new Types.ObjectId(), 'viewer_user');
+
     const otherParticipant = createUser(new Types.ObjectId(), 'other_user');
+
     const conversation = new Conversation({
       participantA: viewer._id,
       participantB: otherParticipant._id,

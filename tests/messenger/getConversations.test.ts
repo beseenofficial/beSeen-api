@@ -1,13 +1,15 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Conversation from '../../src/models/Conversation';
 import User from '../../src/models/User';
+import Conversation from '../../src/models/Conversation';
 import getConversations from '../../src/utils/messenger/getConversations';
 import { encodeConversationCursor } from '../../src/utils/messenger/conversationCursor';
 
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const listResult = (value: unknown) => ({
   sort: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
@@ -24,16 +26,21 @@ describe('getConversations', () => {
 
   it('returns a cursor page with only the other participant profile', async () => {
     const viewer = createUser(new Types.ObjectId(), 'viewer_user');
+
     const firstOther = createUser(new Types.ObjectId(), 'first_user');
+
     const secondOther = createUser(new Types.ObjectId(), 'second_user');
+
     const firstConversation = new Conversation({
       participantA: viewer._id,
       participantB: firstOther._id,
     });
+
     const secondConversation = new Conversation({
       participantA: secondOther._id,
       participantB: viewer._id,
     });
+
     const extraConversation = new Conversation({
       participantA: viewer._id,
       participantB: new Types.ObjectId(),

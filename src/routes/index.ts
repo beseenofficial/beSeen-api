@@ -4,8 +4,8 @@ import authRoutes from './auth';
 import docsRoutes from './docs';
 import userRoutes from './users';
 import healthRoutes from './health';
-import broadcastRoutes from './broadcasts';
 import messengerRoutes from './messenger';
+import broadcastRoutes from './broadcasts';
 import notFound from '../middleware/notFound';
 import errorHandler from '../middleware/errorHandler';
 

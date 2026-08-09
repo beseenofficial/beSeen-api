@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -10,11 +10,17 @@ import getMessageHistory from '../../src/utils/messenger/getMessageHistory';
 vi.mock('../../src/utils/messenger/getMessageHistory', () => ({ default: vi.fn() }));
 
 const getMessageHistoryMock = vi.mocked(getMessageHistory);
+
 const userId = new Types.ObjectId();
+
 const recipientId = new Types.ObjectId();
+
 const conversationId = new Types.ObjectId();
+
 const messageId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const accessToken = signAccessToken({ id: userId, role: 'user' }, sessionId);
 
 describe('GET /v1/messenger/conversations/:conversationId/messages', () => {

@@ -15,6 +15,7 @@ const markConversationReadRoute: RequestHandler = async (req, res) => {
   }
 
   const parsedParams = conversationParamsSchema.safeParse(req.params);
+
   const parsedBody = markConversationReadBodySchema.safeParse(req.body);
 
   if (!parsedParams.success || !parsedBody.success) {

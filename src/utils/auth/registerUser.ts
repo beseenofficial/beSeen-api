@@ -1,33 +1,19 @@
 import { Types } from 'mongoose';
 import type { ClientSession } from 'mongoose';
 
+import log from '../../logger';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
 import UserToken from '../../models/UserToken';
 import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
-import type { AuthTokens } from './createAuthSession';
-import type { AuthenticatedUser } from '../../types/auth';
-import type { RegisterBody } from '../../validation/auth/register';
-import { KEY_DERIVATION_VERSION } from '../../constant/auth';
+import type { StoredAvatar } from '../../types/avatar';
 import verifyBluxWallet from '../blux/verifyBluxWallet';
-import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
+import { KEY_DERIVATION_VERSION } from '../../constant/auth';
+import type { RegisterBody } from '../../validation/auth/register';
 import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
-import type { StoredAvatar } from '../avatar/avatarStorage';
-import log from '../../logger';
-
-type RegistrationFailureReason =
-  | 'username_taken'
-  | 'wallet_already_registered'
-  | 'public_key_already_registered'
-  | 'wallet_not_verified_by_blux'
-  | 'blux_verification_unavailable'
-  | 'invalid_avatar'
-  | 'avatar_storage_unavailable';
-
-type RegisterUserResult =
-  | { ok: true; user: AuthenticatedUser; auth: AuthTokens }
-  | { ok: false; reason: RegistrationFailureReason };
+import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
+import type { RegistrationFailureReason, RegisterUserResult } from '../../types/auth';
 
 interface MongoDuplicateKeyError extends Error {
   code: number;
@@ -176,4 +162,3 @@ const registerUser = async (
 };
 
 export default registerUser;
-export type { RegistrationFailureReason, RegisterUserResult };

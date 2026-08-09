@@ -1,6 +1,6 @@
-import SwaggerParser from '@apidevtools/swagger-parser';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
+import SwaggerParser from '@apidevtools/swagger-parser';
 
 import app from '../../src/app';
 import openApiDocument from '../../src/openapi/document';
@@ -52,7 +52,9 @@ describe('OpenAPI contract', () => {
 
   it('serves the machine-readable contract and interactive Swagger UI', async () => {
     const jsonResponse = await request(app).get('/v1/openapi.json');
+
     const docsRedirect = await request(app).get('/v1/docs');
+
     const docsResponse = await request(app).get('/v1/docs/');
 
     expect(jsonResponse.status).toBe(200);

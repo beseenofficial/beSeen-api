@@ -1,5 +1,5 @@
-import { Types } from 'mongoose';
 import request from 'supertest';
+import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
@@ -47,6 +47,7 @@ describe('GET /v1/users/username/availability', () => {
     const reservedResponse = await request(app)
       .get('/v1/users/username/availability')
       .query({ username: 'Me' });
+
     const invalidResponse = await request(app)
       .get('/v1/users/username/availability')
       .query({ username: 'ab!' });

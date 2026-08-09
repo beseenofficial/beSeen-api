@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
+import { usernameSchema } from '../user/profileFields';
 import isBase64PublicKey from '../../utils/auth/isBase64PublicKey';
 import isValidStellarGAddress from '../../utils/stellar/isValidStellarGAddress';
-import { usernameSchema } from '../user/profileFields';
 
 const publicKeySchema = z
   .string()

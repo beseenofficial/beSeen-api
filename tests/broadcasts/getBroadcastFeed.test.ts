@@ -1,13 +1,15 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import User from '../../src/models/User';
 import Broadcast from '../../src/models/Broadcast';
 import BroadcastRecipient from '../../src/models/BroadcastRecipient';
-import User from '../../src/models/User';
 import getBroadcastFeed from '../../src/utils/broadcast/getBroadcastFeed';
 
 const WALLET_ADDRESS = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const queryResult = <T>(value: T) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const listQueryResult = <T>(value: T) => ({
   sort: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
@@ -46,8 +48,11 @@ describe('getBroadcastFeed', () => {
 
   it('returns received broadcasts with only the viewer recipient key', async () => {
     const viewer = createViewer();
+
     const creatorId = new Types.ObjectId();
+
     const broadcast = createPublishedBroadcast(creatorId);
+
     const aggregateRows = [
       {
         keyVersion: 1,
@@ -62,6 +67,7 @@ describe('getBroadcastFeed', () => {
     ];
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(viewer) as never);
     const aggregateExec = vi.fn().mockResolvedValue(aggregateRows);
+
     const aggregateSpy = vi
       .spyOn(BroadcastRecipient, 'aggregate')
       .mockReturnValue({ exec: aggregateExec } as never);
@@ -96,11 +102,13 @@ describe('getBroadcastFeed', () => {
 
   it('returns sent broadcasts with the creator wrapped key and cursor pagination', async () => {
     const viewer = createViewer();
+
     const first = new Broadcast({
       ...createPublishedBroadcast(viewer._id),
       status: 'published',
       creatorEncryptionPublicKey: Buffer.alloc(32, 7).toString('base64'),
     });
+
     const second = new Broadcast({
       ...createPublishedBroadcast(viewer._id),
       status: 'published',
