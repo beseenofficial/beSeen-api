@@ -1,23 +1,23 @@
 import type { ClientSession } from 'mongoose';
 
+import User from '../../models/User';
+import UserKey from '../../models/UserKey';
+import Message from '../../models/Message';
+import { withDatabaseTransaction } from '../../db';
+import Conversation from '../../models/Conversation';
+import resolveReplyBounty from './resolveReplyBounty';
+import MessageBounty from '../../models/MessageBounty';
+import type { MessageDocument } from '../../models/Message';
+import serializeMessageBounty from './serializeMessageBounty';
+import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
+import type { MessageBountyDocument } from '../../models/MessageBounty';
+import type { SerializedMessageBounty } from './serializeMessageBounty';
+import buildMessageSignatureMessage from './buildMessageSignatureMessage';
+import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import {
   MESSENGER_ENCRYPTION_VERSION,
   MESSENGER_SIGNATURE_VERSION,
 } from '../../constant/messenger';
-import { withDatabaseTransaction } from '../../db';
-import Conversation from '../../models/Conversation';
-import Message from '../../models/Message';
-import type { MessageDocument } from '../../models/Message';
-import MessageBounty from '../../models/MessageBounty';
-import type { MessageBountyDocument } from '../../models/MessageBounty';
-import User from '../../models/User';
-import UserKey from '../../models/UserKey';
-import type { SendMessageBody } from '../../validation/messenger/sendMessage';
-import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
-import buildMessageSignatureMessage from './buildMessageSignatureMessage';
-import resolveReplyBounty from './resolveReplyBounty';
-import serializeMessageBounty from './serializeMessageBounty';
-import type { SerializedMessageBounty } from './serializeMessageBounty';
 
 type SendMessageFailureReason =
   | 'account_unavailable'
@@ -131,10 +131,8 @@ const idempotentResult = async (
     return { ok: false, reason: 'message_conflict' };
   }
 
-  const [bounty, unlockedBounty] = await Promise.all([
-    findMessageBounty(message, session),
-    findUnlockedBounty(message, session),
-  ]);
+  const bounty = await findMessageBounty(message, session);
+  const unlockedBounty = await findUnlockedBounty(message, session);
 
   return {
     ok: true,
@@ -198,14 +196,21 @@ const sendMessageInTransaction = async (
     return { ok: false, reason: 'participant_unavailable' };
   }
 
-  const [senderKey, recipientKey] = await Promise.all([
-    UserKey.findOne({ user: sender._id, status: 'active', revokedAt: null })
-      .session(session)
-      .exec(),
-    UserKey.findOne({ user: recipient._id, status: 'active', revokedAt: null })
-      .session(session)
-      .exec(),
-  ]);
+  const senderKey = await UserKey.findOne({
+    user: sender._id,
+    status: 'active',
+    revokedAt: null,
+  })
+    .session(session)
+    .exec();
+
+  const recipientKey = await UserKey.findOne({
+    user: recipient._id,
+    status: 'active',
+    revokedAt: null,
+  })
+    .session(session)
+    .exec();
 
   if (!senderKey || !recipientKey) {
     return { ok: false, reason: 'active_keys_not_found' };
@@ -248,9 +253,11 @@ const sendMessageInTransaction = async (
   }
 
   const createdAt = new Date();
+
   const recipientUnreadField = conversation.participantA.equals(recipient._id)
     ? 'participantAUnreadCount'
     : 'participantBUnreadCount';
+    
   const sequencedConversation = await Conversation.findOneAndUpdate(
     {
       _id: conversation._id,
@@ -264,7 +271,7 @@ const sendMessageInTransaction = async (
         lastMessageClientMessageId: body.clientMessageId,
       },
     },
-    { new: false, session },
+    { returnDocument: 'before', session },
   ).exec();
 
   if (!sequencedConversation) {

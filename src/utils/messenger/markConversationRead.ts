@@ -1,9 +1,9 @@
 import type { ClientSession } from 'mongoose';
 
+import User from '../../models/User';
+import Message from '../../models/Message';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
-import Message from '../../models/Message';
-import User from '../../models/User';
 
 type MarkConversationReadFailureReason =
   'account_unavailable' | 'conversation_not_found' | 'read_sequence_not_found';
@@ -54,13 +54,17 @@ const markConversationReadInTransaction = async (
   }
 
   const viewerIsParticipantA = conversation.participantA.equals(viewer._id);
+
   const readSequenceField = viewerIsParticipantA
     ? 'participantAReadSequence'
     : 'participantBReadSequence';
+
   const unreadCountField = viewerIsParticipantA
     ? 'participantAUnreadCount'
     : 'participantBUnreadCount';
+    
   const currentReadSequence = conversation[readSequenceField] ?? 0;
+  
   const currentUnreadCount = conversation[unreadCountField] ?? 0;
 
   if (throughSequence <= currentReadSequence) {
@@ -93,7 +97,7 @@ const markConversationReadInTransaction = async (
         [unreadCountField]: unreadCount,
       },
     },
-    { new: true, session, runValidators: true },
+    { returnDocument: 'after', session, runValidators: true },
   ).exec();
 
   if (!updatedConversation) {

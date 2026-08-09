@@ -1,8 +1,8 @@
 import type { ClientSession } from 'mongoose';
 
+import User from '../../models/User';
 import { withDatabaseTransaction } from '../../db';
 import MessageBounty from '../../models/MessageBounty';
-import User from '../../models/User';
 import serializeMessageBounty from './serializeMessageBounty';
 import type { SerializedMessageBounty } from './serializeMessageBounty';
 
@@ -51,7 +51,7 @@ const claimMessageBountyInTransaction = async (
         expiresAt: { $lte: now },
       },
       { $set: { status: 'expired' } },
-      { new: true, session },
+      { returnDocument: 'after', session },
     ).exec();
 
     if (!bounty) {
@@ -78,7 +78,7 @@ const claimMessageBountyInTransaction = async (
       status: 'claimable',
     },
     { $set: { status: 'claimed', claimedAt: now } },
-    { new: true, runValidators: true, session },
+    { returnDocument: 'after', runValidators: true, session },
   ).exec();
 
   if (!claimedBounty) {

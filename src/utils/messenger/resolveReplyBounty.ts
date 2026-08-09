@@ -32,7 +32,7 @@ const resolveReplyBounty = async (
         claimableAt: input.repliedAt,
       },
     },
-    { new: true, runValidators: true, session: input.session },
+    { returnDocument: 'after', runValidators: true, session: input.session },
   ).exec();
 
   if (claimableBounty) {

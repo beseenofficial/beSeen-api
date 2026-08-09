@@ -20,19 +20,29 @@ const purchaseUserTokenInTransaction = async (
   ownerUsername: string,
   session: ClientSession,
 ): Promise<PurchaseUserTokenResult> => {
-  const [buyer, owner] = await Promise.all([
-    User.findOne({ _id: buyerId, status: 'active', deletedAt: null }).session(session).exec(),
-    User.findOne({ username: ownerUsername, status: 'active', deletedAt: null })
-      .session(session)
-      .exec(),
-  ]);
+  const buyer = await User.findOne({
+    _id: buyerId,
+    status: 'active',
+    deletedAt: null,
+  })
+    .session(session)
+    .exec();
+  const owner = await User.findOne({
+    username: ownerUsername,
+    status: 'active',
+    deletedAt: null,
+  })
+    .session(session)
+    .exec();
 
   if (!buyer) {
     return { ok: false, reason: 'buyer_unavailable' };
   }
+
   if (!owner) {
     return { ok: false, reason: 'user_not_found' };
   }
+
   if (buyer._id.equals(owner._id)) {
     return { ok: false, reason: 'own_token' };
   }
@@ -43,10 +53,12 @@ const purchaseUserTokenInTransaction = async (
     { $setOnInsert: { token: token._id, holder: buyer._id } },
     { upsert: true, session },
   ).exec();
-  const [holding, ensuredConversation] = await Promise.all([
-    TokenHolding.findOne({ token: token._id, holder: buyer._id }).session(session).exec(),
-    ensureConversation(buyer._id, owner._id, session),
-  ]);
+
+  const holding = await TokenHolding.findOne({ token: token._id, holder: buyer._id })
+    .session(session)
+    .exec();
+    
+  const ensuredConversation = await ensureConversation(buyer._id, owner._id, session);
 
   if (!holding) {
     throw new Error('Token holding could not be created');
