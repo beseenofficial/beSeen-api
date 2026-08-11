@@ -137,6 +137,10 @@ messageBountySchema.index(
   { name: 'message_bounties_sponsor_status' },
 );
 messageBountySchema.index({ status: 1, expiresAt: 1 }, { name: 'message_bounties_status_expiry' });
+messageBountySchema.index(
+  { status: 1, beneficiary: 1, claimedAt: -1 },
+  { name: 'message_bounties_claimed_beneficiary' },
+);
 
 const MessageBounty = model<IMessageBounty>('MessageBounty', messageBountySchema);
 

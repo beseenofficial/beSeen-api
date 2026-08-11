@@ -270,6 +270,10 @@ messageSchema.index(
   { unique: true, name: 'messages_sender_client_id_unique' },
 );
 messageSchema.index({ conversation: 1, _id: -1 }, { name: 'messages_conversation_history' });
+messageSchema.index(
+  { createdAt: -1, conversation: 1 },
+  { name: 'messages_recent_conversation_activity' },
+);
 
 const Message = model<IMessage>('Message', messageSchema);
 

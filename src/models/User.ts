@@ -3,6 +3,7 @@ import type { HydratedDocument } from 'mongoose';
 
 import { USER_ROLES, USER_STATUSES } from '../constant/user';
 import type { UserRole, UserStatus } from '../constant/user';
+import { DISCOVER_SCORE_VERSION } from '../constant/discover';
 import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
@@ -15,6 +16,9 @@ interface IUser {
   role: UserRole;
   status: UserStatus;
   deletedAt: Date | null;
+  discoverScore: number;
+  discoverScoreVersion: number;
+  discoverScoreUpdatedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,6 +75,27 @@ const userSchema = new Schema<IUser>(
       type: Date,
       default: null,
     },
+    discoverScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+      required: true,
+    },
+    discoverScoreVersion: {
+      type: Number,
+      min: 1,
+      default: DISCOVER_SCORE_VERSION,
+      required: true,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Discover score version must be a safe integer',
+      },
+    },
+    discoverScoreUpdatedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -81,6 +106,7 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ walletAddress: 1 }, { unique: true, name: 'users_wallet_address_unique' });
 userSchema.index({ username: 1 }, { unique: true, name: 'users_username_unique' });
 userSchema.index({ status: 1, _id: 1 }, { name: 'users_status_id' });
+userSchema.index({ status: 1, discoverScore: -1, _id: -1 }, { name: 'users_discover_ranking' });
 
 const User = model<IUser>('User', userSchema);
 

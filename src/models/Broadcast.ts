@@ -201,6 +201,10 @@ broadcastSchema.index(
 );
 broadcastSchema.index({ creator: 1, status: 1, _id: -1 }, { name: 'broadcasts_creator_status' });
 broadcastSchema.index({ status: 1, expiresAt: 1 }, { name: 'broadcasts_status_expiration' });
+broadcastSchema.index(
+  { status: 1, creator: 1, publishedAt: -1 },
+  { name: 'broadcasts_published_creator_activity' },
+);
 
 const Broadcast = model<IBroadcast>('Broadcast', broadcastSchema);
 

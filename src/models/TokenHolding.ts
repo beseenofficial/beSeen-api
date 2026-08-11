@@ -33,6 +33,7 @@ tokenHoldingSchema.index(
   { unique: true, name: 'token_holdings_token_holder_unique' },
 );
 tokenHoldingSchema.index({ holder: 1, _id: -1 }, { name: 'token_holdings_holder_list' });
+tokenHoldingSchema.index({ token: 1, createdAt: -1 }, { name: 'token_holdings_token_activity' });
 
 const TokenHolding = model<ITokenHolding>('TokenHolding', tokenHoldingSchema);
 

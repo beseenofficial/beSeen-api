@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import User from '../../models/User';
 import type { DiscoverUsersPage } from '../../types/user';
 import type { DiscoverUsersQuery } from '../../validation/user/discover';
+import { encodeDiscoverCursor } from '../discover/discoverCursor';
 
 const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPage> => {
   const filter: Record<string, unknown> = {
@@ -11,12 +12,18 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   };
 
   if (query.cursor) {
-    filter._id = { $lt: new Types.ObjectId(query.cursor) };
+    filter.$or = [
+      { discoverScore: { $lt: query.cursor.score } },
+      {
+        discoverScore: query.cursor.score,
+        _id: { $lt: new Types.ObjectId(query.cursor.id) },
+      },
+    ];
   }
 
   const rows = await User.find(filter)
-    .select({ username: 1, avatar: 1 })
-    .sort({ _id: -1 })
+    .select({ username: 1, avatar: 1, discoverScore: 1 })
+    .sort({ discoverScore: -1, _id: -1 })
     .limit(query.limit + 1)
     .exec();
 
@@ -32,7 +39,13 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
       username: user.username,
       avatar: user.avatar,
     })),
-    nextCursor: hasMore && lastUser ? lastUser._id.toString() : null,
+    nextCursor:
+      hasMore && lastUser
+        ? encodeDiscoverCursor({
+            score: lastUser.discoverScore,
+            id: lastUser._id.toString(),
+          })
+        : null,
     hasMore,
   };
 };

@@ -336,15 +336,16 @@ const openApiPaths = {
       tags: ['Profiles'],
       summary: 'Discover active public user profiles',
       description:
-        'Returns active users newest first with only their public ID, username, and avatar.',
+        'Returns active users ordered by the periodically recalculated Discover score with only their public ID, username, and avatar.',
       operationId: 'discoverUsers',
       parameters: [
         {
           in: 'query',
           name: 'cursor',
           required: false,
-          description: 'The nextCursor returned by the previous page.',
-          schema: { $ref: '#/components/schemas/ObjectId' },
+          description:
+            'Opaque ranking cursor returned as nextCursor by the previous page. Clients must not construct or inspect it.',
+          schema: { type: 'string', minLength: 1, maxLength: 256 },
         },
         {
           in: 'query',
@@ -364,7 +365,7 @@ const openApiPaths = {
               items: { $ref: '#/components/schemas/DiscoverUser' },
             },
             nextCursor: {
-              oneOf: [{ $ref: '#/components/schemas/ObjectId' }, { type: 'null' }],
+              oneOf: [{ type: 'string', minLength: 1, maxLength: 256 }, { type: 'null' }],
             },
             hasMore: { type: 'boolean' },
           },
