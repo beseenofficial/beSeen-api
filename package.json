@@ -7,6 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
+    "migrate": "tsx src/migrations/run.ts",
+    "migrate:prod": "node dist/migrations/run.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

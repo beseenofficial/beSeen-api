@@ -15,9 +15,23 @@ describe('User model', () => {
     expect(user.avatarObjectKey).toBeNull();
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
+    expect(user.discoverScore).toBe(0);
+    expect(user.discoverScoreVersion).toBe(1);
+    expect(user.discoverScoreUpdatedAt).toBeNull();
     expect(user.toObject()).not.toHaveProperty('accountType');
     expect(user.toObject()).not.toHaveProperty('bio');
     expect(user.toObject()).not.toHaveProperty('displayName');
+  });
+
+  it('declares a stable Discover ranking index', () => {
+    expect(User.schema.indexes()).toEqual(
+      expect.arrayContaining([
+        [
+          { status: 1, discoverScore: -1, _id: -1 },
+          expect.objectContaining({ name: 'users_discover_ranking' }),
+        ],
+      ]),
+    );
   });
 
   it('rejects invalid Stellar addresses and usernames', async () => {

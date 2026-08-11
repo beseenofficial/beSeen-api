@@ -3,13 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import User from '../../src/models/User';
 import discoverUsers from '../../src/utils/user/discoverUsers';
+import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
 
-const user = (id: string, username: string, avatar: string | null = null) =>
+const user = (id: string, username: string, discoverScore: number, avatar: string | null = null) =>
   new User({
     _id: new Types.ObjectId(id),
     walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
     username,
     avatar,
+    discoverScore,
   });
 
 const queryResult = (value: unknown) => ({
@@ -24,12 +26,12 @@ describe('discoverUsers', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns a newest-first public page without private user data', async () => {
-    const first = user('000000000000000000000003', 'third_user', 'https://img.example/3.webp');
+  it('returns a score-ranked public page without private user data', async () => {
+    const first = user('000000000000000000000003', 'third_user', 80, 'https://img.example/3.webp');
 
-    const second = user('000000000000000000000002', 'second_user');
+    const second = user('000000000000000000000002', 'second_user', 70);
 
-    const extra = user('000000000000000000000001', 'first_user');
+    const extra = user('000000000000000000000001', 'first_user', 60);
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([first, second, extra]) as never);
 
@@ -44,7 +46,7 @@ describe('discoverUsers', () => {
         },
         { id: second._id.toString(), username: 'second_user', avatar: null },
       ],
-      nextCursor: second._id.toString(),
+      nextCursor: encodeDiscoverCursor({ score: 70, id: second._id.toString() }),
       hasMore: true,
     });
     expect(User.find).toHaveBeenCalledWith({ status: 'active', deletedAt: null });
@@ -52,7 +54,10 @@ describe('discoverUsers', () => {
   });
 
   it('applies the exclusive cursor and returns a final page', async () => {
-    const cursor = '000000000000000000000010';
+    const cursor = {
+      score: 42.5,
+      id: '000000000000000000000010',
+    };
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([]) as never);
 
@@ -64,7 +69,13 @@ describe('discoverUsers', () => {
     expect(User.find).toHaveBeenCalledWith({
       status: 'active',
       deletedAt: null,
-      _id: { $lt: new Types.ObjectId(cursor) },
+      $or: [
+        { discoverScore: { $lt: cursor.score } },
+        {
+          discoverScore: cursor.score,
+          _id: { $lt: new Types.ObjectId(cursor.id) },
+        },
+      ],
     });
   });
 });
