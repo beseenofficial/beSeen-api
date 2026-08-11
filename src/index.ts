@@ -8,12 +8,17 @@ import {
   startBroadcastDraftCleanup,
   stopBroadcastDraftCleanup,
 } from './utils/broadcast/broadcastDraftCleanupScheduler';
+import {
+  startDiscoverRankingScheduler,
+  stopDiscoverRankingScheduler,
+} from './utils/discover/discoverRankingScheduler';
 
 let server: Server | undefined;
 
 const shutdown = (signal: NodeJS.Signals): void => {
   log.info({ signal }, 'Shutdown started');
   stopBroadcastDraftCleanup();
+  stopDiscoverRankingScheduler();
 
   if (!server) {
     void disconnectDatabase().finally(() => process.exit(0));
@@ -33,6 +38,7 @@ const shutdown = (signal: NodeJS.Signals): void => {
 const bootstrap = async (): Promise<void> => {
   await connectDatabase();
   startBroadcastDraftCleanup();
+  startDiscoverRankingScheduler();
 
   server = app.listen(env.PORT, () => {
     log.info({ port: env.PORT }, 'BeSeen API started');
