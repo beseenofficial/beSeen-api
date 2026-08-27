@@ -52,7 +52,7 @@ describe('20260811AddDiscoverRanking migration', () => {
         {
           $set: {
             discoverScore: { $ifNull: ['$discoverScore', 0] },
-            discoverScoreVersion: { $ifNull: ['$discoverScoreVersion', 1] },
+              discoverScoreVersion: { $ifNull: ['$discoverScoreVersion', 3] },
             discoverScoreUpdatedAt: { $ifNull: ['$discoverScoreUpdatedAt', null] },
           },
         },

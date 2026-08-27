@@ -36,6 +36,10 @@ describe('recalculateDiscoverRankings', () => {
     });
 
     const metrics: DiscoverRankingMetrics = {
+      hasAvatar: false,
+      activeSeconds30d: 0,
+      activeDays30d: 0,
+      lastActiveAt: null,
       followerCount: 1_000,
       newFollowerCount30d: 0,
       lastTokenPurchaseAt: null,
@@ -71,8 +75,8 @@ describe('recalculateDiscoverRankings', () => {
             filter: { _id: userId, status: 'active', deletedAt: null },
             update: {
               $set: {
-                discoverScore: 35,
-                discoverScoreVersion: 1,
+                discoverScore: 30,
+                discoverScoreVersion: 3,
                 discoverScoreUpdatedAt: calculatedAt,
               },
             },

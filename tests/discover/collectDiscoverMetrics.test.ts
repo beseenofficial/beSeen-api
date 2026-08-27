@@ -5,6 +5,7 @@ import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
 import TokenHolding from '../../src/models/TokenHolding';
 import MessageBounty from '../../src/models/MessageBounty';
+import UserActivityDay from '../../src/models/UserActivityDay';
 import collectDiscoverMetrics from '../../src/utils/discover/collectDiscoverMetrics';
 
 const aggregateResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
@@ -58,14 +59,21 @@ describe('collectDiscoverMetrics', () => {
         },
       ]) as never,
     );
+    vi.spyOn(UserActivityDay, 'aggregate').mockReturnValue(
+      aggregateResult([{ _id: userId, activeSeconds30d: 3_600, activeDays30d: 2 }]) as never,
+    );
 
     const result = await collectDiscoverMetrics(
-      [{ id: userId.toString(), registeredAt }],
+      [{ id: userId.toString(), registeredAt, hasAvatar: true, lastActiveAt: activityAt }],
       [userId],
       new Date('2026-08-11T12:00:00.000Z'),
     );
 
     expect(result.get(userId.toString())).toEqual({
+      hasAvatar: true,
+      activeSeconds30d: 3_600,
+      activeDays30d: 2,
+      lastActiveAt: activityAt,
       followerCount: 20,
       newFollowerCount30d: 5,
       lastTokenPurchaseAt: activityAt,
@@ -111,11 +119,13 @@ describe('collectDiscoverMetrics', () => {
     const holdingAggregateSpy = vi.spyOn(TokenHolding, 'aggregate');
 
     const messageAggregateSpy = vi.spyOn(Message, 'aggregate');
+    const activityAggregateSpy = vi.spyOn(UserActivityDay, 'aggregate');
 
     const result = await collectDiscoverMetrics([], [], new Date());
 
     expect(result.size).toBe(0);
     expect(holdingAggregateSpy).not.toHaveBeenCalled();
     expect(messageAggregateSpy).not.toHaveBeenCalled();
+    expect(activityAggregateSpy).not.toHaveBeenCalled();
   });
 });

@@ -16,8 +16,10 @@ describe('User model', () => {
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.discoverScore).toBe(0);
-    expect(user.discoverScoreVersion).toBe(1);
+    expect(user.discoverScoreVersion).toBe(3);
     expect(user.discoverScoreUpdatedAt).toBeNull();
+    expect(user.lastActiveAt).toBeNull();
+    expect(user.lastActivityHeartbeatAt).toBeNull();
     expect(user.toObject()).not.toHaveProperty('accountType');
     expect(user.toObject()).not.toHaveProperty('bio');
     expect(user.toObject()).not.toHaveProperty('displayName');
