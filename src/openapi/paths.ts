@@ -331,6 +331,37 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/me/activity': {
+    post: {
+      tags: ['Profiles'],
+      summary: 'Record an authenticated user activity heartbeat',
+      description:
+        'Call approximately once per minute while the application is visible and active. The server credits only plausible consecutive heartbeat intervals, stores daily activity buckets, and uses the most recent 30 days in Discover ranking.',
+      operationId: 'recordCurrentUserActivity',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': jsonResponse('Activity heartbeat recorded.', {
+          type: 'object',
+          additionalProperties: false,
+          required: ['activity'],
+          properties: {
+            activity: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['creditedSeconds', 'lastActiveAt', 'isOnline'],
+              properties: {
+                creditedSeconds: { type: 'integer', minimum: 0, maximum: 120 },
+                lastActiveAt: { type: 'string', format: 'date-time' },
+                isOnline: { type: 'boolean', const: true },
+              },
+            },
+          },
+        }),
+        '401': unauthorized,
+        '429': rateLimited,
+      },
+    },
+  },
   '/v1/users/discover': {
     get: {
       tags: ['Profiles'],

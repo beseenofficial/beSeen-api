@@ -1,4 +1,8 @@
 interface DiscoverRankingMetrics {
+  hasAvatar: boolean;
+  activeSeconds30d: number;
+  activeDays30d: number;
+  lastActiveAt: Date | null;
   followerCount: number;
   newFollowerCount30d: number;
   lastTokenPurchaseAt: Date | null;
@@ -14,6 +18,8 @@ interface DiscoverRankingMetrics {
 interface DiscoverRankingUser {
   id: string;
   registeredAt: Date;
+  hasAvatar: boolean;
+  lastActiveAt: Date | null;
 }
 
 interface DiscoverFollowerMetrics {
@@ -41,8 +47,15 @@ interface DiscoverBroadcastMetrics {
   lastPublishedBroadcastAt: Date;
 }
 
+interface DiscoverActivityMetrics {
+  userId: string;
+  activeSeconds30d: number;
+  activeDays30d: number;
+}
+
 export type {
   DiscoverBountyMetrics,
+  DiscoverActivityMetrics,
   DiscoverBroadcastMetrics,
   DiscoverChatMetrics,
   DiscoverFollowerMetrics,

@@ -1,14 +1,12 @@
 import log from '../logger';
 import { connectDatabase, disconnectDatabase } from '../db';
-import addDiscoverRanking from './20260811AddDiscoverRanking';
+import runDatabaseMigrations from './runDatabaseMigrations';
 
 const runMigrations = async (): Promise<void> => {
   await connectDatabase();
 
   try {
-    const result = await addDiscoverRanking();
-
-    log.info(result, 'Database migrations completed');
+    await runDatabaseMigrations();
   } finally {
     await disconnectDatabase();
   }

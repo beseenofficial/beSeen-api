@@ -19,6 +19,8 @@ interface IUser {
   discoverScore: number;
   discoverScoreVersion: number;
   discoverScoreUpdatedAt: Date | null;
+  lastActiveAt: Date | null;
+  lastActivityHeartbeatAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +97,15 @@ const userSchema = new Schema<IUser>(
     discoverScoreUpdatedAt: {
       type: Date,
       default: null,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+    },
+    lastActivityHeartbeatAt: {
+      type: Date,
+      default: null,
+      select: false,
     },
   },
   {
