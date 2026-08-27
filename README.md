@@ -1,270 +1,280 @@
-# BeSeen API
+# BeSeen
 
-BeSeen API is the backend service for the BeSeen platform. It provides wallet-based authentication, public user profiles, token-based social connections, discovery ranking, encrypted broadcasts, and encrypted direct messaging.
+BeSeen is a privacy-focused social protocol built around wallet-owned identity, encrypted communication, and token-based audience access.
 
-The service is built with Node.js, TypeScript, Express, MongoDB, and Mongoose. It exposes a versioned REST API with an OpenAPI specification and an interactive Swagger UI.
+Instead of asking users to create and manage a separate cryptographic identity, BeSeen derives an application-specific signing key and encryption key from a fixed Stellar wallet signature. Private keys and plaintext remain on the client. The API coordinates identity, delivery, audience membership, replay protection, discovery, and encrypted state without needing access to message content.
 
-## Features
+This repository contains the BeSeen API: the protocol coordination and persistence layer for authentication, profiles, discovery, broadcasts, direct messages, social tokens, and message bounties.
 
-- Stellar wallet-based registration and authentication
-- Short-lived access tokens with refresh-session rotation
-- Replay-resistant signed login proofs
-- Public profiles and avatar storage through Cloudflare R2
-- Username availability and profile management
-- User tokens, token ownership, and follower counts
-- Ranked user discovery based on bounded engagement signals
-- Authenticated activity heartbeat tracking
-- Client-side encrypted broadcasts with per-recipient wrapped keys
-- Client-side encrypted direct messages and read receipts
-- Idempotent message delivery and token acquisition
-- Optional message bounties
-- Request validation, rate limiting, structured logging, and secure HTTP defaults
-- OpenAPI documentation
-- Automatic database migrations during application startup
+## The problem
 
-## Technology
+Wallet-based applications commonly prove account ownership but then fall back to conventional server-controlled identity and plaintext communication. Private social applications have the opposite problem: they can encrypt content, but key creation, recovery, discovery, and audience management often create too much friction for mainstream users.
 
-- Node.js 22
-- TypeScript
-- Express 5
-- MongoDB 8 with replica-set transactions
-- Mongoose
-- Zod
-- Pino
-- Vitest
-- Docker and Docker Compose
+BeSeen connects these two layers:
 
-## Requirements
+- A Stellar wallet is the root of the user's application identity.
+- Deterministic key derivation makes the same communication identity recoverable from the same wallet.
+- Separate signing and encryption keys prevent one key from being reused for unrelated cryptographic purposes.
+- Content is encrypted before it reaches the API.
+- Social-token ownership defines who can access a creator's broadcasts.
+- The server verifies authorization and integrity without receiving private keys or plaintext.
 
-Choose one of the following setups:
+## Core protocol
 
-- Docker Engine with Docker Compose; or
-- Node.js 22+, npm, and a MongoDB replica set
+### 1. Wallet-derived identity
 
-MongoDB must run as a replica set because several application operations use transactions. The included Compose configuration initializes a single-node `rs0` replica set automatically.
+The client constructs a fixed, non-submitted Stellar transaction containing the `beseen_kdf_v1` domain marker and asks the connected wallet to sign it.
 
-## Quick start with Docker
+The resulting raw 64-byte transaction signature is used locally as input to `HKDF-SHA-256`. Domain-separated derivation contexts produce two independent 32-byte seeds:
 
-Docker Compose is the recommended way to run the complete local stack.
-
-1. Create the environment file:
-
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
-2. Replace all placeholder credentials in `.env`, especially:
-
-   - `ACCESS_TOKEN_SECRET`
-   - `BLUX_APP_ID`
-   - `BLUX_APP_SECRET`
-   - `R2_ENDPOINT`
-   - `R2_ACCESS_KEY_ID`
-   - `R2_SECRET_ACCESS_KEY`
-   - `R2_PUBLIC_BASE_URL`
-
-3. Build and start the services:
-
-   ```bash
-   docker compose up --build
-   ```
-
-4. Verify the API:
-
-   ```http
-   GET http://127.0.0.1:3000/v1/health
-   ```
-
-The Compose stack exposes the API on `127.0.0.1:3000` and MongoDB on `127.0.0.1:27017`. MongoDB data is retained in named Docker volumes.
-
-To run the stack in the background:
-
-```bash
-docker compose up --build -d
+```text
+Stellar wallet
+      │
+      │ signs a fixed transaction locally
+      ▼
+64-byte wallet signature
+      │
+      ├── HKDF: beseen.fi/ed25519-signing-key/v1
+      │         └── Ed25519 signing key pair
+      │
+      └── HKDF: beseen.fi/x25519-encryption-key/v1
+                └── X25519 encryption key pair
 ```
 
-To follow API logs:
+The fixed transaction has no ledger effect and is never submitted to Stellar. Its raw signature, derived seeds, and private keys are not sent to the API. Only the wallet address and derived public keys are registered.
 
-```bash
-docker compose logs -f api
+This design gives the client two distinct capabilities:
+
+- **Ed25519 signing:** proves authorship and protects the integrity of login proofs, messages, and broadcasts.
+- **X25519 encryption:** wraps per-content symmetric keys for authorized readers.
+
+Because derivation is versioned and domain-separated, the protocol can evolve without silently reusing key material across purposes or versions.
+
+### 2. Signed authentication without passwords
+
+Login uses the derived Ed25519 key rather than a password or raw wallet signature. The client signs a canonical proof containing:
+
+- protocol version;
+- wallet address;
+- a client-generated UUID request ID; and
+- an issuance timestamp.
+
+The API verifies the signature against the active public signing key, enforces a five-minute validity window, and persists the request ID. Reusing the same proof is rejected at the database level, providing replay resistance even when multiple API instances process requests concurrently.
+
+Successful authentication creates a short-lived access token and a rotating refresh session. Refresh-token material is hashed before persistence, session rotation is transactional, and logout revokes the active session.
+
+### 3. Hybrid end-to-end encryption
+
+Direct messages and broadcasts use a hybrid encryption envelope:
+
+1. The client generates a random 32-byte content key.
+2. Plaintext is encrypted once with `XChaCha20-Poly1305-IETF` using a 24-byte nonce.
+3. The content key is wrapped separately for each authorized reader with an `X25519-XSalsa20-Poly1305` sealed box.
+4. The sender signs a canonical manifest that binds the encrypted payload, nonce, participant identities, public-key versions, wrapped keys, protocol versions, and relevant metadata.
+5. The API verifies the Ed25519 signature and stores only the encrypted envelope.
+
+```text
+Plaintext
+   │
+   ├── random content key + XChaCha20-Poly1305
+   │                     └── ciphertext + nonce
+   │
+   └── content key
+          ├── sealed to recipient X25519 key
+          └── sealed to sender X25519 key
+
+Canonical envelope ── Ed25519 signature ──► API verification and storage
 ```
 
-To stop the services without deleting database data:
+The sender receives a wrapped copy so sent content remains readable from the sender's own client. The API cannot unwrap these keys because it never holds participant private keys.
 
-```bash
-docker compose down
+Canonical Base64 encoding, exact byte-length validation, immutable encrypted fields, protocol versioning, and signed metadata reduce ambiguity between clients and prevent an encrypted payload from being reinterpreted with altered context.
+
+## Encrypted direct messaging
+
+Every pair of users shares one canonical conversation. Purchasing another user's social token establishes or reuses that conversation, including when acquisition later occurs in the reverse direction.
+
+For every message, the signed manifest binds:
+
+- conversation, sender, and recipient IDs;
+- a client-generated message UUID;
+- sender and recipient key versions;
+- both public encryption keys and the sender signing key;
+- ciphertext and nonce;
+- wrapped content-key copies for sender and recipient;
+- reply target; and
+- optional bounty terms.
+
+Message delivery is idempotent. Repeating the same request can safely return the existing message, while attempting to reuse a client message ID with different content is rejected. Per-conversation monotonic sequence numbers provide stable history pagination and read cursors.
+
+Read receipts do not require plaintext access. Each participant advances a monotonic sequence cursor after displaying messages, allowing unread counts and recipient-seen state to be calculated from encrypted history.
+
+## Encrypted broadcasts
+
+Broadcasts extend the same hybrid encryption model from one recipient to a token-defined audience.
+
+When a draft is created, the API freezes an audience snapshot from the active holders of the creator's token and returns their X25519 public keys. The client encrypts the content only once, wraps the content key once per recipient, and also creates a sender copy.
+
+Recipient key entries are sorted canonically and reduced to a SHA-256 digest. The creator signs a manifest containing this digest together with the ciphertext, nonce, audience count, creator key version, and encrypted sender key. The API verifies the complete manifest before atomically publishing the broadcast.
+
+This produces two useful properties:
+
+- Encryption cost for the content itself stays constant as the audience grows; only small wrapped-key records scale with recipient count.
+- Audience access is fixed at publication time, so later token transfers cannot silently change the authorized readers of an existing broadcast.
+
+Draft creation, paginated recipient retrieval, batched wrapped-key upload, finalization, cancellation, expiration, and feed delivery are separate operations. This makes large audience preparation resumable without publishing a partially prepared envelope.
+
+## Token-based social graph
+
+Each user owns one application token. Holding another user's token acts as a social relationship and currently provides two capabilities:
+
+- inclusion in that creator's future broadcast audience snapshots; and
+- access to the canonical direct conversation with that creator.
+
+Token acquisition is idempotent and protected by unique database constraints. The current implementation models acquisition without payment or an on-chain asset transfer, keeping the protocol boundary ready for a future Stellar-backed ownership or payment module.
+
+## Message bounties
+
+An encrypted direct message can include signed bounty terms: asset code, canonical decimal amount, and response window. These terms are part of the immutable message manifest, so they cannot be detached from or changed independently of the message that created them.
+
+The bounty lifecycle is transactional:
+
+```text
+offered ── valid direct reply ──► claimable ── beneficiary claim ──► claimed
+   │
+   └── response window elapsed ──► expired
 ```
 
-## Local development
+The first valid reply to the referenced message unlocks the bounty. Claim retries are idempotent. At the current prototype stage, this state machine does not custody funds, move Stellar assets, or represent on-chain escrow.
 
-1. Install dependencies:
+## Discovery ranking
 
-   ```bash
-   npm install
-   ```
+Discovery is designed as a bounded multi-signal ranking system rather than a raw follower leaderboard. Scores are recalculated in batches and persisted for efficient cursor-based retrieval.
 
-2. Create and configure `.env`:
+The current 100-point model combines:
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+| Signal                             | Maximum contribution |
+| ---------------------------------- | -------------------: |
+| Total followers                    |                   25 |
+| Recent follower growth and recency |                   17 |
+| Claimed message bounties           |                   15 |
+| Reciprocal conversation activity   |                   15 |
+| Published broadcasts               |                   11 |
+| Credited online activity           |                   10 |
+| Account maturity                   |                    5 |
+| Profile avatar                     |                    2 |
 
-3. Start MongoDB as the `rs0` replica set. You can run only the MongoDB service from the included Compose stack:
+Signals use caps, recency decay, and fixed maximum contributions so a single dimension cannot dominate indefinitely. New accounts receive a temporary, declining visibility boost.
 
-   ```bash
-   docker compose up -d mongo
-   ```
+Online activity is credited through authenticated heartbeats only when intervals are plausible. The ranking uses the most recent 30 days, combining total active duration, active-day consistency, and recent presence. Excessively frequent heartbeats do not create additional time, and long gaps are not treated as continuous activity.
 
-4. Start the development server:
+## What the server can and cannot see
 
-   ```bash
-   npm run dev
-   ```
+| The API receives                          | The API does not receive               |
+| ----------------------------------------- | -------------------------------------- |
+| Stellar public wallet address             | Stellar private key                    |
+| Derived Ed25519 and X25519 public keys    | Fixed-transaction raw wallet signature |
+| Ciphertext and nonces                     | Derived private keys or seeds          |
+| Individually wrapped content keys         | Unwrapped content keys                 |
+| Signed canonical manifests                | Message or broadcast plaintext         |
+| Audience membership and delivery metadata | Locally decrypted content              |
 
-The development server watches TypeScript source files and restarts when they change. Its port is controlled by `PORT` and defaults to `5000` when the variable is not provided. The included `.env.example` sets it to `3000`.
+The API necessarily observes service metadata such as accounts, relationships, conversation participants, broadcast audience membership, timestamps, and encrypted payload sizes. The current protocol protects content confidentiality; it does not claim metadata anonymity.
 
-## Environment variables
+## Integrity and consistency
 
-| Variable                             | Required in production | Default                | Description                                                             |
-| ------------------------------------ | ---------------------: | ---------------------- | ----------------------------------------------------------------------- |
-| `NODE_ENV`                           |                     No | `development`          | Runtime mode: `development`, `test`, or `production`.                   |
-| `PORT`                               |                     No | `5000`                 | HTTP server port.                                                       |
-| `DB_URI`                             |                     No | Local `rs0` URI        | MongoDB connection URI.                                                 |
-| `DB_NAME`                            |                     No | `beseen`               | MongoDB database name.                                                  |
-| `LOG_LEVEL`                          |                     No | `info`                 | Pino log level.                                                         |
-| `STELLAR_NETWORK`                    |                     No | `testnet`              | Stellar network: `testnet` or `public`.                                 |
-| `AUTH_DOMAIN`                        |                     No | `beseen.fi`            | Domain included in authentication messages.                             |
-| `ACCESS_TOKEN_SECRET`                |                    Yes | Development-only value | Secret used to sign access tokens; must contain at least 32 characters. |
-| `ACCESS_TOKEN_TTL_SECONDS`           |                     No | `900`                  | Access-token lifetime. Allowed range: 300–3,600 seconds.                |
-| `REFRESH_TOKEN_TTL_SECONDS`          |                     No | `2592000`              | Refresh-session lifetime.                                               |
-| `BLUX_BASE_URL`                      |                     No | `https://api.blux.cc`  | BLUX API base URL.                                                      |
-| `BLUX_APP_ID`                        |                    Yes | Development-only value | BLUX application identifier.                                            |
-| `BLUX_APP_SECRET`                    |                    Yes | Development-only value | BLUX server credential.                                                 |
-| `BLUX_VERIFICATION_TIMEOUT_MS`       |                     No | `5000`                 | BLUX verification request timeout.                                      |
-| `R2_ENDPOINT`                        |                    Yes | Placeholder URL        | Cloudflare R2 S3-compatible endpoint.                                   |
-| `R2_ACCESS_KEY_ID`                   |                    Yes | Development-only value | R2 access-key identifier.                                               |
-| `R2_SECRET_ACCESS_KEY`               |                    Yes | Development-only value | R2 secret access key.                                                   |
-| `R2_BUCKET_NAME`                     |                     No | `beseen-avatars`       | Bucket used for profile avatars.                                        |
-| `R2_PUBLIC_BASE_URL`                 |                    Yes | Development-only URL   | Public avatar base URL or custom domain.                                |
-| `R2_MAX_AVATAR_BYTES`                |                     No | `5242880`              | Maximum accepted avatar size in bytes.                                  |
-| `BROADCAST_DRAFT_TTL_SECONDS`        |                     No | `604800`               | Maximum lifetime of an unfinished broadcast draft.                      |
-| `BROADCAST_CLEANUP_INTERVAL_SECONDS` |                     No | `300`                  | Interval for removing expired broadcast drafts.                         |
+MongoDB replica-set transactions are used wherever several records must change as one operation, including registration, session creation and rotation, message sequencing, bounty transitions, token acquisition, and conversation creation.
 
-The application validates its environment during startup and exits immediately when production configuration is missing or unsafe.
+Additional consistency controls include:
 
-## Database migrations
+- unique indexes for replay IDs and client-generated operation IDs;
+- one active key record per user;
+- one canonical conversation per user pair;
+- one ownership record per user and token;
+- immutable encrypted message fields;
+- frozen broadcast audience snapshots;
+- strict schemas and canonical encoding validation;
+- cursor-based pagination for mutable feeds and histories;
+- rate limits on authentication, mutation, and high-volume endpoints;
+- startup migrations that backfill existing databases and ensure required indexes before traffic is accepted.
 
-Database migrations run automatically after MongoDB connects and before the HTTP server starts. This includes schema backfills and index creation for existing databases, so Docker deployments do not require a separate migration command.
+## System architecture
 
-Migrations are idempotent and safe to run again after a restart. If a migration fails, the server does not begin accepting requests.
-
-The manual command remains available for maintenance workflows:
-
-```bash
-npm run migrate
+```text
+┌──────────────────────────── Client ────────────────────────────┐
+│ Stellar wallet                                                  │
+│ Local key derivation                                            │
+│ Local encryption, decryption, signing, and signature checks     │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ public keys, proofs,
+                                │ ciphertext, wrapped keys
+                                ▼
+┌──────────────────────────── BeSeen API ─────────────────────────┐
+│ Authentication and replay protection                            │
+│ Protocol validation and signature verification                  │
+│ Audience, conversation, token, bounty, and discovery services   │
+│ OpenAPI contract, rate limiting, and structured logs             │
+└──────────────────────┬─────────────────────┬────────────────────┘
+                       │                     │
+                       ▼                     ▼
+              MongoDB replica set       Cloudflare R2
+              protocol state and        processed avatars
+              encrypted envelopes
 ```
 
-In production builds, the equivalent command is:
+## API surface
 
-```bash
-npm run migrate:prod
-```
+The API is versioned under `/v1` and grouped into four domains:
 
-## API documentation
+- `/v1/auth` — client protocol configuration, registration, signed login, refresh, and logout
+- `/v1/users` — profiles, public keys, discovery, activity, social tokens, and follower data
+- `/v1/broadcasts` — encrypted drafts, audience snapshots, wrapped-key batches, publication, and feed
+- `/v1/messenger` — conversations, encrypted history, messages, read state, and bounty claims
 
-Once the server is running, the complete request and response contract is available at:
+When the service is running, the complete request and response schemas are available through:
 
 - Swagger UI: `http://127.0.0.1:3000/v1/docs/`
 - OpenAPI JSON: `http://127.0.0.1:3000/v1/openapi.json`
 - Health check: `http://127.0.0.1:3000/v1/health`
 
-All application endpoints are namespaced under `/v1`.
+## Current scope and protocol evolution
 
-### API areas
+The repository implements the complete server-side flow described above, including cryptographic envelope validation, transactional persistence, replay prevention, activity-aware discovery, and automated schema upgrades.
 
-| Area           | Base path        | Purpose                                                                    |
-| -------------- | ---------------- | -------------------------------------------------------------------------- |
-| Authentication | `/v1/auth`       | Client configuration, registration, login, refresh, and logout.            |
-| Users          | `/v1/users`      | Profiles, public keys, activity, discovery, and user-token operations.     |
-| Broadcasts     | `/v1/broadcasts` | Encrypted broadcast drafts, recipient keys, finalization, and feed access. |
-| Messenger      | `/v1/messenger`  | Conversations, encrypted messages, read state, and bounties.               |
+Two boundaries are intentionally explicit in the current prototype:
 
-Protected endpoints expect an access token in the standard header:
+1. Registration verifies the Stellar address through BLUX and validates the format of submitted derived public keys, but it does not yet require an additional wallet ownership challenge that cryptographically binds those keys during registration.
+2. Token acquisition and message bounties currently model entitlement and lifecycle state without on-chain payment, asset transfer, custody, or escrow.
 
-```http
-Authorization: Bearer <access-token>
+The protocol is versioned so these components can be replaced with stronger production mechanisms without changing the encrypted content model. A production registration ceremony can bind the wallet, derived public keys, network, domain, and one-time server challenge in a single signed transcript. Likewise, the current token and bounty state machines can be connected to verified Stellar transactions or escrow contracts.
+
+## Running the prototype
+
+The fastest way to run the API and its required single-node MongoDB replica set is Docker Compose.
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-Responses use a consistent JSON envelope. A typical successful response looks like:
+Set the BLUX, Cloudflare R2, and access-token credentials in `.env`, then run:
 
-```json
-{
-  "status": "success",
-  "message": "Request completed",
-  "result": {}
-}
+```bash
+docker compose up --build
 ```
 
-## Security model
+The API becomes available at `http://127.0.0.1:3000`. Database migrations run automatically before the server accepts traffic; no separate migration step is required.
 
-Private cryptographic material and plaintext message content remain on the client. The API stores only the public keys and encrypted payloads required to authenticate users, address recipients, and deliver content.
+For local TypeScript development:
 
-Important boundaries:
-
-- Wallet signatures used for deterministic key derivation are created client-side.
-- Derived private keys never need to be sent to the API.
-- Login requests prove possession of the registered signing key.
-- Login proof identifiers are persisted to prevent replay.
-- Broadcast and message plaintext is encrypted before upload.
-- Content keys are wrapped separately for authorized participants.
-- Sensitive credentials such as BLUX and R2 secrets remain server-side.
-- Avatar uploads are validated and processed before storage.
-- Authentication and mutation endpoints are rate-limited.
-
-Always use HTTPS in production and keep access-token, BLUX, database, and object-storage credentials outside the repository.
-
-## Project structure
-
-```text
-src/
-├── constant/       Domain constants and scoring configuration
-├── middleware/     Authentication, rate limits, uploads, and error handling
-├── migrations/     Idempotent database migrations and startup runner
-├── models/         Mongoose models and indexes
-├── openapi/        OpenAPI document, schemas, and endpoint definitions
-├── routes/         Versioned HTTP route handlers
-├── storage/        External storage clients
-├── types/          Shared TypeScript types
-├── utils/          Domain services and cryptographic helpers
-├── validation/     Zod request-validation schemas
-├── app.ts          Express application configuration
-├── db.ts           MongoDB connection and transaction helpers
-├── env.ts          Environment parsing and validation
-└── index.ts        Application startup and graceful shutdown
-
-tests/              Unit and route-level test suites
-compose.yaml        Local API and MongoDB stack
-Dockerfile          Multi-stage production image
+```bash
+npm install
+docker compose up -d mongo
+npm run dev
 ```
 
-## Available scripts
+## Verification
 
-| Command                | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `npm run dev`          | Start the development server with file watching. |
-| `npm run build`        | Compile TypeScript into `dist/`.                 |
-| `npm start`            | Start the compiled production server.            |
-| `npm test`             | Run the complete Vitest suite once.              |
-| `npm run test:watch`   | Run tests in watch mode.                         |
-| `npm run lint`         | Run ESLint across the repository.                |
-| `npm run format`       | Format supported files with Prettier.            |
-| `npm run format:check` | Check formatting without modifying files.        |
-| `npm run migrate`      | Run migrations directly from TypeScript.         |
-| `npm run migrate:prod` | Run compiled migrations.                         |
-
-## Quality checks
-
-Before opening a pull request, run:
+The repository includes unit and route-level coverage for authentication, cryptographic manifests, replay handling, broadcasts, messaging, bounties, discovery ranking, migrations, avatars, tokens, and user activity.
 
 ```bash
 npm run format:check
@@ -273,20 +283,6 @@ npm run build
 npm test
 ```
 
-## Production
-
-The provided Dockerfile creates a multi-stage production image that contains only compiled output and production dependencies. The runtime container runs as a non-root user, and the Compose service enables a read-only filesystem with a temporary `/tmp` mount.
-
-For a production deployment:
-
-1. Provide unique production secrets through the deployment environment.
-2. Use a durable MongoDB replica set with authentication and backups.
-3. Place the API behind an HTTPS reverse proxy or load balancer.
-4. Restrict database and object-storage network access.
-5. Configure a public R2 custom domain for avatar delivery.
-6. Monitor health checks and structured application logs.
-7. Preserve graceful shutdown so in-flight requests can complete.
-
 ## License
 
-This project is licensed under the terms of the [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE).
