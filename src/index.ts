@@ -12,6 +12,7 @@ import {
   startDiscoverRankingScheduler,
   stopDiscoverRankingScheduler,
 } from './utils/discover/discoverRankingScheduler';
+import runDatabaseMigrations from './migrations/runDatabaseMigrations';
 
 let server: Server | undefined;
 
@@ -37,6 +38,7 @@ const shutdown = (signal: NodeJS.Signals): void => {
 
 const bootstrap = async (): Promise<void> => {
   await connectDatabase();
+  await runDatabaseMigrations();
   startBroadcastDraftCleanup();
   startDiscoverRankingScheduler();
 

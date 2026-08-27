@@ -18,6 +18,16 @@ interface DiscoverUsersPage {
   hasMore: boolean;
 }
 
+interface UserActivityHeartbeat {
+  creditedSeconds: number;
+  lastActiveAt: Date;
+  isOnline: boolean;
+}
+
+type RecordUserActivityResult =
+  | { ok: true; activity: UserActivityHeartbeat }
+  | { ok: false; reason: 'account_unavailable' };
+
 type UsernameUnavailabilityReason = 'invalid' | 'reserved' | 'taken';
 
 type UpdateProfileFailureReason =
@@ -51,6 +61,8 @@ export type {
   GetPublicProfileResult,
   GetPublicUserKeysResult,
   UpdateCurrentUserResult,
+  RecordUserActivityResult,
+  UserActivityHeartbeat,
   UpdateProfileFailureReason,
   UsernameAvailabilityResult,
   UsernameUnavailabilityReason,

@@ -5,6 +5,8 @@ interface DiscoverScoreBreakdown {
   chatQuality: number;
   broadcastActivity: number;
   accountAge: number;
+  profileCompleteness: number;
+  onlineActivity: number;
   newUserBoost: number;
 }
 

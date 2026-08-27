@@ -10,12 +10,14 @@ const recalculateDiscoverRankings = async (
   const startedAt = Date.now();
 
   const users = await User.find({ status: 'active', deletedAt: null })
-    .select({ _id: 1, createdAt: 1 })
+    .select({ _id: 1, avatar: 1, lastActiveAt: 1, createdAt: 1 })
     .exec();
 
   const rankingUsers: DiscoverRankingUser[] = users.map((user) => ({
     id: user._id.toString(),
     registeredAt: user.createdAt,
+    hasAvatar: user.avatar !== null,
+    lastActiveAt: user.lastActiveAt,
   }));
 
   const metricsByUserId = await collectDiscoverMetrics(

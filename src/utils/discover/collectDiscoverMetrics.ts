@@ -5,11 +5,16 @@ import collectBountyMetrics from './metrics/collectBountyMetrics';
 import collectFollowerMetrics from './metrics/collectFollowerMetrics';
 import { DISCOVER_ACTIVITY_WINDOW_DAYS } from '../../constant/discover';
 import collectBroadcastMetrics from './metrics/collectBroadcastMetrics';
+import collectActivityMetrics from './metrics/collectActivityMetrics';
 import type { DiscoverRankingMetrics, DiscoverRankingUser } from '../../types/discover';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1_000;
 
 const createEmptyMetrics = (user: DiscoverRankingUser): DiscoverRankingMetrics => ({
+  hasAvatar: user.hasAvatar,
+  activeSeconds30d: 0,
+  activeDays30d: 0,
+  lastActiveAt: user.lastActiveAt,
   followerCount: 0,
   newFollowerCount30d: 0,
   lastTokenPurchaseAt: null,
@@ -37,11 +42,12 @@ const collectDiscoverMetrics = async (
     now.getTime() - DISCOVER_ACTIVITY_WINDOW_DAYS * MILLISECONDS_PER_DAY,
   );
 
-  const [followers, bounties, chats, broadcasts] = await Promise.all([
+  const [followers, bounties, chats, broadcasts, activity] = await Promise.all([
     collectFollowerMetrics(userIds, activityCutoff),
     collectBountyMetrics(userIds),
     collectChatMetrics(userIds, activityCutoff),
     collectBroadcastMetrics(userIds, activityCutoff),
+    collectActivityMetrics(userIds, activityCutoff),
   ]);
 
   for (const record of followers) {
@@ -78,6 +84,15 @@ const collectDiscoverMetrics = async (
     if (metrics) {
       metrics.publishedBroadcastCount30d = record.publishedBroadcastCount30d;
       metrics.lastPublishedBroadcastAt = record.lastPublishedBroadcastAt;
+    }
+  }
+
+  for (const record of activity) {
+    const metrics = metricsByUserId.get(record.userId);
+
+    if (metrics) {
+      metrics.activeSeconds30d = record.activeSeconds30d;
+      metrics.activeDays30d = record.activeDays30d;
     }
   }
 

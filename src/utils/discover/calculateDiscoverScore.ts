@@ -2,6 +2,11 @@ import type { CalculatedDiscoverScore, DiscoverRankingMetrics } from '../../type
 import {
   DISCOVER_ACCOUNT_AGE_WEIGHT,
   DISCOVER_ACCOUNT_MATURITY_DAYS,
+  DISCOVER_AVATAR_WEIGHT,
+  DISCOVER_ACTIVE_DAYS_30D_CAP,
+  DISCOVER_ACTIVE_DAYS_30D_WEIGHT,
+  DISCOVER_ACTIVE_SECONDS_30D_CAP,
+  DISCOVER_ACTIVE_SECONDS_30D_WEIGHT,
   DISCOVER_CLAIMED_BOUNTY_COUNT_CAP,
   DISCOVER_CLAIMED_BOUNTY_COUNT_WEIGHT,
   DISCOVER_CLAIMED_USDC_AMOUNT_CAP,
@@ -9,6 +14,8 @@ import {
   DISCOVER_FOLLOWER_CAP,
   DISCOVER_FOLLOWER_WEIGHT,
   DISCOVER_LAST_PUBLISHED_BROADCAST_WEIGHT,
+  DISCOVER_LAST_ACTIVE_HALF_LIFE_DAYS,
+  DISCOVER_LAST_ACTIVE_WEIGHT,
   DISCOVER_LAST_RECIPROCAL_CHAT_WEIGHT,
   DISCOVER_LAST_TOKEN_PURCHASE_WEIGHT,
   DISCOVER_NEW_USER_BOOSTS,
@@ -80,6 +87,16 @@ const calculateDiscoverScore = (
   const accountAge =
     DISCOVER_ACCOUNT_AGE_WEIGHT * clampUnit(ageDays / DISCOVER_ACCOUNT_MATURITY_DAYS);
 
+  const profileCompleteness = metrics.hasAvatar ? DISCOVER_AVATAR_WEIGHT : 0;
+
+  const onlineActivity =
+    DISCOVER_ACTIVE_SECONDS_30D_WEIGHT *
+      normalizeLogarithmically(metrics.activeSeconds30d, DISCOVER_ACTIVE_SECONDS_30D_CAP) +
+    DISCOVER_ACTIVE_DAYS_30D_WEIGHT *
+      normalizeLogarithmically(metrics.activeDays30d, DISCOVER_ACTIVE_DAYS_30D_CAP) +
+    DISCOVER_LAST_ACTIVE_WEIGHT *
+      calculateRecency(metrics.lastActiveAt, now, DISCOVER_LAST_ACTIVE_HALF_LIFE_DAYS);
+
   const newUserBoost = calculateNewUserBoost(ageDays);
 
   const breakdown = {
@@ -89,6 +106,8 @@ const calculateDiscoverScore = (
     chatQuality: roundScore(chatQuality),
     broadcastActivity: roundScore(broadcastActivity),
     accountAge: roundScore(accountAge),
+    profileCompleteness,
+    onlineActivity: roundScore(onlineActivity),
     newUserBoost,
   };
 
@@ -101,6 +120,8 @@ const calculateDiscoverScore = (
         chatQuality +
         broadcastActivity +
         accountAge +
+        profileCompleteness +
+        onlineActivity +
         newUserBoost,
     ),
   );
