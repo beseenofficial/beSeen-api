@@ -1,152 +1,292 @@
 # BeSeen API
 
-Backend API for Stellar wallet accounts, minimal user profiles, and end-to-end encrypted broadcasts.
+BeSeen API is the backend service for the BeSeen platform. It provides wallet-based authentication, public user profiles, token-based social connections, discovery ranking, encrypted broadcasts, and encrypted direct messaging.
 
-## Security boundary
+The service is built with Node.js, TypeScript, Express, MongoDB, and Mongoose. It exposes a versioned REST API with an OpenAPI specification and an interactive Swagger UI.
 
-- The fixed key-derivation transaction is created and signed in the client.
-- Its raw wallet signature, all derived private keys, plaintext, and raw broadcast content keys never
-  reach the API.
-- The API stores the Stellar wallet address, the derived Ed25519/X25519 public keys, minimal profile
-  data, encrypted broadcast content, and individually wrapped content keys.
-- Registration validates the Stellar address through the BLUX server API with `user_id: 0` before
-  creating the user. BLUX credentials remain server-only; the frontend registration contract does
-  not change.
-- Login has no server challenge. The client signs a timestamped UUID message with its derived
-  Ed25519 private key; used UUIDs are persisted to prevent replay.
+## Features
 
-Every product user has the same capabilities. There is no `creator`/`regular` account type and no
-category, bio, skill, headline, or display-name profile. Public user data is only:
+- Stellar wallet-based registration and authentication
+- Short-lived access tokens with refresh-session rotation
+- Replay-resistant signed login proofs
+- Public profiles and avatar storage through Cloudflare R2
+- Username availability and profile management
+- User tokens, token ownership, and follower counts
+- Ranked user discovery based on bounded engagement signals
+- Authenticated activity heartbeat tracking
+- Client-side encrypted broadcasts with per-recipient wrapped keys
+- Client-side encrypted direct messages and read receipts
+- Idempotent message delivery and token acquisition
+- Optional message bounties
+- Request validation, rate limiting, structured logging, and secure HTTP defaults
+- OpenAPI documentation
+- Automatic database migrations during application startup
+
+## Technology
+
+- Node.js 22
+- TypeScript
+- Express 5
+- MongoDB 8 with replica-set transactions
+- Mongoose
+- Zod
+- Pino
+- Vitest
+- Docker and Docker Compose
+
+## Requirements
+
+Choose one of the following setups:
+
+- Docker Engine with Docker Compose; or
+- Node.js 22+, npm, and a MongoDB replica set
+
+MongoDB must run as a replica set because several application operations use transactions. The included Compose configuration initializes a single-node `rs0` replica set automatically.
+
+## Quick start with Docker
+
+Docker Compose is the recommended way to run the complete local stack.
+
+1. Create the environment file:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+2. Replace all placeholder credentials in `.env`, especially:
+
+   - `ACCESS_TOKEN_SECRET`
+   - `BLUX_APP_ID`
+   - `BLUX_APP_SECRET`
+   - `R2_ENDPOINT`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_PUBLIC_BASE_URL`
+
+3. Build and start the services:
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. Verify the API:
+
+   ```http
+   GET http://127.0.0.1:3000/v1/health
+   ```
+
+The Compose stack exposes the API on `127.0.0.1:3000` and MongoDB on `127.0.0.1:27017`. MongoDB data is retained in named Docker volumes.
+
+To run the stack in the background:
+
+```bash
+docker compose up --build -d
+```
+
+To follow API logs:
+
+```bash
+docker compose logs -f api
+```
+
+To stop the services without deleting database data:
+
+```bash
+docker compose down
+```
+
+## Local development
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create and configure `.env`:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+3. Start MongoDB as the `rs0` replica set. You can run only the MongoDB service from the included Compose stack:
+
+   ```bash
+   docker compose up -d mongo
+   ```
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+The development server watches TypeScript source files and restarts when they change. Its port is controlled by `PORT` and defaults to `5000` when the variable is not provided. The included `.env.example` sets it to `3000`.
+
+## Environment variables
+
+| Variable                             | Required in production | Default                | Description                                                             |
+| ------------------------------------ | ---------------------: | ---------------------- | ----------------------------------------------------------------------- |
+| `NODE_ENV`                           |                     No | `development`          | Runtime mode: `development`, `test`, or `production`.                   |
+| `PORT`                               |                     No | `5000`                 | HTTP server port.                                                       |
+| `DB_URI`                             |                     No | Local `rs0` URI        | MongoDB connection URI.                                                 |
+| `DB_NAME`                            |                     No | `beseen`               | MongoDB database name.                                                  |
+| `LOG_LEVEL`                          |                     No | `info`                 | Pino log level.                                                         |
+| `STELLAR_NETWORK`                    |                     No | `testnet`              | Stellar network: `testnet` or `public`.                                 |
+| `AUTH_DOMAIN`                        |                     No | `beseen.fi`            | Domain included in authentication messages.                             |
+| `ACCESS_TOKEN_SECRET`                |                    Yes | Development-only value | Secret used to sign access tokens; must contain at least 32 characters. |
+| `ACCESS_TOKEN_TTL_SECONDS`           |                     No | `900`                  | Access-token lifetime. Allowed range: 300–3,600 seconds.                |
+| `REFRESH_TOKEN_TTL_SECONDS`          |                     No | `2592000`              | Refresh-session lifetime.                                               |
+| `BLUX_BASE_URL`                      |                     No | `https://api.blux.cc`  | BLUX API base URL.                                                      |
+| `BLUX_APP_ID`                        |                    Yes | Development-only value | BLUX application identifier.                                            |
+| `BLUX_APP_SECRET`                    |                    Yes | Development-only value | BLUX server credential.                                                 |
+| `BLUX_VERIFICATION_TIMEOUT_MS`       |                     No | `5000`                 | BLUX verification request timeout.                                      |
+| `R2_ENDPOINT`                        |                    Yes | Placeholder URL        | Cloudflare R2 S3-compatible endpoint.                                   |
+| `R2_ACCESS_KEY_ID`                   |                    Yes | Development-only value | R2 access-key identifier.                                               |
+| `R2_SECRET_ACCESS_KEY`               |                    Yes | Development-only value | R2 secret access key.                                                   |
+| `R2_BUCKET_NAME`                     |                     No | `beseen-avatars`       | Bucket used for profile avatars.                                        |
+| `R2_PUBLIC_BASE_URL`                 |                    Yes | Development-only URL   | Public avatar base URL or custom domain.                                |
+| `R2_MAX_AVATAR_BYTES`                |                     No | `5242880`              | Maximum accepted avatar size in bytes.                                  |
+| `BROADCAST_DRAFT_TTL_SECONDS`        |                     No | `604800`               | Maximum lifetime of an unfinished broadcast draft.                      |
+| `BROADCAST_CLEANUP_INTERVAL_SECONDS` |                     No | `300`                  | Interval for removing expired broadcast drafts.                         |
+
+The application validates its environment during startup and exits immediately when production configuration is missing or unsafe.
+
+## Database migrations
+
+Database migrations run automatically after MongoDB connects and before the HTTP server starts. This includes schema backfills and index creation for existing databases, so Docker deployments do not require a separate migration command.
+
+Migrations are idempotent and safe to run again after a restart. If a migration fails, the server does not begin accepting requests.
+
+The manual command remains available for maintenance workflows:
+
+```bash
+npm run migrate
+```
+
+In production builds, the equivalent command is:
+
+```bash
+npm run migrate:prod
+```
+
+## API documentation
+
+Once the server is running, the complete request and response contract is available at:
+
+- Swagger UI: `http://127.0.0.1:3000/v1/docs/`
+- OpenAPI JSON: `http://127.0.0.1:3000/v1/openapi.json`
+- Health check: `http://127.0.0.1:3000/v1/health`
+
+All application endpoints are namespaced under `/v1`.
+
+### API areas
+
+| Area           | Base path        | Purpose                                                                    |
+| -------------- | ---------------- | -------------------------------------------------------------------------- |
+| Authentication | `/v1/auth`       | Client configuration, registration, login, refresh, and logout.            |
+| Users          | `/v1/users`      | Profiles, public keys, activity, discovery, and user-token operations.     |
+| Broadcasts     | `/v1/broadcasts` | Encrypted broadcast drafts, recipient keys, finalization, and feed access. |
+| Messenger      | `/v1/messenger`  | Conversations, encrypted messages, read state, and bounties.               |
+
+Protected endpoints expect an access token in the standard header:
+
+```http
+Authorization: Bearer <access-token>
+```
+
+Responses use a consistent JSON envelope. A typical successful response looks like:
 
 ```json
 {
-  "id": "507f1f77bcf86cd799439011",
-  "username": "new_user",
-  "avatar": "https://cdn.example/avatar.webp"
+  "status": "success",
+  "message": "Request completed",
+  "result": {}
 }
 ```
 
-## Development
+## Security model
 
-1. Copy `.env.example` to `.env`.
-2. Start MongoDB as the `rs0` replica set, or run `docker compose up --build`.
-3. Run `npm install`.
-4. Run `npm run dev`.
+Private cryptographic material and plaintext message content remain on the client. The API stores only the public keys and encrypted payloads required to authenticate users, address recipients, and deliver content.
 
-The API listens on port `5000`. Docker publishes it only on `127.0.0.1:5000:5000`.
+Important boundaries:
 
-```http
-GET /v1/health
-GET /v1/docs/
-GET /v1/openapi.json
+- Wallet signatures used for deterministic key derivation are created client-side.
+- Derived private keys never need to be sent to the API.
+- Login requests prove possession of the registered signing key.
+- Login proof identifiers are persisted to prevent replay.
+- Broadcast and message plaintext is encrypted before upload.
+- Content keys are wrapped separately for authorized participants.
+- Sensitive credentials such as BLUX and R2 secrets remain server-side.
+- Avatar uploads are validated and processed before storage.
+- Authentication and mutation endpoints are rate-limited.
+
+Always use HTTPS in production and keep access-token, BLUX, database, and object-storage credentials outside the repository.
+
+## Project structure
+
+```text
+src/
+├── constant/       Domain constants and scoring configuration
+├── middleware/     Authentication, rate limits, uploads, and error handling
+├── migrations/     Idempotent database migrations and startup runner
+├── models/         Mongoose models and indexes
+├── openapi/        OpenAPI document, schemas, and endpoint definitions
+├── routes/         Versioned HTTP route handlers
+├── storage/        External storage clients
+├── types/          Shared TypeScript types
+├── utils/          Domain services and cryptographic helpers
+├── validation/     Zod request-validation schemas
+├── app.ts          Express application configuration
+├── db.ts           MongoDB connection and transaction helpers
+├── env.ts          Environment parsing and validation
+└── index.ts        Application startup and graceful shutdown
+
+tests/              Unit and route-level test suites
+compose.yaml        Local API and MongoDB stack
+Dockerfile          Multi-stage production image
 ```
 
-## Client flow
+## Available scripts
 
-The full browser implementation contract is in
-[`docs/CLIENT_INTEGRATION_GUIDE.md`](docs/CLIENT_INTEGRATION_GUIDE.md).
+| Command                | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `npm run dev`          | Start the development server with file watching. |
+| `npm run build`        | Compile TypeScript into `dist/`.                 |
+| `npm start`            | Start the compiled production server.            |
+| `npm test`             | Run the complete Vitest suite once.              |
+| `npm run test:watch`   | Run tests in watch mode.                         |
+| `npm run lint`         | Run ESLint across the repository.                |
+| `npm run format`       | Format supported files with Prettier.            |
+| `npm run format:check` | Check formatting without modifying files.        |
+| `npm run migrate`      | Run migrations directly from TypeScript.         |
+| `npm run migrate:prod` | Run compiled migrations.                         |
 
-The short version is:
+## Quality checks
 
-1. `GET /v1/auth/config`.
-2. Build and sign the fixed `beseen_kdf_v1` transaction locally.
-3. Extract its raw 64-byte signature and use the documented HKDF settings to derive Ed25519 and
-   X25519 key pairs. Keep private keys client-only.
-4. For a new account, call `POST /v1/auth/register` as `multipart/form-data`: put the unchanged
-   registration object in `payload` with `JSON.stringify(...)`, and put the image file in the
-   optional `avatar` field. The backend verifies the wallet through BLUX, validates the actual image
-   bytes, converts it to a 512x512 WebP, uploads it to R2, and stores only its public URL/object key.
-5. For an existing account, sign the documented login message with the derived Ed25519 private key
-   and call `POST /v1/auth/login` directly. There is no challenge request.
-6. If local private keys are missing, sign the same fixed KDF transaction again and reconstruct the
-   exact same key pairs before login.
+Before opening a pull request, run:
 
-The registration trust model is suitable only for the demo. Login after registration still proves
-possession of the stored derived Ed25519 private key.
-
-The browser should reject avatar files over 5 MiB, images below 128x128 pixels, and non-JPEG/PNG/WebP
-selections for immediate feedback. Backend validation remains authoritative. `R2_PUBLIC_BASE_URL` must be an R2 custom domain
-or enabled public development URL; the S3 API endpoint is not a browser image URL.
-
-Avatar is optional. `PATCH /v1/users/me` accepts a new optional `avatar` file using the same
-multipart `payload` convention. The payload may contain `username` or `removeAvatar: true`; a
-username-only update may remain JSON. The API replaces or removes the old R2 object only after the
-profile update succeeds.
-
-## Broadcasts
-
-Every active user owns one database-backed demo token. Another authenticated user can acquire it
-without payment or an on-chain transaction. A broadcast audience is the active holders of the
-sender's token at the moment the draft is created:
-
-- `Broadcast.audienceType = "token_holders"`
-- `BroadcastRecipient.accessMode = "token"`
-- `BroadcastRecipient.tokenId` identifies the sender's token
-
-The purchase endpoint is idempotent, so repeated clicks cannot create duplicate ownership records.
-Payment and Stellar asset validation can replace this demo acquisition later without changing the
-encryption flow.
-
-The same existing token purchase also ensures one canonical Messenger conversation for the buyer
-and token owner. It does not create a separate Messenger token or entitlement. Repeating the
-purchase, or later purchasing in the reverse direction, reuses the same user-pair conversation.
-
-Authenticated clients can list their conversations, read one conversation, and fetch both
-participants’ current public signing/encryption keys from `/v1/messenger/conversations`. These
-endpoints expose no wallet address, private key, plaintext, or raw content key.
-
-Clients send direct messages with
-`POST /v1/messenger/conversations/:conversationId/messages`. The server derives sender, recipient,
-key snapshots, and protocol versions from authenticated state; the request contains only a UUID,
-ciphertext, nonce, one wrapped content-key copy per participant, an optional reply ID, and the
-sender’s Ed25519 signature. Identical retries are idempotent, while UUID reuse with changed content
-is rejected.
-
-`GET /v1/messenger/conversations/:conversationId/messages` returns newest-first encrypted history
-with sequence pagination. Each signed manifest contains both opaque wrapped-key copies for integrity
-verification, while `viewerKey` tells the client which copy its locally stored derived private key
-can open. Conversation lists are ordered by latest activity and include ciphertext-safe last-message
-metadata plus a server-maintained unread count.
-
-After actually displaying messages, the client advances its monotonic read cursor with
-`PUT /v1/messenger/conversations/:conversationId/read` and `{ "throughSequence": n }`. The server
-recalculates unread messages in the same transaction. History items expose `delivery.seenByRecipient`,
-and conversation summaries expose both participants’ read sequences, so senders can render seen
-state without revealing message content.
-
-A sender may include an optional demo bounty in the same encrypted-message request, for example
-`{ "assetCode": "USDC", "amount": "10", "durationSeconds": 3600 }`. Amount is a canonical decimal
-string, not a floating-point JSON number. The immutable terms are part of the Ed25519 message
-manifest, and the `offered` bounty record is created in the same database transaction as the
-message. If the beneficiary sends a direct reply to that exact message before `expiresAt`, the
-first valid reply atomically changes the bounty to `claimable`; the send response exposes it as
-`unlockedBounty`. The beneficiary can then call
-`POST /v1/messenger/bounties/:bountyId/claim`. Claim retries are idempotent. Offered bounties with
-no timely reply become `expired`. All bounty behavior remains demo-only: it does not move money,
-touch Stellar, reserve a balance, create escrow, or change any real balance.
-
-The exact client encryption, signing, history, read-receipt, and demo-bounty flow is documented in
-[`docs/MESSENGER_CLIENT_INTEGRATION.md`](docs/MESSENGER_CLIENT_INTEGRATION.md).
-
-Broadcast encryption is entirely client-side:
-
-1. Create a draft and receive the frozen recipient X25519 public-key snapshot plus the sender's own
-   public key.
-2. Generate one random 32-byte content key.
-3. Encrypt plaintext once with XChaCha20-Poly1305.
-4. Wrap that content key separately for every recipient and once for the sender with X25519 sealed
-   boxes.
-5. Upload only wrapped keys, ciphertext, nonce, and the derived Ed25519 manifest signature.
-6. Recipients and the sender unwrap their own copy locally and decrypt locally.
-
-The public key does not need to be resent as proof on every call. A public key proves nothing by
-itself; the Ed25519 signature proves possession of its matching private key. JWT authentication
-protects draft operations, and finalization additionally verifies the signed encrypted manifest.
-
-## Verification
-
-```powershell
-npm run build
+```bash
+npm run format:check
 npm run lint
+npm run build
 npm test
 ```
+
+## Production
+
+The provided Dockerfile creates a multi-stage production image that contains only compiled output and production dependencies. The runtime container runs as a non-root user, and the Compose service enables a read-only filesystem with a temporary `/tmp` mount.
+
+For a production deployment:
+
+1. Provide unique production secrets through the deployment environment.
+2. Use a durable MongoDB replica set with authentication and backups.
+3. Place the API behind an HTTPS reverse proxy or load balancer.
+4. Restrict database and object-storage network access.
+5. Configure a public R2 custom domain for avatar delivery.
+6. Monitor health checks and structured application logs.
+7. Preserve graceful shutdown so in-flight requests can complete.
+
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
