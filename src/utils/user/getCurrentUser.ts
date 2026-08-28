@@ -1,6 +1,7 @@
 import User from '../../models/User';
 import getUserVerification from './getUserVerification';
 import type { GetCurrentUserResult } from '../../types/user';
+import { formatDemoUsdcUnits } from '../messenger/demoUsdcAmount';
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
@@ -16,6 +17,7 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
       avatar: user.avatar,
       bio: user.bio,
       verification: getUserVerification(user),
+      demoUsdcBalance: formatDemoUsdcUnits(user.demoUsdcBalanceUnits),
       createdAt: user.createdAt,
     },
   };

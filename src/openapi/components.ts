@@ -69,6 +69,22 @@ const publicUserProperties = {
     minimum: 0,
     description: 'Total number of encrypted direct messages sent and received by this user.',
   },
+  totalBountyReceivedUsdc: {
+    type: 'string',
+    pattern: '^(?:0|[1-9]\\d*)(?:\\.\\d{1,7})?$',
+    description: 'Lifetime total of claimed USDC bounties received by this user.',
+    example: '35.5',
+  },
+};
+
+const currentUserProperties = {
+  ...userProperties,
+  demoUsdcBalance: {
+    type: 'string',
+    pattern: '^(?:0|[1-9]\\d*)(?:\\.\\d{1,7})?$',
+    description: 'Private demo-only USDC balance represented as an exact decimal string.',
+    example: '20',
+  },
 };
 
 const openApiComponents = {
@@ -116,6 +132,12 @@ const openApiComponents = {
       additionalProperties: false,
       required: Object.keys(userProperties),
       properties: userProperties,
+    },
+    CurrentUser: {
+      type: 'object',
+      additionalProperties: false,
+      required: Object.keys(currentUserProperties),
+      properties: currentUserProperties,
     },
     PublicUser: {
       type: 'object',
@@ -527,7 +549,7 @@ const openApiComponents = {
       properties: {
         assetCode: {
           type: 'string',
-          pattern: '^[A-Z0-9]{1,12}$',
+          const: 'USDC',
           example: 'USDC',
         },
         amount: {
@@ -561,7 +583,7 @@ const openApiComponents = {
       ],
       properties: {
         id: objectIdSchema,
-        assetCode: { type: 'string', pattern: '^[A-Z0-9]{1,12}$' },
+        assetCode: { type: 'string', const: 'USDC' },
         amount: {
           type: 'string',
           pattern: '^(?:0|[1-9]\\d{0,11})(?:\\.\\d{1,7})?$',

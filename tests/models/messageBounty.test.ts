@@ -19,14 +19,27 @@ const bountyInput = () => ({
 });
 
 describe('MessageBounty model', () => {
-  it('stores demo bounty terms in offered state without payment data', async () => {
+  it('preserves old bounties as legacy and validates newly reserved demo funds', async () => {
     const bounty = new MessageBounty(bountyInput());
 
     await expect(bounty.validate()).resolves.toBeUndefined();
     expect(bounty.status).toBe('offered');
+    expect(bounty.amountUnits).toBeNull();
+    expect(bounty.fundingStatus).toBe('legacy');
     expect(bounty.replyMessage).toBeNull();
     expect(bounty.claimableAt).toBeNull();
     expect(bounty.claimedAt).toBeNull();
+
+    await expect(
+      new MessageBounty({
+        ...bountyInput(),
+        amountUnits: 105_000_000,
+        fundingStatus: 'reserved',
+      }).validate(),
+    ).resolves.toBeUndefined();
+    await expect(
+      new MessageBounty({ ...bountyInput(), fundingStatus: 'reserved' }).validate(),
+    ).rejects.toThrow('Funded bounties require exact amount units');
   });
 
   it('defines one bounty per message and expiry query indexes', () => {

@@ -5,6 +5,7 @@ import { withDatabaseTransaction } from '../../db';
 import MessageBounty from '../../models/MessageBounty';
 import serializeMessageBounty from './serializeMessageBounty';
 import type { ClaimMessageBountyResult } from '../../types/messenger/bounty';
+import expireMessageBounty from './expireMessageBounty';
 
 const claimMessageBountyInTransaction = async (
   beneficiaryId: string,
@@ -36,16 +37,7 @@ const claimMessageBountyInTransaction = async (
   }
 
   if (bounty.status === 'offered' && bounty.expiresAt.getTime() <= now.getTime()) {
-    bounty = await MessageBounty.findOneAndUpdate(
-      {
-        _id: bounty._id,
-        beneficiary: beneficiary._id,
-        status: 'offered',
-        expiresAt: { $lte: now },
-      },
-      { $set: { status: 'expired' } },
-      { returnDocument: 'after', session },
-    ).exec();
+    bounty = await expireMessageBounty(bounty._id, now, session);
 
     if (!bounty) {
       return { ok: false, reason: 'bounty_not_claimable' };
@@ -64,13 +56,26 @@ const claimMessageBountyInTransaction = async (
     return { ok: true, bounty: serializeMessageBounty(bounty), claimedNow: false };
   }
 
+  const fundedClaim = bounty.fundingStatus === 'reserved';
+
+  if (fundedClaim && bounty.amountUnits === null) {
+    throw new Error('Funded bounty is missing exact amount units');
+  }
+
   const claimedBounty = await MessageBounty.findOneAndUpdate(
     {
       _id: bounty._id,
       beneficiary: beneficiary._id,
       status: 'claimable',
+      fundingStatus: fundedClaim ? 'reserved' : 'legacy',
     },
-    { $set: { status: 'claimed', claimedAt: now } },
+    {
+      $set: {
+        status: 'claimed',
+        claimedAt: now,
+        fundingStatus: fundedClaim ? 'paid' : 'legacy',
+      },
+    },
     { returnDocument: 'after', runValidators: true, session },
   ).exec();
 
@@ -92,6 +97,18 @@ const claimMessageBountyInTransaction = async (
     }
 
     return { ok: false, reason: 'bounty_not_claimable' };
+  }
+
+  if (fundedClaim) {
+    const creditResult = await User.updateOne(
+      { _id: beneficiary._id, status: 'active', deletedAt: null },
+      { $inc: { demoUsdcBalanceUnits: bounty.amountUnits! } },
+      { runValidators: true, session },
+    ).exec();
+
+    if (creditResult.matchedCount !== 1) {
+      throw new Error('Bounty beneficiary balance could not be credited');
+    }
   }
 
   return {

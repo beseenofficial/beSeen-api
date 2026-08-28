@@ -1,6 +1,7 @@
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import type { ResolveReplyBountyInput } from '../../types/messenger/bounty';
+import expireMessageBounty from './expireMessageBounty';
 
 const resolveReplyBounty = async (
   input: ResolveReplyBountyInput,
@@ -28,18 +29,20 @@ const resolveReplyBounty = async (
     return claimableBounty;
   }
 
-  await MessageBounty.updateOne(
-    {
-      message: input.replyToMessageId,
-      conversation: input.conversationId,
-      beneficiary: input.senderId,
-      sponsor: input.recipientId,
-      status: 'offered',
-      expiresAt: { $lte: input.repliedAt },
-    },
-    { $set: { status: 'expired' } },
-    { session: input.session },
-  ).exec();
+  const expiredOffer = await MessageBounty.findOne({
+    message: input.replyToMessageId,
+    conversation: input.conversationId,
+    beneficiary: input.senderId,
+    sponsor: input.recipientId,
+    status: 'offered',
+    expiresAt: { $lte: input.repliedAt },
+  })
+    .session(input.session)
+    .exec();
+
+  if (expiredOffer) {
+    await expireMessageBounty(expiredOffer._id, input.repliedAt, input.session);
+  }
 
   return null;
 };

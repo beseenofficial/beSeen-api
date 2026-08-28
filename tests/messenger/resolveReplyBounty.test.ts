@@ -1,8 +1,11 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MessageBounty from '../../src/models/MessageBounty';
 import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
+import expireMessageBounty from '../../src/utils/messenger/expireMessageBounty';
+
+vi.mock('../../src/utils/messenger/expireMessageBounty', () => ({ default: vi.fn() }));
 
 const conversationId = new Types.ObjectId('000000000000000000000001');
 
@@ -31,6 +34,8 @@ const input = () => ({
 });
 
 describe('resolveReplyBounty', () => {
+  beforeEach(() => vi.mocked(expireMessageBounty).mockReset());
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -51,7 +56,6 @@ describe('resolveReplyBounty', () => {
       claimableAt: repliedAt,
     });
     vi.spyOn(MessageBounty, 'findOneAndUpdate').mockReturnValue(execQuery(bounty) as never);
-    const expireSpy = vi.spyOn(MessageBounty, 'updateOne');
 
     await expect(resolveReplyBounty(input())).resolves.toBe(bounty);
     expect(MessageBounty.findOneAndUpdate).toHaveBeenCalledWith(
@@ -71,20 +75,19 @@ describe('resolveReplyBounty', () => {
       },
       { returnDocument: 'after', runValidators: true, session },
     );
-    expect(expireSpy).not.toHaveBeenCalled();
+    expect(expireMessageBounty).not.toHaveBeenCalled();
   });
 
   it('expires an unanswered offer when the direct reply is too late', async () => {
     vi.spyOn(MessageBounty, 'findOneAndUpdate').mockReturnValue(execQuery(null) as never);
-    vi.spyOn(MessageBounty, 'updateOne').mockReturnValue(
-      execQuery({ acknowledged: true, modifiedCount: 1 }) as never,
-    );
+    const expiredOffer = { _id: new Types.ObjectId() };
+    vi.spyOn(MessageBounty, 'findOne').mockReturnValue({
+      session: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValue(expiredOffer),
+    } as never);
+    vi.mocked(expireMessageBounty).mockResolvedValue(null);
 
     await expect(resolveReplyBounty(input())).resolves.toBeNull();
-    expect(MessageBounty.updateOne).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'offered', expiresAt: { $lte: repliedAt } }),
-      { $set: { status: 'expired' } },
-      { session },
-    );
+    expect(expireMessageBounty).toHaveBeenCalledWith(expiredOffer._id, repliedAt, session);
   });
 });

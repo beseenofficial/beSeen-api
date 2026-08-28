@@ -104,4 +104,36 @@ describe('POST /v1/messenger/conversations/:conversationId/messages', () => {
     expect(response.status).toBe(409);
     expect(response.body.result.code).toBe('MESSAGE_ID_CONFLICT');
   });
+
+  it('returns a stable conflict when the demo USDC balance is insufficient', async () => {
+    sendMessageMock.mockResolvedValue({
+      ok: false,
+      reason: 'insufficient_demo_usdc_balance',
+    });
+
+    const response = await request(app)
+      .post(`/v1/messenger/conversations/${conversationId.toString()}/messages`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        ...validBody(),
+        bounty: { assetCode: 'USDC', amount: '21', durationSeconds: 3_600 },
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.result.code).toBe('INSUFFICIENT_DEMO_USDC_BALANCE');
+  });
+
+  it('rejects non-USDC demo bounties before calling the service', async () => {
+    const response = await request(app)
+      .post(`/v1/messenger/conversations/${conversationId.toString()}/messages`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        ...validBody(),
+        bounty: { assetCode: 'XLM', amount: '1', durationSeconds: 3_600 },
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.result.code).toBe('VALIDATION_ERROR');
+    expect(sendMessageMock).not.toHaveBeenCalled();
+  });
 });

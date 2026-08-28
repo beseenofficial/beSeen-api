@@ -48,6 +48,11 @@ const messengerSendErrors: Record<
     code: 'INVALID_MESSAGE_SIGNATURE',
     message: 'The encrypted message signature is invalid',
   },
+  insufficient_demo_usdc_balance: {
+    statusCode: 409,
+    code: 'INSUFFICIENT_DEMO_USDC_BALANCE',
+    message: 'The demo USDC balance is insufficient for this bounty',
+  },
   message_conflict: {
     statusCode: 409,
     code: 'MESSAGE_ID_CONFLICT',

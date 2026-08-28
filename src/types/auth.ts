@@ -28,6 +28,7 @@ interface PublicUserProfile extends AuthenticatedUser {
   sentMessageCount: number;
   receivedMessageCount: number;
   messageCount: number;
+  totalBountyReceivedUsdc: string;
 }
 
 interface SessionUser {

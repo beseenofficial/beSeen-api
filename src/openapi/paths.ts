@@ -277,7 +277,7 @@ const openApiPaths = {
         '200': jsonResponse('Current user retrieved.', {
           type: 'object',
           required: ['user'],
-          properties: { user: { $ref: '#/components/schemas/User' } },
+          properties: { user: { $ref: '#/components/schemas/CurrentUser' } },
         }),
         '401': unauthorized,
       },

@@ -28,6 +28,7 @@ describe('GET /v1/users/:username', () => {
         sentMessageCount: 12,
         receivedMessageCount: 8,
         messageCount: 20,
+        totalBountyReceivedUsdc: '35.5',
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
@@ -47,6 +48,7 @@ describe('GET /v1/users/:username', () => {
       sentMessageCount: 12,
       receivedMessageCount: 8,
       messageCount: 20,
+      totalBountyReceivedUsdc: '35.5',
     });
     expect(getPublicProfileMock).toHaveBeenCalledWith('sample_user');
   });

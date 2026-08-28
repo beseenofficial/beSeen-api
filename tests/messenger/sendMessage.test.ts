@@ -187,6 +187,9 @@ describe('sendMessage', () => {
     };
     setupNewMessageReads();
     verifySignatureMock.mockReturnValue(true);
+    const balanceSpy = vi
+      .spyOn(User, 'findOneAndUpdate')
+      .mockReturnValue(execQuery({ _id: senderId, demoUsdcBalanceUnits: 100_000_000 }) as never);
     vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
       execQuery({ nextSequence: 1 }) as never,
     );
@@ -239,12 +242,40 @@ describe('sendMessage', () => {
           beneficiary: recipientId,
           assetCode: 'USDC',
           amount: '10',
+          amountUnits: 100_000_000,
+          fundingStatus: 'reserved',
           durationSeconds: 3_600,
           status: 'offered',
         }),
       ],
       { session },
     );
+    expect(balanceSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: senderId,
+        demoUsdcBalanceUnits: { $gte: 100_000_000 },
+      }),
+      { $inc: { demoUsdcBalanceUnits: -100_000_000 } },
+      { returnDocument: 'after', runValidators: true, session },
+    );
+  });
+
+  it('rejects a bounty before allocating a message sequence when the balance is insufficient', async () => {
+    const requestBody = {
+      ...body(),
+      bounty: { assetCode: 'USDC' as const, amount: '20.0000001', durationSeconds: 3_600 },
+    };
+    setupNewMessageReads();
+    verifySignatureMock.mockReturnValue(true);
+    vi.spyOn(User, 'findOneAndUpdate').mockReturnValue(execQuery(null) as never);
+    const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
+    const messageSpy = vi.spyOn(Message, 'create');
+
+    await expect(
+      sendMessage(senderId.toString(), conversationId.toString(), requestBody),
+    ).resolves.toEqual({ ok: false, reason: 'insufficient_demo_usdc_balance' });
+    expect(sequenceSpy).not.toHaveBeenCalled();
+    expect(messageSpy).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid derived-key signature before allocating a sequence', async () => {

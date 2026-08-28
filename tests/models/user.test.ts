@@ -16,6 +16,7 @@ describe('User model', () => {
     expect(user.bio).toBeNull();
     expect(user.verificationGrantedAt).toBeNull();
     expect(user.verificationExpiresAt).toBeNull();
+    expect(user.demoUsdcBalanceUnits).toBe(200_000_000);
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.discoverScore).toBe(0);

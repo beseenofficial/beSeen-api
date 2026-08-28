@@ -44,6 +44,12 @@ describe('OpenAPI contract', () => {
     expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
       'walletAddress',
     );
+    expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
+      'demoUsdcBalance',
+    );
+    expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty(
+      'demoUsdcBalance',
+    );
     expect(openApiDocument.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',
       scheme: 'bearer',

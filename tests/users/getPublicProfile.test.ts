@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
+import MessageBounty from '../../src/models/MessageBounty';
 import getPublicProfile from '../../src/utils/user/getPublicProfile';
 
 const queryResult = (value: unknown) => ({
@@ -33,6 +34,9 @@ describe('getPublicProfile', () => {
       .spyOn(Message, 'countDocuments')
       .mockReturnValueOnce(queryResult(12) as never)
       .mockReturnValueOnce(queryResult(8) as never);
+    const bountyAggregateSpy = vi
+      .spyOn(MessageBounty, 'aggregate')
+      .mockReturnValue(queryResult([{ total: '35.5' }]) as never);
 
     await expect(getPublicProfile('alice')).resolves.toEqual({
       ok: true,
@@ -46,18 +50,31 @@ describe('getPublicProfile', () => {
         sentMessageCount: 12,
         receivedMessageCount: 8,
         messageCount: 20,
+        totalBountyReceivedUsdc: '35.5',
         createdAt,
       },
     });
     expect(broadcastCountSpy).toHaveBeenCalledWith({ creator: userId, status: 'published' });
     expect(messageCountSpy).toHaveBeenNthCalledWith(1, { sender: userId });
     expect(messageCountSpy).toHaveBeenNthCalledWith(2, { recipient: userId });
+    expect(bountyAggregateSpy).toHaveBeenCalledWith([
+      {
+        $match: {
+          beneficiary: userId,
+          status: 'claimed',
+          assetCode: 'USDC',
+        },
+      },
+      { $group: { _id: null, total: { $sum: { $toDecimal: '$amount' } } } },
+      { $project: { _id: 0, total: { $toString: '$total' } } },
+    ]);
   });
 
   it('does not query broadcasts when the user is unavailable', async () => {
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(null) as never);
     const broadcastCountSpy = vi.spyOn(Broadcast, 'countDocuments');
     const messageCountSpy = vi.spyOn(Message, 'countDocuments');
+    const bountyAggregateSpy = vi.spyOn(MessageBounty, 'aggregate');
 
     await expect(getPublicProfile('missing_user')).resolves.toEqual({
       ok: false,
@@ -65,5 +82,6 @@ describe('getPublicProfile', () => {
     });
     expect(broadcastCountSpy).not.toHaveBeenCalled();
     expect(messageCountSpy).not.toHaveBeenCalled();
+    expect(bountyAggregateSpy).not.toHaveBeenCalled();
   });
 });

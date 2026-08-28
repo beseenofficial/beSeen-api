@@ -12,6 +12,7 @@ import serializeMessageBounty from './serializeMessageBounty';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
+import { parseDemoUsdcUnits } from './demoUsdcAmount';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import type { SendMessageResult, SentMessage } from '../../types/messenger/message';
 import {
@@ -229,6 +230,34 @@ const sendMessageInTransaction = async (
     return { ok: false, reason: 'invalid_signature' };
   }
 
+  let bountyAmountUnits: number | null = null;
+
+  if (body.bounty) {
+    try {
+      bountyAmountUnits = parseDemoUsdcUnits(body.bounty.amount);
+    } catch (error: unknown) {
+      if (error instanceof RangeError) {
+        return { ok: false, reason: 'insufficient_demo_usdc_balance' };
+      }
+      throw error;
+    }
+
+    const fundedSender = await User.findOneAndUpdate(
+      {
+        _id: sender._id,
+        status: 'active',
+        deletedAt: null,
+        demoUsdcBalanceUnits: { $gte: bountyAmountUnits },
+      },
+      { $inc: { demoUsdcBalanceUnits: -bountyAmountUnits } },
+      { returnDocument: 'after', runValidators: true, session },
+    ).exec();
+
+    if (!fundedSender) {
+      return { ok: false, reason: 'insufficient_demo_usdc_balance' };
+    }
+  }
+
   const createdAt = new Date();
 
   const recipientUnreadField = conversation.participantA.equals(recipient._id)
@@ -307,6 +336,8 @@ const sendMessageInTransaction = async (
           beneficiary: recipient._id,
           assetCode: body.bounty.assetCode,
           amount: body.bounty.amount,
+          amountUnits: bountyAmountUnits,
+          fundingStatus: 'reserved',
           durationSeconds: body.bounty.durationSeconds,
           status: 'offered',
           expiresAt,

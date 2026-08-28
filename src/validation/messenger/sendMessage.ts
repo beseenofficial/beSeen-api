@@ -3,7 +3,6 @@ import { z } from 'zod';
 import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
-  MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
   MESSENGER_BOUNTY_MAX_DURATION_SECONDS,
   MESSENGER_BOUNTY_MIN_DURATION_SECONDS,
   MESSENGER_CONTENT_NONCE_BYTES,
@@ -23,7 +22,7 @@ const objectIdSchema = z
 
 const bountyTermsSchema = z
   .object({
-    assetCode: z.string().regex(MESSENGER_BOUNTY_ASSET_CODE_PATTERN),
+    assetCode: z.literal('USDC'),
     amount: z
       .string()
       .regex(MESSENGER_BOUNTY_AMOUNT_PATTERN)

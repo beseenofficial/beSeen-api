@@ -3,6 +3,7 @@ import type { HydratedDocument } from 'mongoose';
 
 import type { UserRole, UserStatus } from '../constant/user';
 import { DISCOVER_SCORE_VERSION } from '../constant/discover';
+import { DEMO_USDC_DEFAULT_BALANCE_UNITS } from '../constant/messenger';
 import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
 import { USER_BIO_MAX_LENGTH, USER_ROLES, USER_STATUSES } from '../constant/user';
 
@@ -16,6 +17,7 @@ interface IUser {
   bio: string | null;
   verificationGrantedAt: Date | null;
   verificationExpiresAt: Date | null;
+  demoUsdcBalanceUnits: number;
   role: UserRole;
   status: UserStatus;
   deletedAt: Date | null;
@@ -81,6 +83,16 @@ const userSchema = new Schema<IUser>(
     verificationExpiresAt: {
       type: Date,
       default: null,
+    },
+    demoUsdcBalanceUnits: {
+      type: Number,
+      min: 0,
+      default: DEMO_USDC_DEFAULT_BALANCE_UNITS,
+      required: true,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Demo USDC balance units must be a safe integer',
+      },
     },
     role: {
       type: String,

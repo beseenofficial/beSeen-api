@@ -25,6 +25,10 @@ interface UserActivityHeartbeat {
   isOnline: boolean;
 }
 
+interface CurrentUserProfile extends AuthenticatedUser {
+  demoUsdcBalance: string;
+}
+
 type RecordUserActivityResult =
   { ok: true; activity: UserActivityHeartbeat } | { ok: false; reason: 'account_unavailable' };
 
@@ -37,7 +41,7 @@ type UpdateCurrentUserResult =
   { ok: true; user: AuthenticatedUser } | { ok: false; reason: UpdateProfileFailureReason };
 
 type GetCurrentUserResult =
-  { ok: true; user: AuthenticatedUser } | { ok: false; reason: 'account_unavailable' };
+  { ok: true; user: CurrentUserProfile } | { ok: false; reason: 'account_unavailable' };
 
 type GetPublicProfileResult =
   { ok: true; user: PublicUserProfile } | { ok: false; reason: 'user_not_found' };
@@ -63,6 +67,7 @@ export type {
   UpdateCurrentUserResult,
   RecordUserActivityResult,
   UserActivityHeartbeat,
+  CurrentUserProfile,
   UpdateProfileFailureReason,
   UsernameAvailabilityResult,
   UsernameUnavailabilityReason,
