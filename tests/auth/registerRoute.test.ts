@@ -29,6 +29,7 @@ describe('POST /v1/auth/register', () => {
         id: '507f1f77bcf86cd799439011',
         username: 'new_user',
         avatar: 'https://cdn.beseen.fi/avatar.webp',
+        bio: null,
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
       },
       auth: {
@@ -46,6 +47,7 @@ describe('POST /v1/auth/register', () => {
       id: '507f1f77bcf86cd799439011',
       username: 'new_user',
       avatar: 'https://cdn.beseen.fi/avatar.webp',
+      bio: null,
       createdAt: '2026-07-27T12:00:00.000Z',
     });
     expect(registerUserMock).toHaveBeenCalledWith(
@@ -72,6 +74,23 @@ describe('POST /v1/auth/register', () => {
     expect(registerUserMock).toHaveBeenCalledWith(
       expect.objectContaining({ walletAddress: WALLET, username: 'new_user' }),
       expect.objectContaining({ fieldname: 'avatar', originalname: 'avatar.png' }),
+    );
+  });
+
+  it('ignores bio during registration so it can only be set through profile editing', async () => {
+    registerUserMock.mockResolvedValue({
+      ok: false,
+      reason: 'wallet_not_verified_by_blux',
+    });
+
+    const response = await request(app)
+      .post('/v1/auth/register')
+      .send({ ...validBody(), bio: 'Set this later' });
+
+    expect(response.status).toBe(403);
+    expect(registerUserMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({ bio: expect.anything() }),
+      undefined,
     );
   });
 

@@ -93,6 +93,7 @@ const registerUserInTransaction = async (
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      bio: user.bio,
       createdAt: user.createdAt,
     },
   };

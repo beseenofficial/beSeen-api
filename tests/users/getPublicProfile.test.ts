@@ -40,6 +40,7 @@ describe('getPublicProfile', () => {
         id: userId.toString(),
         username: 'alice',
         avatar: null,
+        bio: null,
         broadcastCount: 9,
         sentMessageCount: 12,
         receivedMessageCount: 8,

@@ -13,6 +13,7 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      bio: user.bio,
       createdAt: user.createdAt,
     },
   };

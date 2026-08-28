@@ -20,6 +20,11 @@ const userProperties = {
     example: 'new_user',
   },
   avatar: nullableUrlSchema,
+  bio: {
+    oneOf: [{ type: 'string', maxLength: 64 }, { type: 'null' }],
+    description: 'Optional single-line profile bio with at most 64 characters.',
+    example: 'Building private social tools',
+  },
   createdAt: { type: 'string', format: 'date-time' },
 };
 
@@ -589,6 +594,7 @@ const openApiComponents = {
       additionalProperties: false,
       properties: {
         username: userProperties.username,
+        bio: userProperties.bio,
         removeAvatar: {
           type: 'boolean',
           const: true,

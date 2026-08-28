@@ -13,6 +13,7 @@ describe('User model', () => {
     expect(user.username).toBe('beseen_user');
     expect(user.avatar).toBeNull();
     expect(user.avatarObjectKey).toBeNull();
+    expect(user.bio).toBeNull();
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.discoverScore).toBe(0);
@@ -21,7 +22,6 @@ describe('User model', () => {
     expect(user.lastActiveAt).toBeNull();
     expect(user.lastActivityHeartbeatAt).toBeNull();
     expect(user.toObject()).not.toHaveProperty('accountType');
-    expect(user.toObject()).not.toHaveProperty('bio');
     expect(user.toObject()).not.toHaveProperty('displayName');
   });
 
@@ -42,6 +42,25 @@ describe('User model', () => {
     ).rejects.toThrow();
     await expect(
       new User({ walletAddress: WALLET, username: 'bad-name' }).validate(),
+    ).rejects.toThrow();
+  });
+
+  it('accepts a short single-line bio and rejects longer or multiline values', async () => {
+    await expect(
+      new User({
+        walletAddress: WALLET,
+        username: 'valid_user',
+        bio: 'Privacy belongs to everyone',
+      }).validate(),
+    ).resolves.toBeUndefined();
+    await expect(
+      new User({ walletAddress: WALLET, username: 'valid_user', bio: 'a'.repeat(64) }).validate(),
+    ).resolves.toBeUndefined();
+    await expect(
+      new User({ walletAddress: WALLET, username: 'valid_user', bio: 'a'.repeat(65) }).validate(),
+    ).rejects.toThrow();
+    await expect(
+      new User({ walletAddress: WALLET, username: 'valid_user', bio: 'first\nsecond' }).validate(),
     ).rejects.toThrow();
   });
 });

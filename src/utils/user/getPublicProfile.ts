@@ -24,6 +24,7 @@ const getPublicProfile = async (username: string): Promise<GetPublicProfileResul
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      bio: user.bio,
       broadcastCount,
       sentMessageCount,
       receivedMessageCount,

@@ -30,6 +30,7 @@ describe('PATCH /v1/users/me', () => {
         id: userId.toString(),
         username: 'new_username',
         avatar: null,
+        bio: null,
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
       },
     });
@@ -45,6 +46,55 @@ describe('PATCH /v1/users/me', () => {
       { username: 'new_username' },
       undefined,
     );
+  });
+
+  it('accepts, trims, and clears a short bio', async () => {
+    updateCurrentUserMock.mockResolvedValue({
+      ok: true,
+      user: {
+        id: userId.toString(),
+        username: 'current_user',
+        avatar: null,
+        bio: 'Private social, made simple',
+        createdAt: new Date('2026-07-27T12:00:00.000Z'),
+      },
+    });
+
+    const updated = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ bio: '  Private social, made simple  ' });
+
+    expect(updated.status).toBe(200);
+    expect(updateCurrentUserMock).toHaveBeenCalledWith(
+      userId.toString(),
+      { bio: 'Private social, made simple' },
+      undefined,
+    );
+
+    updateCurrentUserMock.mockClear();
+    const cleared = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ bio: '' });
+
+    expect(cleared.status).toBe(200);
+    expect(updateCurrentUserMock).toHaveBeenCalledWith(userId.toString(), { bio: null }, undefined);
+  });
+
+  it('rejects multiline and overlong bios', async () => {
+    const multiline = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ bio: 'first\nsecond' });
+    const overlong = await request(app)
+      .patch('/v1/users/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ bio: 'a'.repeat(65) });
+
+    expect(multiline.status).toBe(400);
+    expect(overlong.status).toBe(400);
+    expect(updateCurrentUserMock).not.toHaveBeenCalled();
   });
 
   it('accepts an optional avatar file with an optional profile payload', async () => {

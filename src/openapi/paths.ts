@@ -284,9 +284,9 @@ const openApiPaths = {
     },
     patch: {
       tags: ['Profiles'],
-      summary: 'Update the current username or optional avatar',
+      summary: 'Update the current username, bio, or optional avatar',
       description:
-        'For an avatar change, send multipart/form-data with an optional JSON payload field and an avatar file. Send {"removeAvatar":true} in payload to remove the current avatar. A username-only update may still use application/json. Avatar files and removeAvatar cannot be sent together.',
+        'The optional bio is a single line of at most 64 characters and is updated only through this endpoint. For an avatar change, send multipart/form-data with an optional JSON payload field and an avatar file. Send {"removeAvatar":true} in payload to remove the current avatar. Profile-only updates may use application/json. Avatar files and removeAvatar cannot be sent together.',
       operationId: 'updateCurrentUser',
       security: [{ bearerAuth: [] }],
       requestBody: {
@@ -300,8 +300,8 @@ const openApiPaths = {
                 payload: {
                   type: 'string',
                   description:
-                    'Optional JSON.stringify({ username?, removeAvatar?: true }). It may be omitted when only uploading an avatar.',
-                  example: '{"username":"new_username"}',
+                    'Optional JSON.stringify({ username?, bio?, removeAvatar?: true }). It may be omitted when only uploading an avatar.',
+                  example: '{"username":"new_username","bio":"Building private social tools"}',
                 },
                 avatar: {
                   type: 'string',

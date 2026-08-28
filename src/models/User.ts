@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument } from 'mongoose';
 
-import { USER_ROLES, USER_STATUSES } from '../constant/user';
+import { USER_BIO_MAX_LENGTH, USER_ROLES, USER_STATUSES } from '../constant/user';
 import type { UserRole, UserStatus } from '../constant/user';
 import { DISCOVER_SCORE_VERSION } from '../constant/discover';
 import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
@@ -13,6 +13,7 @@ interface IUser {
   username: string;
   avatar: string | null;
   avatarObjectKey: string | null;
+  bio: string | null;
   role: UserRole;
   status: UserStatus;
   deletedAt: Date | null;
@@ -60,6 +61,16 @@ const userSchema = new Schema<IUser>(
       maxlength: 1_024,
       default: null,
       select: false,
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null || (!/[\r\n]/u.test(value) && [...value].length <= USER_BIO_MAX_LENGTH),
+        message: `Bio must be one line with at most ${USER_BIO_MAX_LENGTH} characters`,
+      },
     },
     role: {
       type: String,

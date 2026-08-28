@@ -61,6 +61,11 @@ const updateCurrentUser = async (
   if (body.username !== undefined) {
     user.username = body.username;
   }
+
+  if (body.bio !== undefined) {
+    user.bio = body.bio;
+  }
+
   if (uploadedAvatar) {
     user.avatar = uploadedAvatar.publicUrl;
     user.avatarObjectKey = uploadedAvatar.objectKey;
@@ -94,6 +99,7 @@ const updateCurrentUser = async (
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      bio: user.bio,
       createdAt: user.createdAt,
     },
   };

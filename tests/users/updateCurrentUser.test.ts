@@ -24,6 +24,7 @@ const createUser = () => {
     _id: userId,
     walletAddress,
     username: 'current_user',
+    bio: null,
     avatar: 'https://images.beseen.fi/avatars/user/old.webp',
     avatarObjectKey: 'avatars/user/old.webp',
   });
@@ -64,6 +65,26 @@ describe('updateCurrentUser', () => {
     });
     expect(uploadAvatarMock).not.toHaveBeenCalled();
     expect(deleteAvatarMock).not.toHaveBeenCalled();
+  });
+
+  it('updates and clears the optional bio', async () => {
+    const user = createUser();
+    vi.spyOn(User, 'findOne').mockReturnValue(findOneResult(user) as never);
+    vi.spyOn(user, 'save').mockResolvedValue(user);
+
+    const updated = await updateCurrentUser(userId.toString(), {
+      bio: 'Private social, made simple',
+    });
+
+    expect(updated).toMatchObject({
+      ok: true,
+      user: { bio: 'Private social, made simple' },
+    });
+    expect(user.bio).toBe('Private social, made simple');
+
+    const cleared = await updateCurrentUser(userId.toString(), { bio: null });
+    expect(cleared).toMatchObject({ ok: true, user: { bio: null } });
+    expect(user.bio).toBeNull();
   });
 
   it('uploads a replacement and deletes the previous object after saving', async () => {

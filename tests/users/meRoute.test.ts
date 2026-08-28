@@ -37,6 +37,7 @@ describe('GET /v1/users/me', () => {
         walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
         username: 'sample_user',
         avatar: null,
+        bio: 'Private social, made simple',
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
@@ -50,6 +51,7 @@ describe('GET /v1/users/me', () => {
       id: userId.toString(),
       username: 'sample_user',
       avatar: null,
+      bio: 'Private social, made simple',
       createdAt: '2026-07-01T12:00:00.000Z',
     });
     expect(AuthSession.exists).toHaveBeenCalledWith(
