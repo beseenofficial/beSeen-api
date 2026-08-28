@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import User from '../../models/User';
+import getUserVerification from './getUserVerification';
 import type { DiscoverUsersPage } from '../../types/user';
 import type { DiscoverUsersQuery } from '../../validation/user/discover';
 import { encodeDiscoverCursor } from '../discover/discoverCursor';
@@ -22,7 +23,13 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   }
 
   const rows = await User.find(filter)
-    .select({ username: 1, avatar: 1, discoverScore: 1 })
+    .select({
+      username: 1,
+      avatar: 1,
+      verificationGrantedAt: 1,
+      verificationExpiresAt: 1,
+      discoverScore: 1,
+    })
     .sort({ discoverScore: -1, _id: -1 })
     .limit(query.limit + 1)
     .exec();
@@ -38,6 +45,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      verification: getUserVerification(user),
     })),
     nextCursor:
       hasMore && lastUser

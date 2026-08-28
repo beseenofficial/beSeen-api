@@ -1,6 +1,7 @@
 import User from '../../models/User';
 import Message from '../../models/Message';
 import Broadcast from '../../models/Broadcast';
+import getUserVerification from './getUserVerification';
 import type { GetPublicProfileResult } from '../../types/user';
 
 const getPublicProfile = async (username: string): Promise<GetPublicProfileResult> => {
@@ -25,6 +26,7 @@ const getPublicProfile = async (username: string): Promise<GetPublicProfileResul
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      verification: getUserVerification(user),
       broadcastCount,
       sentMessageCount,
       receivedMessageCount,

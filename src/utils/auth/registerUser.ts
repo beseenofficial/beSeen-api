@@ -10,6 +10,7 @@ import createAuthSession from './createAuthSession';
 import type { StoredAvatar } from '../../types/avatar';
 import verifyBluxWallet from '../blux/verifyBluxWallet';
 import { KEY_DERIVATION_VERSION } from '../../constant/auth';
+import getUserVerification from '../user/getUserVerification';
 import type { RegisterBody } from '../../validation/auth/register';
 import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
 import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
@@ -94,6 +95,7 @@ const registerUserInTransaction = async (
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      verification: getUserVerification(user),
       createdAt: user.createdAt,
     },
   };

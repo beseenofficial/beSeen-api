@@ -14,6 +14,8 @@ describe('User model', () => {
     expect(user.avatar).toBeNull();
     expect(user.avatarObjectKey).toBeNull();
     expect(user.bio).toBeNull();
+    expect(user.verificationGrantedAt).toBeNull();
+    expect(user.verificationExpiresAt).toBeNull();
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.discoverScore).toBe(0);
@@ -61,6 +63,35 @@ describe('User model', () => {
     ).rejects.toThrow();
     await expect(
       new User({ walletAddress: WALLET, username: 'valid_user', bio: 'first\nsecond' }).validate(),
+    ).rejects.toThrow();
+  });
+
+  it('requires a complete verification period with expiration after its grant time', async () => {
+    const grantedAt = new Date('2026-08-01T00:00:00.000Z');
+    const expiresAt = new Date('2026-09-01T00:00:00.000Z');
+
+    await expect(
+      new User({
+        walletAddress: WALLET,
+        username: 'verified_user',
+        verificationGrantedAt: grantedAt,
+        verificationExpiresAt: expiresAt,
+      }).validate(),
+    ).resolves.toBeUndefined();
+    await expect(
+      new User({
+        walletAddress: WALLET,
+        username: 'partial_user',
+        verificationExpiresAt: expiresAt,
+      }).validate(),
+    ).rejects.toThrow();
+    await expect(
+      new User({
+        walletAddress: WALLET,
+        username: 'expired_before_grant',
+        verificationGrantedAt: expiresAt,
+        verificationExpiresAt: grantedAt,
+      }).validate(),
     ).rejects.toThrow();
   });
 });

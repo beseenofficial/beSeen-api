@@ -5,6 +5,7 @@ import type { UpdateCurrentUserResult } from '../../types/user';
 import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
 import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
 import type { UpdateProfileBody } from '../../validation/user/updateProfile';
+import getUserVerification from './getUserVerification';
 
 const isUsernameDuplicateError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 11_000;
@@ -100,6 +101,7 @@ const updateCurrentUser = async (
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      verification: getUserVerification(user),
       createdAt: user.createdAt,
     },
   };

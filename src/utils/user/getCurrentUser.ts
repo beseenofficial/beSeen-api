@@ -1,4 +1,5 @@
 import User from '../../models/User';
+import getUserVerification from './getUserVerification';
 import type { GetCurrentUserResult } from '../../types/user';
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
@@ -14,6 +15,7 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      verification: getUserVerification(user),
       createdAt: user.createdAt,
     },
   };

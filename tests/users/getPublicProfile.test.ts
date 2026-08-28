@@ -41,6 +41,7 @@ describe('getPublicProfile', () => {
         username: 'alice',
         avatar: null,
         bio: null,
+        verification: { isVerified: false, grantedAt: null, expiresAt: null },
         broadcastCount: 9,
         sentMessageCount: 12,
         receivedMessageCount: 8,

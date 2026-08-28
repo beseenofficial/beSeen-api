@@ -10,6 +10,24 @@ const nullableUrlSchema = {
   example: 'https://cdn.example/avatar.webp',
 };
 
+const userVerificationSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['isVerified', 'grantedAt', 'expiresAt'],
+  properties: {
+    isVerified: {
+      type: 'boolean',
+      description: 'True only while the verification period is currently active.',
+    },
+    grantedAt: {
+      oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+    },
+    expiresAt: {
+      oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+    },
+  },
+};
+
 const userProperties = {
   id: objectIdSchema,
   username: {
@@ -25,6 +43,7 @@ const userProperties = {
     description: 'Optional single-line profile bio with at most 64 characters.',
     example: 'Building private social tools',
   },
+  verification: userVerificationSchema,
   createdAt: { type: 'string', format: 'date-time' },
 };
 
@@ -107,11 +126,12 @@ const openApiComponents = {
     DiscoverUser: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'username', 'avatar'],
+      required: ['id', 'username', 'avatar', 'verification'],
       properties: {
         id: objectIdSchema,
         username: userProperties.username,
         avatar: nullableUrlSchema,
+        verification: userVerificationSchema,
       },
     },
     UserToken: {

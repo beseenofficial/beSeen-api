@@ -1,4 +1,4 @@
-import type { AuthenticatedUser, PublicUserProfile } from './auth';
+import type { AuthenticatedUser, PublicUserProfile, UserVerification } from './auth';
 
 interface UsernameAvailabilityResult {
   username: string;
@@ -10,6 +10,7 @@ interface DiscoverUser {
   id: string;
   username: string;
   avatar: string | null;
+  verification: UserVerification;
 }
 
 interface DiscoverUsersPage {
@@ -25,8 +26,7 @@ interface UserActivityHeartbeat {
 }
 
 type RecordUserActivityResult =
-  | { ok: true; activity: UserActivityHeartbeat }
-  | { ok: false; reason: 'account_unavailable' };
+  { ok: true; activity: UserActivityHeartbeat } | { ok: false; reason: 'account_unavailable' };
 
 type UsernameUnavailabilityReason = 'invalid' | 'reserved' | 'taken';
 

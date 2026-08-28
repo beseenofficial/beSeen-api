@@ -7,6 +7,7 @@ import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
 import type { LoginUserResult } from '../../types/auth';
 import type { LoginBody } from '../../validation/auth/login';
+import getUserVerification from '../user/getUserVerification';
 import buildLoginProofMessage from './buildLoginProofMessage';
 import { LOGIN_PROOF_MAX_AGE_SECONDS } from '../../constant/auth';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
@@ -39,6 +40,7 @@ const createLoginSession = async (
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      verification: getUserVerification(user),
       createdAt: user.createdAt,
     },
   };

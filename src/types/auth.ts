@@ -2,11 +2,18 @@ import type { Types } from 'mongoose';
 
 import type { UserRole } from '../constant/user';
 
+interface UserVerification {
+  isVerified: boolean;
+  grantedAt: Date | null;
+  expiresAt: Date | null;
+}
+
 interface AuthenticatedUser {
   id: string;
   username: string;
   avatar: string | null;
   bio: string | null;
+  verification: UserVerification;
   createdAt: Date;
 }
 
@@ -83,4 +90,5 @@ export type {
   RegisterUserResult,
   RegistrationFailureReason,
   SessionUser,
+  UserVerification,
 };

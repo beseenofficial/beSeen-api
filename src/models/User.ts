@@ -1,10 +1,10 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument } from 'mongoose';
 
-import { USER_BIO_MAX_LENGTH, USER_ROLES, USER_STATUSES } from '../constant/user';
 import type { UserRole, UserStatus } from '../constant/user';
 import { DISCOVER_SCORE_VERSION } from '../constant/discover';
 import isValidStellarGAddress from '../utils/stellar/isValidStellarGAddress';
+import { USER_BIO_MAX_LENGTH, USER_ROLES, USER_STATUSES } from '../constant/user';
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 
@@ -14,6 +14,8 @@ interface IUser {
   avatar: string | null;
   avatarObjectKey: string | null;
   bio: string | null;
+  verificationGrantedAt: Date | null;
+  verificationExpiresAt: Date | null;
   role: UserRole;
   status: UserStatus;
   deletedAt: Date | null;
@@ -72,6 +74,14 @@ const userSchema = new Schema<IUser>(
         message: `Bio must be one line with at most ${USER_BIO_MAX_LENGTH} characters`,
       },
     },
+    verificationGrantedAt: {
+      type: Date,
+      default: null,
+    },
+    verificationExpiresAt: {
+      type: Date,
+      default: null,
+    },
     role: {
       type: String,
       enum: USER_ROLES,
@@ -124,6 +134,26 @@ const userSchema = new Schema<IUser>(
     versionKey: false,
   },
 );
+
+userSchema.pre('validate', function validateVerificationPeriod() {
+  const grantedAt = this.verificationGrantedAt;
+  const expiresAt = this.verificationExpiresAt;
+
+  if ((grantedAt === null) !== (expiresAt === null)) {
+    this.invalidate(
+      'verificationExpiresAt',
+      'Verification grant and expiration timestamps must be set together',
+    );
+    return;
+  }
+
+  if (grantedAt && expiresAt && expiresAt.getTime() <= grantedAt.getTime()) {
+    this.invalidate(
+      'verificationExpiresAt',
+      'Verification expiration must be after its grant time',
+    );
+  }
+});
 
 userSchema.index({ walletAddress: 1 }, { unique: true, name: 'users_wallet_address_unique' });
 userSchema.index({ username: 1 }, { unique: true, name: 'users_username_unique' });

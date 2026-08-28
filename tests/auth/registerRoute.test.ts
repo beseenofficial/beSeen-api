@@ -30,6 +30,7 @@ describe('POST /v1/auth/register', () => {
         username: 'new_user',
         avatar: 'https://cdn.beseen.fi/avatar.webp',
         bio: null,
+        verification: { isVerified: false, grantedAt: null, expiresAt: null },
         createdAt: new Date('2026-07-27T12:00:00.000Z'),
       },
       auth: {
@@ -48,6 +49,7 @@ describe('POST /v1/auth/register', () => {
       username: 'new_user',
       avatar: 'https://cdn.beseen.fi/avatar.webp',
       bio: null,
+      verification: { isVerified: false, grantedAt: null, expiresAt: null },
       createdAt: '2026-07-27T12:00:00.000Z',
     });
     expect(registerUserMock).toHaveBeenCalledWith(
