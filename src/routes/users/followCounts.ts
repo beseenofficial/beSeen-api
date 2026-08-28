@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
 
-import getFollowerCount from '../../utils/token/getFollowerCount';
+import getFollowCounts from '../../utils/token/getFollowCounts';
 import { publicUsernameParamsSchema } from '../../validation/user/updateProfile';
 
-const getFollowerCountRoute: RequestHandler = async (req, res) => {
+const getFollowCountsRoute: RequestHandler = async (req, res) => {
   const params = publicUsernameParamsSchema.safeParse(req.params);
   if (!params.success) {
     return res.status(400).j({
@@ -13,7 +13,7 @@ const getFollowerCountRoute: RequestHandler = async (req, res) => {
     });
   }
 
-  const result = await getFollowerCount(params.data.username);
+  const result = await getFollowCounts(params.data.username);
   if (!result.ok) {
     return res.status(404).j({
       status: 'error',
@@ -24,9 +24,13 @@ const getFollowerCountRoute: RequestHandler = async (req, res) => {
 
   return res.status(200).j({
     status: 'success',
-    message: 'Follower count retrieved',
-    result: { user: result.user, followerCount: result.count },
+    message: 'Follow counts retrieved',
+    result: {
+      user: result.user,
+      followerCount: result.followerCount,
+      followingCount: result.followingCount,
+    },
   });
 };
 
-export default getFollowerCountRoute;
+export default getFollowCountsRoute;

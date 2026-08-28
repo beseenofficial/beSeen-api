@@ -7,7 +7,7 @@ import recordUserActivityRoute from './activity';
 import getMyTokensRoute from './myTokens';
 import getUserTokenRoute from './userToken';
 import getPublicUserKeysRoute from './publicKeys';
-import getFollowerCountRoute from './followerCount';
+import getFollowCountsRoute from './followCounts';
 import getPublicProfileRoute from './publicProfile';
 import purchaseUserTokenRoute from './purchaseToken';
 import authenticate from '../../middleware/authenticate';
@@ -26,7 +26,7 @@ userRoutes.get('/:username', getPublicProfileRoute);
 userRoutes.get('/:username/token', getUserTokenRoute);
 userRoutes.get('/:username/keys', getPublicUserKeysRoute);
 userRoutes.get('/me/tokens', authenticate, getMyTokensRoute);
-userRoutes.get('/:username/followers/count', getFollowerCountRoute);
+userRoutes.get('/:username/follow-counts', getFollowCountsRoute);
 userRoutes.post('/:username/token/purchase', authenticate, purchaseUserTokenRoute);
 userRoutes.get(
   '/username/availability',

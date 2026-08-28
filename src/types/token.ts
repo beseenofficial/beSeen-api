@@ -21,8 +21,13 @@ type GetUserTokenResult =
     }
   | { ok: false; reason: 'user_not_found' };
 
-type GetFollowerCountResult =
-  | { ok: true; user: { id: string; username: string }; count: number }
+type GetFollowCountsResult =
+  | {
+      ok: true;
+      user: { id: string; username: string };
+      followerCount: number;
+      followingCount: number;
+    }
   | { ok: false; reason: 'user_not_found' };
 
 type PurchaseUserTokenResult =
@@ -34,4 +39,4 @@ type PurchaseUserTokenResult =
     }
   | { ok: false; reason: 'buyer_unavailable' | 'user_not_found' | 'own_token' };
 
-export type { GetFollowerCountResult, GetUserTokenResult, MyTokensResult, PurchaseUserTokenResult };
+export type { GetFollowCountsResult, GetUserTokenResult, MyTokensResult, PurchaseUserTokenResult };

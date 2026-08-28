@@ -1,9 +1,9 @@
 import User from '../../models/User';
 import TokenHolding from '../../models/TokenHolding';
 import getOrCreateUserToken from './getOrCreateUserToken';
-import type { GetFollowerCountResult } from '../../types/token';
+import type { GetFollowCountsResult } from '../../types/token';
 
-const getFollowerCount = async (username: string): Promise<GetFollowerCountResult> => {
+const getFollowCounts = async (username: string): Promise<GetFollowCountsResult> => {
   const user = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
   if (!user) {
     return { ok: false, reason: 'user_not_found' };
@@ -11,13 +11,17 @@ const getFollowerCount = async (username: string): Promise<GetFollowerCountResul
 
   const token = await getOrCreateUserToken(user._id);
 
-  const count = await TokenHolding.countDocuments({ token: token._id }).exec();
+  const [followerCount, followingCount] = await Promise.all([
+    TokenHolding.countDocuments({ token: token._id }).exec(),
+    TokenHolding.countDocuments({ holder: user._id }).exec(),
+  ]);
 
   return {
     ok: true,
     user: { id: user._id.toString(), username: user.username },
-    count,
+    followerCount,
+    followingCount,
   };
 };
 
-export default getFollowerCount;
+export default getFollowCounts;
