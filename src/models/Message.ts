@@ -269,6 +269,7 @@ messageSchema.index(
   { sender: 1, clientMessageId: 1 },
   { unique: true, name: 'messages_sender_client_id_unique' },
 );
+messageSchema.index({ recipient: 1 }, { name: 'messages_recipient_count' });
 messageSchema.index({ conversation: 1, _id: -1 }, { name: 'messages_conversation_history' });
 messageSchema.index(
   { createdAt: -1, conversation: 1 },

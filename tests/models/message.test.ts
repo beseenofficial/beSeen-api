@@ -46,6 +46,7 @@ describe('Message model', () => {
           { sender: 1, clientMessageId: 1 },
           expect.objectContaining({ unique: true, name: 'messages_sender_client_id_unique' }),
         ],
+        [{ recipient: 1 }, expect.objectContaining({ name: 'messages_recipient_count' })],
       ]),
     );
   });

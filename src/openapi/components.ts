@@ -23,6 +23,30 @@ const userProperties = {
   createdAt: { type: 'string', format: 'date-time' },
 };
 
+const publicUserProperties = {
+  ...userProperties,
+  broadcastCount: {
+    type: 'integer',
+    minimum: 0,
+    description: 'Number of broadcasts published by this user.',
+  },
+  sentMessageCount: {
+    type: 'integer',
+    minimum: 0,
+    description: 'Number of encrypted direct messages sent by this user.',
+  },
+  receivedMessageCount: {
+    type: 'integer',
+    minimum: 0,
+    description: 'Number of encrypted direct messages received by this user.',
+  },
+  messageCount: {
+    type: 'integer',
+    minimum: 0,
+    description: 'Total number of encrypted direct messages sent and received by this user.',
+  },
+};
+
 const openApiComponents = {
   securitySchemes: {
     bearerAuth: {
@@ -72,8 +96,8 @@ const openApiComponents = {
     PublicUser: {
       type: 'object',
       additionalProperties: false,
-      required: Object.keys(userProperties),
-      properties: userProperties,
+      required: Object.keys(publicUserProperties),
+      properties: publicUserProperties,
     },
     DiscoverUser: {
       type: 'object',

@@ -15,7 +15,12 @@ interface AuthRequestContext {
   role: UserRole;
 }
 
-type PublicUserProfile = AuthenticatedUser;
+interface PublicUserProfile extends AuthenticatedUser {
+  broadcastCount: number;
+  sentMessageCount: number;
+  receivedMessageCount: number;
+  messageCount: number;
+}
 
 interface SessionUser {
   id: Types.ObjectId;

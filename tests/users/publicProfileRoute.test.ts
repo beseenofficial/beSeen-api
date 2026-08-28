@@ -22,6 +22,10 @@ describe('GET /v1/users/:username', () => {
         id: '507f1f77bcf86cd799439011',
         username: 'sample_user',
         avatar: null,
+        broadcastCount: 14,
+        sentMessageCount: 12,
+        receivedMessageCount: 8,
+        messageCount: 20,
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
@@ -35,6 +39,10 @@ describe('GET /v1/users/:username', () => {
       id: '507f1f77bcf86cd799439011',
       username: 'sample_user',
       avatar: null,
+      broadcastCount: 14,
+      sentMessageCount: 12,
+      receivedMessageCount: 8,
+      messageCount: 20,
     });
     expect(getPublicProfileMock).toHaveBeenCalledWith('sample_user');
   });
