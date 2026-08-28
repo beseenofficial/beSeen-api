@@ -4,6 +4,7 @@ import addUserActivity from './20260827AddUserActivity';
 import addDiscoverRanking from './20260811AddDiscoverRanking';
 import addUserVerification from './20260828AddUserVerification';
 import verifyOfficialBeseenUser from './20260828VerifyOfficialBeseenUser';
+import backfillOfficialFollowers from './20260828BackfillOfficialFollowers';
 import addPublicProfileMessageStats from './20260828AddPublicProfileMessageStats';
 
 const runDatabaseMigrations = async (): Promise<void> => {
@@ -13,6 +14,7 @@ const runDatabaseMigrations = async (): Promise<void> => {
   const userBio = await addUserBio();
   const userVerification = await addUserVerification();
   const officialUserVerification = await verifyOfficialBeseenUser();
+  const officialFollowers = await backfillOfficialFollowers();
 
   log.info(
     {
@@ -22,6 +24,7 @@ const runDatabaseMigrations = async (): Promise<void> => {
       userBio,
       userVerification,
       officialUserVerification,
+      officialFollowers,
     },
     'Database migrations completed',
   );

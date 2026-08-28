@@ -11,6 +11,7 @@ import type { StoredAvatar } from '../../types/avatar';
 import verifyBluxWallet from '../blux/verifyBluxWallet';
 import { KEY_DERIVATION_VERSION } from '../../constant/auth';
 import getUserVerification from '../user/getUserVerification';
+import ensureOfficialFollow from '../user/ensureOfficialFollow';
 import type { RegisterBody } from '../../validation/auth/register';
 import { deleteAvatar, uploadAvatar } from '../avatar/avatarStorage';
 import processAvatar, { InvalidAvatarError } from '../avatar/processAvatar';
@@ -84,6 +85,8 @@ const registerUserInTransaction = async (
 
   const userToken = new UserToken({ owner: user._id });
   await userToken.save({ session });
+
+  await ensureOfficialFollow(user._id, session);
 
   const auth = await createAuthSession({ id: user._id, role: user.role }, session);
 

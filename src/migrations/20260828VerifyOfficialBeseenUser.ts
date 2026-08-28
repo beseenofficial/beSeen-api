@@ -1,6 +1,6 @@
 import User from '../models/User';
+import { OFFICIAL_USER_USERNAME } from '../constant/user';
 
-const OFFICIAL_USERNAME = 'beseenfi';
 const VERIFICATION_DURATION_YEARS = 10;
 
 const verifyOfficialBeseenUser = async () => {
@@ -10,7 +10,7 @@ const verifyOfficialBeseenUser = async () => {
 
   const result = await User.collection.updateOne(
     {
-      username: OFFICIAL_USERNAME,
+      username: OFFICIAL_USER_USERNAME,
       verificationGrantedAt: null,
       verificationExpiresAt: null,
     },
@@ -25,7 +25,7 @@ const verifyOfficialBeseenUser = async () => {
   return {
     matchedUsers: result.matchedCount,
     modifiedUsers: result.modifiedCount,
-    username: OFFICIAL_USERNAME,
+    username: OFFICIAL_USER_USERNAME,
     grantedAt: result.modifiedCount > 0 ? grantedAt : null,
     expiresAt: result.modifiedCount > 0 ? expiresAt : null,
   };
