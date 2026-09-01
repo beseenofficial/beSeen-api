@@ -367,7 +367,7 @@ const openApiPaths = {
       tags: ['Profiles'],
       summary: 'Discover active public user profiles',
       description:
-        'Returns active users ordered by the periodically recalculated Discover score with only their public ID, username, and avatar.',
+        'Returns active users ordered by the periodically recalculated Discover score with their public ID, username, avatar, bio, and verification status.',
       operationId: 'discoverUsers',
       parameters: [
         {

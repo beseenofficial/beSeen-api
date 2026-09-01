@@ -5,12 +5,19 @@ import User from '../../src/models/User';
 import discoverUsers from '../../src/utils/user/discoverUsers';
 import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
 
-const user = (id: string, username: string, discoverScore: number, avatar: string | null = null) =>
+const user = (
+  id: string,
+  username: string,
+  discoverScore: number,
+  avatar: string | null = null,
+  bio: string | null = null,
+) =>
   new User({
     _id: new Types.ObjectId(id),
     walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
     username,
     avatar,
+    bio,
     discoverScore,
   });
 
@@ -27,7 +34,13 @@ describe('discoverUsers', () => {
   });
 
   it('returns a score-ranked public page without private user data', async () => {
-    const first = user('000000000000000000000003', 'third_user', 80, 'https://img.example/3.webp');
+    const first = user(
+      '000000000000000000000003',
+      'third_user',
+      80,
+      'https://img.example/3.webp',
+      'Building private social tools',
+    );
 
     const second = user('000000000000000000000002', 'second_user', 70);
 
@@ -43,12 +56,14 @@ describe('discoverUsers', () => {
           id: first._id.toString(),
           username: 'third_user',
           avatar: 'https://img.example/3.webp',
+          bio: 'Building private social tools',
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
         },
         {
           id: second._id.toString(),
           username: 'second_user',
           avatar: null,
+          bio: null,
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
         },
       ],

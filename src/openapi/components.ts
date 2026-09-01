@@ -148,11 +148,12 @@ const openApiComponents = {
     DiscoverUser: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'username', 'avatar', 'verification'],
+      required: ['id', 'username', 'avatar', 'bio', 'verification'],
       properties: {
         id: objectIdSchema,
         username: userProperties.username,
         avatar: nullableUrlSchema,
+        bio: userProperties.bio,
         verification: userVerificationSchema,
       },
     },

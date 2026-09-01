@@ -50,6 +50,7 @@ describe('OpenAPI contract', () => {
     expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty(
       'demoUsdcBalance',
     );
+    expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('bio');
     expect(openApiDocument.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',
       scheme: 'bearer',

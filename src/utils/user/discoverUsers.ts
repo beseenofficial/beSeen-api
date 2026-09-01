@@ -26,6 +26,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
     .select({
       username: 1,
       avatar: 1,
+      bio: 1,
       verificationGrantedAt: 1,
       verificationExpiresAt: 1,
       discoverScore: 1,
@@ -45,6 +46,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
       id: user._id.toString(),
       username: user.username,
       avatar: user.avatar,
+      bio: user.bio,
       verification: getUserVerification(user),
     })),
     nextCursor:
