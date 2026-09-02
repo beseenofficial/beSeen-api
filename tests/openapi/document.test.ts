@@ -51,6 +51,12 @@ describe('OpenAPI contract', () => {
       'demoUsdcBalance',
     );
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('bio');
+    expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
+      'followerCount',
+    );
+    expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
+      'followingCount',
+    );
     expect(openApiDocument.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',
       scheme: 'bearer',

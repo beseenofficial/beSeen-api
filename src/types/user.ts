@@ -11,6 +11,8 @@ interface DiscoverUser {
   username: string;
   avatar: string | null;
   bio: string | null;
+  followerCount: number;
+  followingCount: number;
   verification: UserVerification;
 }
 

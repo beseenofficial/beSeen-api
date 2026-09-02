@@ -1,10 +1,22 @@
 import { Types } from 'mongoose';
 
+import TokenHolding from '../../models/TokenHolding';
 import User from '../../models/User';
+import UserToken from '../../models/UserToken';
 import getUserVerification from './getUserVerification';
 import type { DiscoverUsersPage } from '../../types/user';
 import type { DiscoverUsersQuery } from '../../validation/user/discover';
 import { encodeDiscoverCursor } from '../discover/discoverCursor';
+
+interface FollowCountRecord {
+  _id: Types.ObjectId;
+  count: number;
+}
+
+interface DiscoverFollowCounts {
+  followerCounts: FollowCountRecord[];
+  followingCounts: FollowCountRecord[];
+}
 
 const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPage> => {
   const filter: Record<string, unknown> = {
@@ -40,15 +52,55 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
 
   const lastUser = pageRows.at(-1);
+  const userIds = pageRows.map((user) => user._id);
+
+  const followCounts = userIds.length
+    ? await TokenHolding.aggregate<DiscoverFollowCounts>([
+        {
+          $facet: {
+            followerCounts: [
+              {
+                $lookup: {
+                  from: UserToken.collection.name,
+                  localField: 'token',
+                  foreignField: '_id',
+                  as: 'tokenDocument',
+                },
+              },
+              { $unwind: '$tokenDocument' },
+              { $match: { 'tokenDocument.owner': { $in: userIds } } },
+              { $group: { _id: '$tokenDocument.owner', count: { $sum: 1 } } },
+            ],
+            followingCounts: [
+              { $match: { holder: { $in: userIds } } },
+              { $group: { _id: '$holder', count: { $sum: 1 } } },
+            ],
+          },
+        },
+      ]).exec()
+    : [];
+
+  const followerCountByUserId = new Map(
+    (followCounts[0]?.followerCounts ?? []).map((record) => [record._id.toString(), record.count]),
+  );
+  const followingCountByUserId = new Map(
+    (followCounts[0]?.followingCounts ?? []).map((record) => [record._id.toString(), record.count]),
+  );
 
   return {
-    users: pageRows.map((user) => ({
-      id: user._id.toString(),
-      username: user.username,
-      avatar: user.avatar,
-      bio: user.bio,
-      verification: getUserVerification(user),
-    })),
+    users: pageRows.map((user) => {
+      const userId = user._id.toString();
+
+      return {
+        id: userId,
+        username: user.username,
+        avatar: user.avatar,
+        bio: user.bio,
+        followerCount: followerCountByUserId.get(userId) ?? 0,
+        followingCount: followingCountByUserId.get(userId) ?? 0,
+        verification: getUserVerification(user),
+      };
+    }),
     nextCursor:
       hasMore && lastUser
         ? encodeDiscoverCursor({

@@ -148,12 +148,30 @@ const openApiComponents = {
     DiscoverUser: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'username', 'avatar', 'bio', 'verification'],
+      required: [
+        'id',
+        'username',
+        'avatar',
+        'bio',
+        'followerCount',
+        'followingCount',
+        'verification',
+      ],
       properties: {
         id: objectIdSchema,
         username: userProperties.username,
         avatar: nullableUrlSchema,
         bio: userProperties.bio,
+        followerCount: {
+          type: 'integer',
+          minimum: 0,
+          description: "Number of unique holders of this user's token.",
+        },
+        followingCount: {
+          type: 'integer',
+          minimum: 0,
+          description: 'Number of user tokens held by this user.',
+        },
         verification: userVerificationSchema,
       },
     },
