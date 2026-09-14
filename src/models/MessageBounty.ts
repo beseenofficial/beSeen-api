@@ -12,6 +12,7 @@ import {
 } from '../constant/messenger';
 
 interface IMessageBounty {
+  contractBountyId: string | null;
   message: Types.ObjectId;
   conversation: Types.ObjectId;
   sponsor: Types.ObjectId;
@@ -34,6 +35,12 @@ type MessageBountyDocument = HydratedDocument<IMessageBounty>;
 
 const messageBountySchema = new Schema<IMessageBounty>(
   {
+    contractBountyId: {
+      type: String,
+      default: null,
+      immutable: true,
+      match: [/^[1-9]\d*$/, 'Contract bounty ID must be a positive integer'],
+    },
     message: {
       type: Schema.Types.ObjectId,
       ref: 'Message',
@@ -160,6 +167,14 @@ messageBountySchema.pre('validate', function validateBountyParticipants() {
 messageBountySchema.index(
   { message: 1 },
   { unique: true, name: 'message_bounties_message_unique' },
+);
+messageBountySchema.index(
+  { contractBountyId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { contractBountyId: { $type: 'string' } },
+    name: 'message_bounties_contract_id_unique',
+  },
 );
 messageBountySchema.index(
   { beneficiary: 1, status: 1, expiresAt: 1 },

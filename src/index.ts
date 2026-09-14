@@ -13,6 +13,10 @@ import {
   stopDiscoverRankingScheduler,
 } from './utils/discover/discoverRankingScheduler';
 import runDatabaseMigrations from './migrations/runDatabaseMigrations';
+import {
+  startContractBountySync,
+  stopContractBountySync,
+} from './utils/contract/contractBountySyncScheduler';
 
 let server: Server | undefined;
 
@@ -20,6 +24,7 @@ const shutdown = (signal: NodeJS.Signals): void => {
   log.info({ signal }, 'Shutdown started');
   stopBroadcastDraftCleanup();
   stopDiscoverRankingScheduler();
+  stopContractBountySync();
 
   if (!server) {
     void disconnectDatabase().finally(() => process.exit(0));
@@ -41,6 +46,7 @@ const bootstrap = async (): Promise<void> => {
   await runDatabaseMigrations();
   startBroadcastDraftCleanup();
   startDiscoverRankingScheduler();
+  startContractBountySync();
 
   server = app.listen(env.PORT, () => {
     log.info({ port: env.PORT }, 'BeSeen API started');

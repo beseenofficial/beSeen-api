@@ -18,6 +18,7 @@ interface MessageSignatureMessageInput {
   recipientEncryptedMessageKey: string;
   replyToMessageId: string | null;
   bounty?: {
+    contractBountyId?: string;
     assetCode: string;
     amount: string;
     durationSeconds: number;
@@ -60,6 +61,7 @@ interface MessageHistoryItem {
     recipientEncryptedMessageKey: string;
     replyToMessageId: string | null;
     bountyTerms: {
+      contractBountyId: string | null;
       assetCode: string;
       amount: string;
       durationSeconds: number;

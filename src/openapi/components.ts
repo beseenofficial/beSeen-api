@@ -373,7 +373,7 @@ const openApiComponents = {
         bounty: {
           oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
           description:
-            'Optional demo bounty terms. No payment, balance, escrow, or blockchain transfer occurs.',
+            'Optional signed bounty terms. contractBountyId links a client-created contract lock to this message.',
         },
         signature: {
           type: 'string',
@@ -566,6 +566,13 @@ const openApiComponents = {
       additionalProperties: false,
       required: ['assetCode', 'amount', 'durationSeconds'],
       properties: {
+        contractBountyId: {
+          type: 'string',
+          pattern: '^[1-9]\\d*$',
+          description:
+            'Global u64 ID returned by the client-side BeSeen lock_bounty contract call.',
+          example: '1',
+        },
         assetCode: {
           type: 'string',
           const: 'USDC',
@@ -591,6 +598,7 @@ const openApiComponents = {
       additionalProperties: false,
       required: [
         'id',
+        'contractBountyId',
         'assetCode',
         'amount',
         'durationSeconds',
@@ -602,6 +610,10 @@ const openApiComponents = {
       ],
       properties: {
         id: objectIdSchema,
+        contractBountyId: {
+          oneOf: [{ type: 'string', pattern: '^[1-9]\\d*$' }, { type: 'null' }],
+          description: 'Contract-generated bounty ID; null only for legacy off-chain bounties.',
+        },
         assetCode: { type: 'string', const: 'USDC' },
         amount: {
           type: 'string',

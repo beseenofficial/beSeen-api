@@ -63,6 +63,7 @@ const hasSameClientEnvelope = (
     message.senderEncryptedMessageKey === body.senderEncryptedMessageKey &&
     message.recipientEncryptedMessageKey === body.recipientEncryptedMessageKey &&
     replyToMessageId === body.replyToMessageId &&
+    message.contractBountyId === (bounty?.contractBountyId ?? null) &&
     message.bountyAssetCode === (bounty?.assetCode ?? null) &&
     message.bountyAmount === (bounty?.amount ?? null) &&
     message.bountyDurationSeconds === (bounty?.durationSeconds ?? null) &&
@@ -304,6 +305,7 @@ const sendMessageInTransaction = async (
         senderEncryptedMessageKey: body.senderEncryptedMessageKey,
         recipientEncryptedMessageKey: body.recipientEncryptedMessageKey,
         replyToMessage: body.replyToMessageId,
+        contractBountyId: body.bounty?.contractBountyId ?? null,
         bountyAssetCode: body.bounty?.assetCode ?? null,
         bountyAmount: body.bounty?.amount ?? null,
         bountyDurationSeconds: body.bounty?.durationSeconds ?? null,
@@ -330,6 +332,7 @@ const sendMessageInTransaction = async (
     const createdBounties = await MessageBounty.create(
       [
         {
+          contractBountyId: body.bounty.contractBountyId ?? null,
           message: createdMessage._id,
           conversation: conversation._id,
           sponsor: sender._id,

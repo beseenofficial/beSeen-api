@@ -22,6 +22,10 @@ const objectIdSchema = z
 
 const bountyTermsSchema = z
   .object({
+    contractBountyId: z
+      .string()
+      .regex(/^[1-9]\d*$/)
+      .optional(),
     assetCode: z.literal('USDC'),
     amount: z
       .string()

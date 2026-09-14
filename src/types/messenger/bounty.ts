@@ -4,6 +4,7 @@ import type { MessengerBountyStatus } from '../../constant/messenger';
 
 interface SerializedMessageBounty {
   id: string;
+  contractBountyId: string | null;
   assetCode: string;
   amount: string;
   durationSeconds: number;

@@ -35,6 +35,7 @@ interface IMessage {
   senderEncryptedMessageKey: string;
   recipientEncryptedMessageKey: string;
   replyToMessage: Types.ObjectId | null;
+  contractBountyId: string | null;
   bountyAssetCode: string | null;
   bountyAmount: string | null;
   bountyDurationSeconds: number | null;
@@ -194,6 +195,12 @@ const messageSchema = new Schema<IMessage>(
       ref: 'Message',
       default: null,
       immutable: true,
+    },
+    contractBountyId: {
+      type: String,
+      default: null,
+      immutable: true,
+      match: [/^[1-9]\d*$/, 'Contract bounty ID must be a positive integer'],
     },
     bountyAssetCode: {
       type: String,

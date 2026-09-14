@@ -8,6 +8,7 @@ const sponsor = new Types.ObjectId('000000000000000000000001');
 const beneficiary = new Types.ObjectId('000000000000000000000002');
 
 const bountyInput = () => ({
+  contractBountyId: '1',
   message: new Types.ObjectId('000000000000000000000003'),
   conversation: new Types.ObjectId('000000000000000000000004'),
   sponsor,
@@ -24,6 +25,7 @@ describe('MessageBounty model', () => {
 
     await expect(bounty.validate()).resolves.toBeUndefined();
     expect(bounty.status).toBe('offered');
+    expect(bounty.contractBountyId).toBe('1');
     expect(bounty.amountUnits).toBeNull();
     expect(bounty.fundingStatus).toBe('legacy');
     expect(bounty.replyMessage).toBeNull();
@@ -48,6 +50,10 @@ describe('MessageBounty model', () => {
         [
           { message: 1 },
           expect.objectContaining({ unique: true, name: 'message_bounties_message_unique' }),
+        ],
+        [
+          { contractBountyId: 1 },
+          expect.objectContaining({ unique: true, name: 'message_bounties_contract_id_unique' }),
         ],
         [
           { status: 1, expiresAt: 1 },

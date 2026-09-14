@@ -3,6 +3,7 @@ import type { SerializedMessageBounty } from '../../types/messenger/bounty';
 
 const serializeMessageBounty = (bounty: MessageBountyDocument): SerializedMessageBounty => ({
   id: bounty._id.toString(),
+  contractBountyId: bounty.contractBountyId,
   assetCode: bounty.assetCode,
   amount: bounty.amount,
   durationSeconds: bounty.durationSeconds,
