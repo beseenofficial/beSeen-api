@@ -109,6 +109,8 @@ const syncBountyEvents = async (): Promise<{ processed: number; cursor: string }
 
     const registered = await MessageBounty.exists({
       contractBountyId: eventBountyId.toString(),
+      fundingStatus: 'contract_locked',
+      settlementStatus: { $ne: 'failed' },
     });
 
     if (!registered) {

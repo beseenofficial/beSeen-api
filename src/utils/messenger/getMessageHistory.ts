@@ -79,6 +79,8 @@ const serializeMessageHistoryItem = (
           amount: bounty.amount,
           durationSeconds: bounty.durationSeconds,
           status: bounty.status,
+          settlementStatus: bounty.settlementStatus,
+          settlementTransactionHash: bounty.settlementTransactionHash,
           expiresAt: bounty.expiresAt,
           replyMessageId: bounty.replyMessage?.toString() ?? null,
           claimableAt: bounty.claimableAt,

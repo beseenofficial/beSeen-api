@@ -1,6 +1,7 @@
 import type { ClientSession, Types } from 'mongoose';
 
 import type { MessengerBountyStatus } from '../../constant/messenger';
+import type { ContractBountySettlementStatus } from '../../constant/contract';
 
 interface SerializedMessageBounty {
   id: string;
@@ -9,6 +10,8 @@ interface SerializedMessageBounty {
   amount: string;
   durationSeconds: number;
   status: MessengerBountyStatus;
+  settlementStatus: ContractBountySettlementStatus;
+  settlementTransactionHash: string | null;
   expiresAt: Date;
   replyMessageId: string | null;
   claimableAt: Date | null;

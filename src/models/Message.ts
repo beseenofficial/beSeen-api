@@ -16,6 +16,7 @@ import {
   MESSENGER_SIGNATURE_VERSION,
   MESSENGER_WRAPPED_KEY_BYTES,
 } from '../constant/messenger';
+import isPositiveU64String from '../utils/contract/isPositiveU64String';
 
 interface IMessage {
   conversation: Types.ObjectId;
@@ -200,7 +201,10 @@ const messageSchema = new Schema<IMessage>(
       type: String,
       default: null,
       immutable: true,
-      match: [/^[1-9]\d*$/, 'Contract bounty ID must be a positive integer'],
+      validate: {
+        validator: (value: string | null) => value === null || isPositiveU64String(value),
+        message: 'Contract bounty ID must be a positive u64 integer',
+      },
     },
     bountyAssetCode: {
       type: String,

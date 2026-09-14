@@ -232,6 +232,7 @@ const sendMessageInTransaction = async (
   }
 
   let bountyAmountUnits: number | null = null;
+  const contractFundedBounty = Boolean(body.bounty?.contractBountyId);
 
   if (body.bounty) {
     try {
@@ -243,19 +244,21 @@ const sendMessageInTransaction = async (
       throw error;
     }
 
-    const fundedSender = await User.findOneAndUpdate(
-      {
-        _id: sender._id,
-        status: 'active',
-        deletedAt: null,
-        demoUsdcBalanceUnits: { $gte: bountyAmountUnits },
-      },
-      { $inc: { demoUsdcBalanceUnits: -bountyAmountUnits } },
-      { returnDocument: 'after', runValidators: true, session },
-    ).exec();
+    if (!contractFundedBounty) {
+      const fundedSender = await User.findOneAndUpdate(
+        {
+          _id: sender._id,
+          status: 'active',
+          deletedAt: null,
+          demoUsdcBalanceUnits: { $gte: bountyAmountUnits },
+        },
+        { $inc: { demoUsdcBalanceUnits: -bountyAmountUnits } },
+        { returnDocument: 'after', runValidators: true, session },
+      ).exec();
 
-    if (!fundedSender) {
-      return { ok: false, reason: 'insufficient_demo_usdc_balance' };
+      if (!fundedSender) {
+        return { ok: false, reason: 'insufficient_demo_usdc_balance' };
+      }
     }
   }
 
@@ -340,7 +343,8 @@ const sendMessageInTransaction = async (
           assetCode: body.bounty.assetCode,
           amount: body.bounty.amount,
           amountUnits: bountyAmountUnits,
-          fundingStatus: 'reserved',
+          fundingStatus: contractFundedBounty ? 'contract_locked' : 'reserved',
+          settlementStatus: contractFundedBounty ? 'pending' : 'not_applicable',
           durationSeconds: body.bounty.durationSeconds,
           status: 'offered',
           expiresAt,

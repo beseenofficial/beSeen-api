@@ -145,7 +145,7 @@ offered ── valid direct reply ──► claimable ── beneficiary claim �
    └── response window elapsed ──► expired
 ```
 
-The first valid reply to the referenced message unlocks the bounty. Claim retries are idempotent. The legacy message lifecycle is still stored separately from the on-chain mirror while the reply-settlement path is being connected.
+The first valid reply to the referenced message queues its contract bounty for settlement. A leased retry worker verifies the on-chain sender, recipient, amount, status, and deadline, then signs `settle_replies` with the configured verifier. The bounty becomes `claimed` only after the transaction succeeds (or the worker confirms that it was already settled), so retries are idempotent and a failed submission cannot move database state ahead of the contract. The legacy demo-balance claim path cannot finalize contract-funded bounties.
 
 The API mirrors BeSeen contract bounties in a dedicated collection without replacing MongoDB `_id` values. Successful `lock_bnty` events are the primary ingestion path and `contractBountyId` stores the contract-generated global ID. Only IDs registered by the official message API are mirrored; unrelated direct interactions with the public contract are ignored. A persisted event cursor makes event replay idempotent. Every minute, reconciliation calls `get_bounty` for the next global contract ID and separately recovers registered-but-unmirrored IDs whose event arrived before their API registration or was missed.
 
@@ -246,7 +246,7 @@ The repository implements the complete server-side flow described above, includi
 Two boundaries are intentionally explicit in the current prototype:
 
 1. Registration verifies the Stellar address through BLUX and validates the format of submitted derived public keys, but it does not yet require an additional wallet ownership challenge that cryptographically binds those keys during registration.
-2. Token acquisition is still modeled off-chain. Contract bounty locks are mirrored into MongoDB, while linking them to encrypted messages and submitting reply settlements are separate integration stages.
+2. Token acquisition is still modeled off-chain. Contract bounty locking remains client-owned; the API mirrors registered locks and submits verifier-authorized reply settlements without ever calling `lock_bounty`.
 
 The protocol is versioned so these components can be replaced with stronger production mechanisms without changing the encrypted content model. A production registration ceremony can bind the wallet, derived public keys, network, domain, and one-time server challenge in a single signed transcript. Likewise, the current token and bounty state machines can be connected to verified Stellar transactions or escrow contracts.
 
@@ -258,7 +258,7 @@ The fastest way to run the API and its required single-node MongoDB replica set 
 Copy-Item .env.example .env
 ```
 
-Set the BLUX, Cloudflare R2, access-token, and BeSeen contract credentials in `.env`. Contract synchronization requires `STELLAR_RPC_URL`, `BESEEN_CONTRACT_ID`, `BESEEN_RPC_SOURCE_ACCOUNT`, and the contract deployment ledger in `BESEEN_CONTRACT_START_LEDGER`. The source account is used only to simulate the read-only `get_bounty` call.
+Set the BLUX, Cloudflare R2, access-token, and BeSeen contract credentials in `.env`. Contract synchronization requires `STELLAR_RPC_URL`, `BESEEN_CONTRACT_ID`, `BESEEN_RPC_SOURCE_ACCOUNT`, and the contract deployment ledger in `BESEEN_CONTRACT_START_LEDGER`. Reply settlement additionally requires `BESEEN_VERIFIER_SECRET`; its public key must equal `BESEEN_RPC_SOURCE_ACCOUNT`. Keep this secret server-side and never send it to a client.
 
 Then run:
 

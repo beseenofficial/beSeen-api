@@ -38,6 +38,27 @@ const expireMessageBounty = async (
     return fundedBounty;
   }
 
+  const expiredContractBounty = await MessageBounty.findOneAndUpdate(
+    {
+      _id: bountyId,
+      status: 'offered',
+      fundingStatus: 'contract_locked',
+      expiresAt: { $lte: now },
+    },
+    {
+      $set: {
+        status: 'expired',
+        settlementStatus: 'failed',
+        settlementLastError: 'Reply window expired before a valid reply',
+      },
+    },
+    { returnDocument: 'after', runValidators: true, session },
+  ).exec();
+
+  if (expiredContractBounty) {
+    return expiredContractBounty;
+  }
+
   return MessageBounty.findOneAndUpdate(
     {
       _id: bountyId,

@@ -58,7 +58,11 @@ const reconcileNextContractBounty = async (): Promise<ReconciliationResult> => {
   }
 
   const registered = Boolean(
-    await MessageBounty.exists({ contractBountyId: bounty.contractBountyId }),
+    await MessageBounty.exists({
+      contractBountyId: bounty.contractBountyId,
+      fundingStatus: 'contract_locked',
+      settlementStatus: { $ne: 'failed' },
+    }),
   );
 
   if (registered) {

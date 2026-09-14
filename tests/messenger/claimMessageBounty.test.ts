@@ -111,6 +111,22 @@ describe('claimMessageBounty', () => {
     ).resolves.toEqual({ ok: false, reason: 'bounty_not_claimable' });
   });
 
+  it('does not let the legacy claim route finalize a contract bounty', async () => {
+    const contractBounty = bounty('claimable');
+    contractBounty.contractBountyId = '42';
+    contractBounty.fundingStatus = 'contract_locked';
+    contractBounty.settlementStatus = 'pending';
+    vi.spyOn(MessageBounty, 'findOne').mockReturnValue(sessionQuery(contractBounty) as never);
+    const updateSpy = vi.spyOn(MessageBounty, 'findOneAndUpdate');
+    const creditSpy = vi.spyOn(User, 'updateOne');
+
+    await expect(
+      claimMessageBounty(beneficiaryId.toString(), bountyId.toString()),
+    ).resolves.toEqual({ ok: false, reason: 'bounty_not_claimable' });
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(creditSpy).not.toHaveBeenCalled();
+  });
+
   it('persists expiry and rejects an offered bounty after its deadline', async () => {
     const expiredOffer = bounty('offered');
     expiredOffer.expiresAt = new Date('2026-08-07T11:00:00.000Z');

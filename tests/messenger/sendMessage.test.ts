@@ -260,6 +260,72 @@ describe('sendMessage', () => {
     );
   });
 
+  it('registers a client-locked contract bounty without debiting the demo balance', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(createdAt);
+    const requestBody = {
+      ...body(),
+      bounty: {
+        contractBountyId: '42',
+        assetCode: 'USDC' as const,
+        amount: '10',
+        durationSeconds: 3_600,
+      },
+    };
+    setupNewMessageReads();
+    verifySignatureMock.mockReturnValue(true);
+    const balanceSpy = vi.spyOn(User, 'findOneAndUpdate');
+    vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
+      execQuery({ nextSequence: 1 }) as never,
+    );
+    vi.spyOn(Message, 'create').mockImplementation(
+      async (documents) =>
+        [
+          new Message({
+            ...(documents[0] as Record<string, unknown>),
+            _id: new Types.ObjectId('000000000000000000000004'),
+            createdAt,
+            updatedAt: createdAt,
+          }),
+        ] as never,
+    );
+    vi.spyOn(MessageBounty, 'create').mockImplementation(
+      async (documents) =>
+        [
+          new MessageBounty({
+            ...(documents[0] as Record<string, unknown>),
+            _id: new Types.ObjectId('000000000000000000000005'),
+            createdAt,
+            updatedAt: createdAt,
+          }),
+        ] as never,
+    );
+
+    await expect(
+      sendMessage(senderId.toString(), conversationId.toString(), requestBody),
+    ).resolves.toMatchObject({
+      ok: true,
+      message: {
+        bounty: {
+          contractBountyId: '42',
+          settlementStatus: 'pending',
+        },
+      },
+    });
+    expect(balanceSpy).not.toHaveBeenCalled();
+    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Contract ID: 42');
+    expect(MessageBounty.create).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          contractBountyId: '42',
+          fundingStatus: 'contract_locked',
+          settlementStatus: 'pending',
+        }),
+      ],
+      { session },
+    );
+  });
+
   it('rejects a bounty before allocating a message sequence when the balance is insufficient', async () => {
     const requestBody = {
       ...body(),

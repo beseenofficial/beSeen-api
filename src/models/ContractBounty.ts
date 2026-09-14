@@ -20,6 +20,8 @@ interface IContractBounty {
   eventId: string | null;
   eventLedger: number | null;
   lockTransactionHash: string | null;
+  settlementTransactionHash: string | null;
+  settledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +90,19 @@ const contractBountySchema = new Schema<IContractBounty>(
       default: null,
       lowercase: true,
       match: [TRANSACTION_HASH_PATTERN, 'Lock transaction hash must be a 64-character hex value'],
+    },
+    settlementTransactionHash: {
+      type: String,
+      default: null,
+      lowercase: true,
+      match: [
+        TRANSACTION_HASH_PATTERN,
+        'Settlement transaction hash must be a 64-character hex value',
+      ],
+    },
+    settledAt: {
+      type: Date,
+      default: null,
     },
   },
   {

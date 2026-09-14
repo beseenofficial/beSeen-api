@@ -603,6 +603,8 @@ const openApiComponents = {
         'amount',
         'durationSeconds',
         'status',
+        'settlementStatus',
+        'settlementTransactionHash',
         'expiresAt',
         'replyMessageId',
         'claimableAt',
@@ -623,6 +625,14 @@ const openApiComponents = {
         status: {
           type: 'string',
           enum: ['offered', 'claimable', 'claimed', 'expired'],
+        },
+        settlementStatus: {
+          type: 'string',
+          enum: ['not_applicable', 'pending', 'processing', 'confirmed', 'failed'],
+          description: 'On-chain settle_replies state; legacy bounties use not_applicable.',
+        },
+        settlementTransactionHash: {
+          oneOf: [{ type: 'string', pattern: '^[a-f\\d]{64}$' }, { type: 'null' }],
         },
         expiresAt: { type: 'string', format: 'date-time' },
         replyMessageId: {

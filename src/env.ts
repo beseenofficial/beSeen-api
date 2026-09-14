@@ -33,6 +33,10 @@ const envSchema = z
       .regex(/^G[A-Z2-7]{55}$/)
       .optional(),
     BESEEN_CONTRACT_START_LEDGER: z.coerce.number().int().nonnegative().optional(),
+    BESEEN_VERIFIER_SECRET: z
+      .string()
+      .regex(/^S[A-Z2-7]{55}$/)
+      .optional(),
     AUTH_DOMAIN: z.string().min(1).default('beseen.fi'),
     BLUX_BASE_URL: z.url().default('https://api.blux.cc'),
     BLUX_APP_ID: z.string().min(1).default(DEVELOPMENT_BLUX_APP_ID),

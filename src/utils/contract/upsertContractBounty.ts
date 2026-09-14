@@ -1,4 +1,6 @@
 import ContractBounty from '../../models/ContractBounty';
+import MessageBounty from '../../models/MessageBounty';
+import User from '../../models/User';
 import type { ContractBountyDocument } from '../../models/ContractBounty';
 import type { ObservedContractBounty } from '../../types/contract/bounty';
 
@@ -18,7 +20,48 @@ const assertSameImmutableData = (
 
 const upsertContractBounty = async (
   observed: ObservedContractBounty,
-): Promise<ContractBountyDocument> => {
+): Promise<ContractBountyDocument | null> => {
+  const registration = await MessageBounty.findOne({
+    contractBountyId: observed.contractBountyId,
+    fundingStatus: 'contract_locked',
+    settlementStatus: { $ne: 'failed' },
+  })
+    .select({ sponsor: 1, beneficiary: 1, amountUnits: 1 })
+    .lean()
+    .exec();
+
+  if (!registration || registration.amountUnits === null) {
+    return null;
+  }
+
+  const [sponsor, beneficiary] = await Promise.all([
+    User.findById(registration.sponsor).select({ walletAddress: 1 }).lean().exec(),
+    User.findById(registration.beneficiary).select({ walletAddress: 1 }).lean().exec(),
+  ]);
+
+  if (
+    !sponsor ||
+    !beneficiary ||
+    sponsor.walletAddress !== observed.sender ||
+    beneficiary.walletAddress !== observed.recipient ||
+    registration.amountUnits.toString() !== observed.amount
+  ) {
+    await MessageBounty.updateOne(
+      { _id: registration._id, fundingStatus: 'contract_locked' },
+      {
+        $set: {
+          status: 'expired',
+          settlementStatus: 'failed',
+          settlementLeaseUntil: null,
+          settlementLastError:
+            'On-chain bounty does not match its registered participants or amount',
+        },
+      },
+      { runValidators: true },
+    ).exec();
+    return null;
+  }
+
   const setMetadata: Record<string, unknown> = {};
 
   if (observed.eventId !== undefined) {

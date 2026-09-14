@@ -21,7 +21,15 @@ const MESSENGER_KEY_WRAP_SUITE = 'X25519-XSALSA20-POLY1305-SEALEDBOX';
 const MESSENGER_MIN_CIPHERTEXT_BYTES = MESSENGER_AEAD_OVERHEAD_BYTES + 1;
 const MESSENGER_BOUNTY_AMOUNT_PATTERN = /^(?:0|[1-9]\d{0,11})(?:\.\d{1,7})?$/;
 const MESSENGER_BOUNTY_STATUSES = ['offered', 'claimable', 'claimed', 'expired'] as const;
-const MESSENGER_BOUNTY_FUNDING_STATUSES = ['legacy', 'reserved', 'paid', 'refunded'] as const;
+const MESSENGER_BOUNTY_FUNDING_STATUSES = [
+  'legacy',
+  'reserved',
+  'paid',
+  'refunded',
+  'contract_locked',
+  'contract_settled',
+  'contract_refunded',
+] as const;
 
 const MESSENGER_WRAPPED_KEY_BYTES =
   MESSENGER_CONTENT_KEY_BYTES + MESSENGER_SEALED_BOX_OVERHEAD_BYTES;

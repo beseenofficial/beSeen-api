@@ -17,7 +17,13 @@ interface RegisteredReconciliationResult {
 
 const reconcileRegisteredContractBounties = async (): Promise<RegisteredReconciliationResult> => {
   const registrations = await MessageBounty.aggregate<UnmirroredBounty>([
-    { $match: { contractBountyId: { $type: 'string' } } },
+    {
+      $match: {
+        contractBountyId: { $type: 'string' },
+        fundingStatus: 'contract_locked',
+        settlementStatus: { $ne: 'failed' },
+      },
+    },
     {
       $lookup: {
         from: ContractBounty.collection.name,

@@ -7,6 +7,10 @@ interface ContractSyncConfig {
   startLedger: number;
 }
 
+interface ContractSettlementConfig extends ContractSyncConfig {
+  verifierSecret: string;
+}
+
 const getContractSyncConfig = (): ContractSyncConfig | null => {
   if (
     !env.STELLAR_RPC_URL ||
@@ -25,5 +29,16 @@ const getContractSyncConfig = (): ContractSyncConfig | null => {
   };
 };
 
+const getContractSettlementConfig = (): ContractSettlementConfig | null => {
+  const syncConfig = getContractSyncConfig();
+
+  if (!syncConfig || !env.BESEEN_VERIFIER_SECRET) {
+    return null;
+  }
+
+  return { ...syncConfig, verifierSecret: env.BESEEN_VERIFIER_SECRET };
+};
+
+export { getContractSettlementConfig };
 export default getContractSyncConfig;
-export type { ContractSyncConfig };
+export type { ContractSettlementConfig, ContractSyncConfig };

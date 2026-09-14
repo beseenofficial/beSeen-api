@@ -56,6 +56,10 @@ const claimMessageBountyInTransaction = async (
     return { ok: true, bounty: serializeMessageBounty(bounty), claimedNow: false };
   }
 
+  if (bounty.contractBountyId !== null) {
+    return { ok: false, reason: 'bounty_not_claimable' };
+  }
+
   const fundedClaim = bounty.fundingStatus === 'reserved';
 
   if (fundedClaim && bounty.amountUnits === null) {

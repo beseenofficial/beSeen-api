@@ -73,6 +73,12 @@ describe('MessageBounty model', () => {
     await expect(
       new MessageBounty({ ...bountyInput(), beneficiary: sponsor }).validate(),
     ).rejects.toThrow('A bounty requires different sponsor and beneficiary users');
+    await expect(
+      new MessageBounty({
+        ...bountyInput(),
+        contractBountyId: ((1n << 64n) + 1n).toString(),
+      }).validate(),
+    ).rejects.toThrow('Contract bounty ID must be a positive u64 integer');
     expect(() => new MessageBounty({ ...bountyInput(), paymentSecret: 'not-allowed' })).toThrow();
   });
 });

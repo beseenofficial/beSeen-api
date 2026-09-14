@@ -2,16 +2,20 @@ import log from '../../logger';
 import {
   CONTRACT_BOUNTY_EVENT_POLL_INTERVAL_MS,
   CONTRACT_BOUNTY_RECONCILE_INTERVAL_MS,
+  CONTRACT_BOUNTY_SETTLEMENT_INTERVAL_MS,
 } from '../../constant/contract';
-import getContractSyncConfig from './contractConfig';
+import getContractSyncConfig, { getContractSettlementConfig } from './contractConfig';
+import processNextReplySettlement from './processNextReplySettlement';
 import reconcileNextContractBounty from './reconcileNextContractBounty';
 import reconcileRegisteredContractBounties from './reconcileRegisteredContractBounties';
 import syncBountyEvents from './syncBountyEvents';
 
 let eventTimer: NodeJS.Timeout | undefined;
 let reconciliationTimer: NodeJS.Timeout | undefined;
+let settlementTimer: NodeJS.Timeout | undefined;
 let eventSyncRunning = false;
 let reconciliationRunning = false;
+let settlementRunning = false;
 
 const runBountyEventSync = async (): Promise<void> => {
   if (eventSyncRunning) {
@@ -54,6 +58,26 @@ const runBountyReconciliation = async (): Promise<void> => {
   }
 };
 
+const runReplySettlement = async (): Promise<void> => {
+  if (settlementRunning) {
+    return;
+  }
+
+  settlementRunning = true;
+
+  try {
+    const processed = await processNextReplySettlement();
+
+    if (processed) {
+      log.info('Contract reply bounty settlement processed');
+    }
+  } catch (error: unknown) {
+    log.error({ error }, 'Contract reply bounty settlement failed');
+  } finally {
+    settlementRunning = false;
+  }
+};
+
 const startContractBountySync = (): void => {
   if (eventTimer || reconciliationTimer) {
     return;
@@ -74,6 +98,17 @@ const startContractBountySync = (): void => {
   );
   eventTimer.unref();
   reconciliationTimer.unref();
+
+  if (getContractSettlementConfig()) {
+    void runReplySettlement();
+    settlementTimer = setInterval(
+      () => void runReplySettlement(),
+      CONTRACT_BOUNTY_SETTLEMENT_INTERVAL_MS,
+    );
+    settlementTimer.unref();
+  } else {
+    log.warn('BeSeen contract settlement is disabled because the verifier is not configured');
+  }
 };
 
 const stopContractBountySync = (): void => {
@@ -85,11 +120,16 @@ const stopContractBountySync = (): void => {
     clearInterval(reconciliationTimer);
     reconciliationTimer = undefined;
   }
+  if (settlementTimer) {
+    clearInterval(settlementTimer);
+    settlementTimer = undefined;
+  }
 };
 
 export {
   runBountyEventSync,
   runBountyReconciliation,
+  runReplySettlement,
   startContractBountySync,
   stopContractBountySync,
 };
