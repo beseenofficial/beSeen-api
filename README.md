@@ -138,6 +138,8 @@ Unregistered direct contract purchases are ignored by the social index. The remo
 
 All contract function reads use the shared typed `readContract` executor. Verifier-signed writes use the separate typed `submitContractTransaction` executor; domain wrappers only provide the contract function name and typed parameters.
 
+Discover cards, public profiles, and the current-user profile include `auraPrice`, read from the contract's `aura_price` function and serialized as an exact base-unit integer string. If that read is temporarily unavailable, the profile remains available with `auraPrice: null`.
+
 ## Message bounties
 
 An encrypted direct message can include signed bounty terms: asset code, canonical decimal amount, and response window. These terms are part of the immutable message manifest, so they cannot be detached from or changed independently of the message that created them.
