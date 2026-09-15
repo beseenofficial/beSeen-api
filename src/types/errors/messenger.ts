@@ -48,6 +48,16 @@ const messengerSendErrors: Record<
     code: 'INVALID_MESSAGE_SIGNATURE',
     message: 'The encrypted message signature is invalid',
   },
+  contract_access_denied: {
+    statusCode: 403,
+    code: 'CONTRACT_MESSAGE_ACCESS_DENIED',
+    message: 'The contract no longer permits messaging between these users',
+  },
+  contract_access_unavailable: {
+    statusCode: 503,
+    code: 'CONTRACT_MESSAGE_ACCESS_UNAVAILABLE',
+    message: 'Contract message access could not be verified',
+  },
   insufficient_demo_usdc_balance: {
     statusCode: 409,
     code: 'INSUFFICIENT_DEMO_USDC_BALANCE',

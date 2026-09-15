@@ -132,8 +132,11 @@ The client buys an Aura by calling `buy_aura(buyer, subject)` and signing the tr
 - A matching `buy_aura` event confirms it; `get_aura` reconciliation recovers missed or event-before-API cases.
 - Only matching authenticated buyer, subject, token ID, and on-chain ownership create the unique Aura follow and conversation.
 - Multiple Auras for the same subject still create one follow relationship.
+- Sending requires both the confirmed local Aura relationship and a fresh on-chain `can_message` read. A `false` result or an unavailable contract read fails closed before any message or bounty is stored.
 
 Unregistered direct contract purchases are ignored by the social index. The removed `UserToken` and `TokenHolding` demo collections are not used as an authorization source.
+
+All contract function reads use the shared typed `readContract` executor. Verifier-signed writes use the separate typed `submitContractTransaction` executor; domain wrappers only provide the contract function name and typed parameters.
 
 ## Message bounties
 

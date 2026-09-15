@@ -98,6 +98,8 @@ type SendMessageFailureReason =
   | 'active_keys_not_found'
   | 'reply_not_found'
   | 'invalid_signature'
+  | 'contract_access_denied'
+  | 'contract_access_unavailable'
   | 'insufficient_demo_usdc_balance'
   | 'message_conflict';
 

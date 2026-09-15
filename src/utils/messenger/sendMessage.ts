@@ -9,6 +9,7 @@ import resolveReplyBounty from './resolveReplyBounty';
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageDocument } from '../../models/Message';
 import serializeMessageBounty from './serializeMessageBounty';
+import canMessageOnContract from '../contract/canMessageOnContract';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
@@ -177,6 +178,21 @@ const sendMessageInTransaction = async (
 
   if (!recipient) {
     return { ok: false, reason: 'participant_unavailable' };
+  }
+
+  let contractAllowsMessage: boolean;
+
+  try {
+    contractAllowsMessage = await canMessageOnContract(
+      sender.walletAddress,
+      recipient.walletAddress,
+    );
+  } catch {
+    return { ok: false, reason: 'contract_access_unavailable' };
+  }
+
+  if (!contractAllowsMessage) {
+    return { ok: false, reason: 'contract_access_denied' };
   }
 
   const senderKey = await UserKey.findOne({
