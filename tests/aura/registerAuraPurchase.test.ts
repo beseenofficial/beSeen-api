@@ -1,30 +1,36 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { withDatabaseTransaction } from '../../src/db';
-import AuraToken from '../../src/models/AuraToken';
 import User from '../../src/models/User';
-import registerAuraPurchase from '../../src/utils/aura/registerAuraPurchase';
+import AuraToken from '../../src/models/AuraToken';
+import { withDatabaseTransaction } from '../../src/db';
 import getContractAura from '../../src/utils/contract/getContractAura';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import registerAuraPurchase from '../../src/utils/aura/registerAuraPurchase';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/contract/getContractAura', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const getContractAuraMock = vi.mocked(getContractAura);
+
 const buyerAddress = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const subjectAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const buyer = new User({
   _id: new Types.ObjectId(),
   walletAddress: buyerAddress,
   username: 'buyer',
 });
+
 const subject = new User({
   _id: new Types.ObjectId(),
   walletAddress: subjectAddress,
   username: 'subject_user',
 });
+
 const session = {} as never;
+
 const body = {
   tokenId: '42',
   buyerAddress,

@@ -1,10 +1,9 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
 import AuraFollow from '../../src/models/AuraFollow';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import UserActivityDay from '../../src/models/UserActivityDay';
 import collectDiscoverMetrics from '../../src/utils/discover/collectDiscoverMetrics';
 
@@ -119,6 +118,7 @@ describe('collectDiscoverMetrics', () => {
     const holdingAggregateSpy = vi.spyOn(AuraFollow, 'aggregate');
 
     const messageAggregateSpy = vi.spyOn(Message, 'aggregate');
+
     const activityAggregateSpy = vi.spyOn(UserActivityDay, 'aggregate');
 
     const result = await collectDiscoverMetrics([], [], new Date());

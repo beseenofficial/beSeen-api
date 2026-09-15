@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
-import ContractBounty from '../../src/models/ContractBounty';
 import MessageBounty from '../../src/models/MessageBounty';
+import ContractBounty from '../../src/models/ContractBounty';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import getContractBounty from '../../src/utils/contract/getContractBounty';
 import settleContractBounties from '../../src/utils/contract/settleContractBounties';
 import processNextReplySettlement from '../../src/utils/contract/processNextReplySettlement';
@@ -12,14 +11,19 @@ vi.mock('../../src/utils/contract/getContractBounty', () => ({ default: vi.fn() 
 vi.mock('../../src/utils/contract/settleContractBounties', () => ({ default: vi.fn() }));
 
 const getContractBountyMock = vi.mocked(getContractBounty);
+
 const settleContractBountiesMock = vi.mocked(settleContractBounties);
 
 const bountyId = new Types.ObjectId('000000000000000000000001');
+
 const sponsorId = new Types.ObjectId('000000000000000000000002');
+
 const beneficiaryId = new Types.ObjectId('000000000000000000000003');
+
 const now = new Date('2026-08-07T12:00:00.000Z');
 
 const execQuery = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
+
 const selectQuery = (value: unknown) => ({
   select: vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(value) }),
 });
@@ -63,6 +67,7 @@ describe('processNextReplySettlement', () => {
     const contractUpdate = vi
       .spyOn(ContractBounty, 'updateOne')
       .mockReturnValue(execQuery({ matchedCount: 1 }) as never);
+
     const bountyUpdate = vi
       .spyOn(MessageBounty, 'updateOne')
       .mockReturnValue(execQuery({ matchedCount: 1 }) as never);

@@ -1,14 +1,16 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
-import ContractBounty from '../../src/models/ContractBounty';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import ContractBounty from '../../src/models/ContractBounty';
 import upsertContractBounty from '../../src/utils/contract/upsertContractBounty';
 
 const sponsorId = new Types.ObjectId('000000000000000000000001');
+
 const beneficiaryId = new Types.ObjectId('000000000000000000000002');
+
 const sender = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const recipient = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 const observed = {
@@ -51,6 +53,7 @@ describe('upsertContractBounty registration verification', () => {
       .mockReturnValueOnce(userQuery({ walletAddress: sender }) as never)
       .mockReturnValueOnce(userQuery({ walletAddress: recipient }) as never);
     const stored = { ...observed, save: vi.fn() };
+
     const upsertSpy = vi
       .spyOn(ContractBounty, 'findOneAndUpdate')
       .mockReturnValue(execQuery(stored) as never);
@@ -73,6 +76,7 @@ describe('upsertContractBounty registration verification', () => {
       .mockReturnValueOnce(userQuery({ walletAddress: recipient }) as never)
       .mockReturnValueOnce(userQuery({ walletAddress: sender }) as never);
     const contractUpsertSpy = vi.spyOn(ContractBounty, 'findOneAndUpdate');
+
     const registrationUpdateSpy = vi
       .spyOn(MessageBounty, 'updateOne')
       .mockReturnValue(execQuery({ matchedCount: 1 }) as never);

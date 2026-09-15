@@ -1,7 +1,7 @@
 import User from '../../models/User';
-import ContractBounty from '../../models/ContractBounty';
 import MessageBounty from '../../models/MessageBounty';
-import type { ContractBountyDocument } from '../../models/ContractBounty';
+import ContractBounty from '../../models/ContractBounty';
+import type { ContractBountyDocument } from '../../types/contract/bounty';
 import type { ObservedContractBounty } from '../../types/contract/bounty';
 
 const assertSameImmutableData = (

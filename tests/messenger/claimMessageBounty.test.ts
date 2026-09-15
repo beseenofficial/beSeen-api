@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import { withDatabaseTransaction } from '../../src/db';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import claimMessageBounty from '../../src/utils/messenger/claimMessageBounty';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
@@ -118,6 +117,7 @@ describe('claimMessageBounty', () => {
     contractBounty.settlementStatus = 'pending';
     vi.spyOn(MessageBounty, 'findOne').mockReturnValue(sessionQuery(contractBounty) as never);
     const updateSpy = vi.spyOn(MessageBounty, 'findOneAndUpdate');
+
     const creditSpy = vi.spyOn(User, 'updateOne');
 
     await expect(

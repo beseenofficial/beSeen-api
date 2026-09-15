@@ -39,9 +39,10 @@ vi.mock('../../src/utils/aura/confirmAuraPurchase', () => ({
   default: mocks.confirmAuraPurchase,
 }));
 
-import syncAuraEvents from '../../src/utils/contract/syncAuraEvents';
+import syncAuraPurchaseEvents from '../../src/utils/contract/event/syncAuraPurchaseEvents';
 
 const buyer = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const subject = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 describe('Aura purchase event synchronization', () => {
@@ -71,7 +72,7 @@ describe('Aura purchase event synchronization', () => {
   });
 
   it('confirms only a matching API-registered transaction', async () => {
-    await expect(syncAuraEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
+    await expect(syncAuraPurchaseEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
     expect(mocks.isRegistered).toHaveBeenCalledWith({
       contractTokenId: '42',
       purchaseTransactionHash: 'a'.repeat(64),
@@ -90,7 +91,7 @@ describe('Aura purchase event synchronization', () => {
 
   it('ignores an unrelated direct contract purchase', async () => {
     mocks.isRegistered.mockResolvedValue(null);
-    await expect(syncAuraEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
+    await expect(syncAuraPurchaseEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
     expect(mocks.confirmAuraPurchase).not.toHaveBeenCalled();
     expect(mocks.stateSave).toHaveBeenCalledOnce();
   });

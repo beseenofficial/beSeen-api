@@ -1,9 +1,9 @@
-import networkPassphraseFor from '../stellar/networkPassphraseFor';
 import env from '../../env';
-import type { ContractBountyData } from '../../types/contract/bounty';
+import stellarSdk from './stellarSdk';
 import getContractSyncConfig from './contractConfig';
 import decodeContractBounty from './contractBountyCodec';
-import stellarSdk from './stellarSdk';
+import networkPassphraseFor from '../stellar/networkPassphraseFor';
+import type { ContractBountyData } from '../../types/contract/bounty';
 
 const BOUNTY_NOT_FOUND_ERROR_CODE = 16;
 

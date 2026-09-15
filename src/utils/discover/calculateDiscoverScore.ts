@@ -1,5 +1,11 @@
 import type { CalculatedDiscoverScore, DiscoverRankingMetrics } from '../../types/discover';
 import {
+  calculateAgeDays,
+  calculateRecency,
+  clampUnit,
+  normalizeLogarithmically,
+} from './normalizeScore';
+import {
   DISCOVER_ACCOUNT_AGE_WEIGHT,
   DISCOVER_ACCOUNT_MATURITY_DAYS,
   DISCOVER_AVATAR_WEIGHT,
@@ -27,12 +33,6 @@ import {
   DISCOVER_RECIPROCAL_CHAT_COUNT_CAP,
   DISCOVER_RECIPROCAL_CHAT_COUNT_WEIGHT,
 } from '../../constant/discover';
-import {
-  calculateAgeDays,
-  calculateRecency,
-  clampUnit,
-  normalizeLogarithmically,
-} from './normalizeScore';
 
 const roundScore = (value: number): number => Math.round(value * 100) / 100;
 

@@ -1,7 +1,7 @@
 import type { ClientSession, Types } from 'mongoose';
 
 import type { MessengerBountyStatus } from '../../constant/messenger';
-import type { ContractBountySettlementStatus } from '../../constant/contract';
+import type { ContractBountySettlementStatus } from '../contract/bounty';
 
 interface SerializedMessageBounty {
   id: string;

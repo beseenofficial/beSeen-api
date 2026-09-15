@@ -1,12 +1,11 @@
 import sharp from 'sharp';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
 import { withDatabaseTransaction } from '../../src/db';
 import AuthSession from '../../src/models/AuthSession';
 import registerUser from '../../src/utils/auth/registerUser';
 import verifyBluxWallet from '../../src/utils/blux/verifyBluxWallet';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteAvatar, uploadAvatar } from '../../src/utils/avatar/avatarStorage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));

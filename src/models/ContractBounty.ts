@@ -1,32 +1,14 @@
 import { Schema, model } from 'mongoose';
-import type { HydratedDocument } from 'mongoose';
-
+import type { IContractBounty } from '../types/contract/bounty';
 import { CONTRACT_BOUNTY_SOURCES, CONTRACT_BOUNTY_STATUSES } from '../constant/contract';
-import type { ContractBountySource, ContractBountyStatus } from '../constant/contract';
 
 const POSITIVE_INTEGER_PATTERN = /^[1-9]\d*$/;
+
 const NON_NEGATIVE_INTEGER_PATTERN = /^(?:0|[1-9]\d*)$/;
+
 const STELLAR_ADDRESS_PATTERN = /^[CG][A-Z2-7]{55}$/;
+
 const TRANSACTION_HASH_PATTERN = /^[a-f\d]{64}$/;
-
-interface IContractBounty {
-  contractBountyId: string;
-  sender: string;
-  recipient: string;
-  amount: string;
-  deadline: string;
-  status: ContractBountyStatus;
-  observedVia: ContractBountySource;
-  eventId: string | null;
-  eventLedger: number | null;
-  lockTransactionHash: string | null;
-  settlementTransactionHash: string | null;
-  settledAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type ContractBountyDocument = HydratedDocument<IContractBounty>;
 
 const contractBountySchema = new Schema<IContractBounty>(
   {
@@ -124,4 +106,3 @@ contractBountySchema.index(
 const ContractBounty = model<IContractBounty>('ContractBounty', contractBountySchema);
 
 export default ContractBounty;
-export type { ContractBountyDocument, IContractBounty };

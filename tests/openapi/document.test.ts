@@ -1,8 +1,7 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import SwaggerParser from '@apidevtools/swagger-parser';
-
-import app from '../../src/app';
 import openApiDocument from '../../src/openapi/document';
 
 describe('OpenAPI contract', () => {

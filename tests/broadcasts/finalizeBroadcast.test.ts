@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
+import Broadcast from '../../src/models/Broadcast';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import Broadcast from '../../src/models/Broadcast';
 import BroadcastRecipient from '../../src/models/BroadcastRecipient';
 import finalizeBroadcast from '../../src/utils/broadcast/finalizeBroadcast';
 import buildBroadcastSignatureMessage from '../../src/utils/broadcast/buildBroadcastSignatureMessage';

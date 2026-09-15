@@ -1,16 +1,5 @@
 import { Schema, model } from 'mongoose';
-import type { HydratedDocument } from 'mongoose';
-
-interface IContractSyncState {
-  _id: string;
-  eventCursor: string | null;
-  auraEventCursor: string | null;
-  lastReconciledBountyId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type ContractSyncStateDocument = HydratedDocument<IContractSyncState>;
+import type { IContractSyncState } from '../types/contract/sync';
 
 const contractSyncStateSchema = new Schema<IContractSyncState>(
   {
@@ -43,4 +32,3 @@ const contractSyncStateSchema = new Schema<IContractSyncState>(
 const ContractSyncState = model<IContractSyncState>('ContractSyncState', contractSyncStateSchema);
 
 export default ContractSyncState;
-export type { ContractSyncStateDocument, IContractSyncState };

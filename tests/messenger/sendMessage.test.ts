@@ -1,6 +1,4 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import UserKey from '../../src/models/UserKey';
@@ -8,10 +6,11 @@ import { withDatabaseTransaction } from '../../src/db';
 import Conversation from '../../src/models/Conversation';
 import MessageBounty from '../../src/models/MessageBounty';
 import sendMessage from '../../src/utils/messenger/sendMessage';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
-import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
 import hasAuraConversationAccess from '../../src/utils/aura/hasAuraConversationAccess';
+import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/crypto/verifyEd25519Signature', () => ({ default: vi.fn() }));
@@ -23,6 +22,7 @@ const transactionMock = vi.mocked(withDatabaseTransaction);
 const verifySignatureMock = vi.mocked(verifyEd25519Signature);
 
 const resolveReplyBountyMock = vi.mocked(resolveReplyBounty);
+
 const hasAuraAccessMock = vi.mocked(hasAuraConversationAccess);
 
 const senderId = new Types.ObjectId('000000000000000000000001');
@@ -340,6 +340,7 @@ describe('sendMessage', () => {
     verifySignatureMock.mockReturnValue(true);
     vi.spyOn(User, 'findOneAndUpdate').mockReturnValue(execQuery(null) as never);
     const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
+
     const messageSpy = vi.spyOn(Message, 'create');
 
     await expect(

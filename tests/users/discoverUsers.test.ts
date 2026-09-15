@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import AuraFollow from '../../src/models/AuraFollow';
 import User from '../../src/models/User';
+import AuraFollow from '../../src/models/AuraFollow';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import discoverUsers from '../../src/utils/user/discoverUsers';
 import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
 

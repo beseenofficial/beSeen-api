@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
 import AuraFollow from '../../src/models/AuraFollow';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import resolveBroadcastAudience from '../../src/utils/broadcast/resolveBroadcastAudience';
 
 const sortedResult = <T>(value: T) => ({

@@ -1,20 +1,14 @@
 import type { ClientSession } from 'mongoose';
-
-import { withDatabaseTransaction } from '../../db';
-import AuraFollow from '../../models/AuraFollow';
 import AuraToken from '../../models/AuraToken';
-import type { ObservedAuraPurchase } from '../../types/contract/aura';
+import AuraFollow from '../../models/AuraFollow';
+import { withDatabaseTransaction } from '../../db';
 import ensureConversation from '../messenger/ensureConversation';
-
-interface AuraConfirmationResult {
-  matched: boolean;
-  confirmed: boolean;
-  conversation: { id: string; created: boolean } | null;
-}
+import type { ObservedAuraPurchase } from '../../types/contract/aura';
+import type { AuraConfirmationResult, AuraConfirmationSource } from '../../types/aura';
 
 const confirmInTransaction = async (
   observed: ObservedAuraPurchase,
-  source: 'event' | 'reconciliation',
+  source: AuraConfirmationSource,
   session: ClientSession,
 ): Promise<AuraConfirmationResult> => {
   const registration = await AuraToken.findOne({ contractTokenId: observed.contractTokenId })
@@ -29,6 +23,7 @@ const confirmInTransaction = async (
     source === 'event' &&
     observed.transactionHash !== undefined &&
     registration.purchaseTransactionHash !== observed.transactionHash.toLowerCase();
+
   const stateMismatch =
     registration.buyerAddress !== observed.buyer ||
     registration.buyerAddress !== observed.owner ||
@@ -57,6 +52,7 @@ const confirmInTransaction = async (
     },
     { upsert: true, session },
   ).exec();
+
   const ensuredConversation = await ensureConversation(
     registration.buyer,
     registration.subject,
@@ -85,9 +81,8 @@ const confirmInTransaction = async (
 
 const confirmAuraPurchase = (
   observed: ObservedAuraPurchase,
-  source: 'event' | 'reconciliation',
+  source: AuraConfirmationSource,
 ): Promise<AuraConfirmationResult> =>
   withDatabaseTransaction((session) => confirmInTransaction(observed, source, session));
 
 export default confirmAuraPurchase;
-export type { AuraConfirmationResult };

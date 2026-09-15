@@ -1,12 +1,11 @@
 import { Types } from 'mongoose';
-
 import User from '../../models/User';
+import AuraFollow from '../../models/AuraFollow';
 import Conversation from '../../models/Conversation';
 import serializeConversation from './serializeConversation';
 import { encodeConversationCursor } from './conversationCursor';
 import type { GetConversationsResult } from '../../types/messenger/conversation';
 import type { ConversationListQuery } from '../../validation/messenger/conversation';
-import AuraFollow from '../../models/AuraFollow';
 
 const getConversations = async (
   userId: string,
@@ -23,6 +22,7 @@ const getConversations = async (
   })
     .select({ follower: 1, subject: 1 })
     .exec();
+
   const allowedParticipantIds = follows.map((follow) =>
     follow.follower.equals(viewer._id) ? follow.subject : follow.follower,
   );

@@ -1,10 +1,9 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
-
-import type { MessengerBountyFundingStatus, MessengerBountyStatus } from '../constant/messenger';
-import type { ContractBountySettlementStatus } from '../constant/contract';
-import { CONTRACT_BOUNTY_SETTLEMENT_STATUSES } from '../constant/contract';
 import isPositiveU64String from '../utils/contract/isPositiveU64String';
+import { CONTRACT_BOUNTY_SETTLEMENT_STATUSES } from '../constant/contract';
+import type { ContractBountySettlementStatus } from '../types/contract/bounty';
+import type { MessengerBountyFundingStatus, MessengerBountyStatus } from '../constant/messenger';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_ASSET_CODE_PATTERN,

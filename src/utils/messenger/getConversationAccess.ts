@@ -1,7 +1,7 @@
 import User from '../../models/User';
 import Conversation from '../../models/Conversation';
-import type { GetConversationAccessResult } from '../../types/messenger/conversation';
 import hasAuraConversationAccess from '../aura/hasAuraConversationAccess';
+import type { GetConversationAccessResult } from '../../types/messenger/conversation';
 
 const getConversationAccess = async (
   userId: string,

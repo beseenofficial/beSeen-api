@@ -1,6 +1,5 @@
-import type { ClientSession, Types } from 'mongoose';
-
 import AuraFollow from '../../models/AuraFollow';
+import type { ClientSession, Types } from 'mongoose';
 
 const hasAuraConversationAccess = async (
   firstUserId: Types.ObjectId,

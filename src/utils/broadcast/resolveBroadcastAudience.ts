@@ -1,6 +1,6 @@
-import AuraFollow from '../../models/AuraFollow';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import AuraFollow from '../../models/AuraFollow';
 import type { BroadcastAudienceMember } from '../../types/broadcast';
 
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {

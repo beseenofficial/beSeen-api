@@ -1,5 +1,5 @@
-import AuraFollow from '../../models/AuraFollow';
 import User from '../../models/User';
+import AuraFollow from '../../models/AuraFollow';
 import type { GetFollowCountsResult } from '../../types/follow';
 
 const getFollowCounts = async (username: string): Promise<GetFollowCountsResult> => {

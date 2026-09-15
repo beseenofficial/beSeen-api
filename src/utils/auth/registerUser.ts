@@ -1,9 +1,8 @@
-import { Types } from 'mongoose';
-import type { ClientSession } from 'mongoose';
-
 import log from '../../logger';
+import { Types } from 'mongoose';
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
+import type { ClientSession } from 'mongoose';
 import { withDatabaseTransaction } from '../../db';
 import createAuthSession from './createAuthSession';
 import type { StoredAvatar } from '../../types/avatar';

@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { withDatabaseTransaction } from '../../src/db';
-import AuraFollow from '../../src/models/AuraFollow';
 import AuraToken from '../../src/models/AuraToken';
+import AuraFollow from '../../src/models/AuraFollow';
+import { withDatabaseTransaction } from '../../src/db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import confirmAuraPurchase from '../../src/utils/aura/confirmAuraPurchase';
 import ensureConversation from '../../src/utils/messenger/ensureConversation';
 
@@ -11,17 +10,24 @@ vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/messenger/ensureConversation', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
+
 const ensureConversationMock = vi.mocked(ensureConversation);
+
 const buyer = new Types.ObjectId();
+
 const subject = new Types.ObjectId();
+
 const buyerAddress = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const subjectAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
+
 const session = {} as never;
 
 const findQuery = (value: unknown) => ({
   session: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
+
 const execQuery = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) });
 
 describe('confirmAuraPurchase', () => {

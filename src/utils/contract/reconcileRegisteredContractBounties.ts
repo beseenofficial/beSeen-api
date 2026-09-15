@@ -1,21 +1,12 @@
-import ContractBounty from '../../models/ContractBounty';
-import MessageBounty from '../../models/MessageBounty';
 import getContractBounty from './getContractBounty';
+import MessageBounty from '../../models/MessageBounty';
+import ContractBounty from '../../models/ContractBounty';
 import upsertContractBounty from './upsertContractBounty';
+import type { BountyReconciliationResult, UnmirroredBounty } from '../../types/contract/reconciliation';
 
 const REGISTERED_RECONCILIATION_BATCH_SIZE = 25;
 
-interface UnmirroredBounty {
-  contractBountyId: string;
-}
-
-interface RegisteredReconciliationResult {
-  checked: number;
-  synchronized: number;
-  notFound: number;
-}
-
-const reconcileRegisteredContractBounties = async (): Promise<RegisteredReconciliationResult> => {
+const reconcileRegisteredContractBounties = async (): Promise<BountyReconciliationResult> => {
   const registrations = await MessageBounty.aggregate<UnmirroredBounty>([
     {
       $match: {

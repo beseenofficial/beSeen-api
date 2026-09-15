@@ -1,11 +1,10 @@
-const U32_MAX = (1n << 32n) - 1n;
-const I128_MIN = -(1n << 127n);
-const I128_MAX = (1n << 127n) - 1n;
+import type { AuraPriceParams } from '../../types/contract/aura';
 
-interface AuraPriceParams {
-  basePrice: bigint;
-  increment: bigint;
-}
+const U32_MAX = (1n << 32n) - 1n;
+
+const I128_MIN = -(1n << 127n);
+
+const I128_MAX = (1n << 127n) - 1n;
 
 const requireI128 = (value: bigint): void => {
   if (value < I128_MIN || value > I128_MAX) {
@@ -41,4 +40,3 @@ const auraPriceAt = (params: AuraPriceParams, sold: number | bigint): bigint => 
 };
 
 export { auraPriceAt, requireAuraPriceParams };
-export type { AuraPriceParams };

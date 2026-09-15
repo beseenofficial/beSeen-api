@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import AuraFollow from '../../src/models/AuraFollow';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import getFollowCounts from '../../src/utils/aura/getFollowCounts';
 
 const queryResult = (value: unknown) => ({
@@ -16,6 +15,7 @@ describe('getFollowCounts', () => {
 
   it('counts confirmed Aura follow relationships in both directions', async () => {
     const userId = new Types.ObjectId();
+
     const user = new User({
       _id: userId,
       walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',

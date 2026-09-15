@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
-import Conversation from '../../src/models/Conversation';
 import AuraFollow from '../../src/models/AuraFollow';
+import Conversation from '../../src/models/Conversation';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import getConversations from '../../src/utils/messenger/getConversations';
 import { encodeConversationCursor } from '../../src/utils/messenger/conversationCursor';
 

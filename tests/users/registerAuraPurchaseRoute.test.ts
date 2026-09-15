@@ -1,18 +1,21 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { Types } from 'mongoose';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
-import registerAuraPurchase from '../../src/utils/aura/registerAuraPurchase';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import signAccessToken from '../../src/utils/auth/signAccessToken';
+import registerAuraPurchase from '../../src/utils/aura/registerAuraPurchase';
 
 vi.mock('../../src/utils/aura/registerAuraPurchase', () => ({ default: vi.fn() }));
 
 const userId = new Types.ObjectId();
+
 const sessionId = new Types.ObjectId();
+
 const token = signAccessToken({ id: userId, role: 'user' }, sessionId);
+
 const registerMock = vi.mocked(registerAuraPurchase);
+
 const body = {
   tokenId: '42',
   buyerAddress: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV',

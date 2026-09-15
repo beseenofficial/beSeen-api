@@ -1,11 +1,10 @@
 import { Types } from 'mongoose';
-
-import AuraFollow from '../../models/AuraFollow';
 import User from '../../models/User';
+import AuraFollow from '../../models/AuraFollow';
 import getUserVerification from './getUserVerification';
 import type { DiscoverUsersPage } from '../../types/user';
-import type { DiscoverUsersQuery } from '../../validation/user/discover';
 import { encodeDiscoverCursor } from '../discover/discoverCursor';
+import type { DiscoverUsersQuery } from '../../validation/user/discover';
 
 interface FollowCountRecord {
   _id: Types.ObjectId;
@@ -51,6 +50,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
 
   const lastUser = pageRows.at(-1);
+
   const userIds = pageRows.map((user) => user._id);
 
   const followCounts = userIds.length
@@ -73,6 +73,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   const followerCountByUserId = new Map(
     (followCounts[0]?.followerCounts ?? []).map((record) => [record._id.toString(), record.count]),
   );
+
   const followingCountByUserId = new Map(
     (followCounts[0]?.followingCounts ?? []).map((record) => [record._id.toString(), record.count]),
   );

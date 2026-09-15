@@ -1,17 +1,13 @@
-import stellarSdk from './stellarSdk';
-import AuraToken from '../../models/AuraToken';
-import getContractSyncConfig from './contractConfig';
-import confirmAuraPurchase from '../aura/confirmAuraPurchase';
-import { decodeAuraPurchasedEvent } from './contractAuraCodec';
-import ContractSyncState from '../../models/ContractSyncState';
-import { CONTRACT_AURA_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../constant/contract';
+import stellarSdk from '../stellarSdk';
+import AuraToken from '../../../models/AuraToken';
+import getContractSyncConfig from '../contractConfig';
+import { decodeAuraPurchasedEvent } from '../contractAuraCodec';
+import confirmAuraPurchase from '../../aura/confirmAuraPurchase';
+import ContractSyncState from '../../../models/ContractSyncState';
+import type { ContractEventSyncResult } from '../../../types/contract/event';
+import { CONTRACT_AURA_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../../constant/contract';
 
-interface AuraEventSyncResult {
-  processed: number;
-  cursor: string;
-}
-
-const syncAuraEvents = async (): Promise<AuraEventSyncResult> => {
+const syncAuraPurchaseEvents = async (): Promise<ContractEventSyncResult> => {
   const config = getContractSyncConfig();
 
   if (!config) {
@@ -89,4 +85,4 @@ const syncAuraEvents = async (): Promise<AuraEventSyncResult> => {
   return { processed, cursor: response.cursor };
 };
 
-export default syncAuraEvents;
+export default syncAuraPurchaseEvents;

@@ -1,7 +1,6 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DiscoverRankingMetrics } from '../../src/types/discover';
 import collectDiscoverMetrics from '../../src/utils/discover/collectDiscoverMetrics';
 import recalculateDiscoverRankings from '../../src/utils/discover/recalculateDiscoverRankings';

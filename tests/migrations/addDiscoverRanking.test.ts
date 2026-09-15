@@ -1,10 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
 import AuraFollow from '../../src/models/AuraFollow';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import addDiscoverRanking from '../../src/migrations/20260811AddDiscoverRanking';
 
 describe('20260811AddDiscoverRanking migration', () => {

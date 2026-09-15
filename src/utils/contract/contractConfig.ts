@@ -1,15 +1,5 @@
 import env from '../../env';
-
-interface ContractSyncConfig {
-  rpcUrl: string;
-  contractId: string;
-  sourceAccount: string;
-  startLedger: number;
-}
-
-interface ContractSettlementConfig extends ContractSyncConfig {
-  verifierSecret: string;
-}
+import type { ContractSettlementConfig, ContractSyncConfig } from '../../types/contract/config';
 
 const getContractSyncConfig = (): ContractSyncConfig | null => {
   if (
@@ -41,4 +31,3 @@ const getContractSettlementConfig = (): ContractSettlementConfig | null => {
 
 export { getContractSettlementConfig };
 export default getContractSyncConfig;
-export type { ContractSettlementConfig, ContractSyncConfig };

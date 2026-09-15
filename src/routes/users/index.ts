@@ -1,18 +1,17 @@
-import { Router } from 'express';
-
 import getMeRoute from './me';
-import discoverUsersRoute from './discover';
+import { Router } from 'express';
 import updateMeRoute from './updateMe';
+import discoverUsersRoute from './discover';
 import recordUserActivityRoute from './activity';
-import getPublicUserKeysRoute from './publicKeys';
 import getFollowCountsRoute from './followCounts';
+import getPublicUserKeysRoute from './publicKeys';
 import getPublicProfileRoute from './publicProfile';
-import registerAuraPurchaseRoute from './registerAuraPurchase';
 import authenticate from '../../middleware/authenticate';
 import avatarUpload from '../../middleware/avatarUpload';
+import registerAuraPurchaseRoute from './registerAuraPurchase';
 import getUsernameAvailabilityRoute from './usernameAvailability';
-import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
 import userActivityRateLimit from '../../middleware/userActivityRateLimit';
+import usernameAvailabilityRateLimit from '../../middleware/usernameAvailabilityRateLimit';
 
 const userRoutes = Router();
 

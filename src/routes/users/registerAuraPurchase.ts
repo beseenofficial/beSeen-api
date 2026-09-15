@@ -14,6 +14,7 @@ const registerAuraPurchaseRoute: RequestHandler = async (req, res) => {
   }
 
   const params = publicUsernameParamsSchema.safeParse(req.params);
+
   const body = registerAuraPurchaseBodySchema.safeParse(req.body);
   if (!params.success || !body.success) {
     return res.status(400).j({
@@ -26,6 +27,7 @@ const registerAuraPurchaseRoute: RequestHandler = async (req, res) => {
   const result = await registerAuraPurchase(req.auth.userId, params.data.username, body.data);
   if (!result.ok) {
     const notFound = result.reason === 'subject_not_found';
+
     const unavailable = result.reason === 'buyer_unavailable';
     return res.status(notFound ? 404 : unavailable ? 401 : 409).j({
       status: 'error',

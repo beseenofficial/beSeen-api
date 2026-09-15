@@ -1,20 +1,14 @@
-import ContractBounty from '../../models/ContractBounty';
-import ContractSyncState from '../../models/ContractSyncState';
-import MessageBounty from '../../models/MessageBounty';
-import { CONTRACT_BOUNTY_SYNC_STATE_ID } from '../../constant/contract';
 import getContractBounty from './getContractBounty';
+import MessageBounty from '../../models/MessageBounty';
+import ContractBounty from '../../models/ContractBounty';
 import upsertContractBounty from './upsertContractBounty';
+import ContractSyncState from '../../models/ContractSyncState';
+import { CONTRACT_BOUNTY_SYNC_STATE_ID } from '../../constant/contract';
+import type { BountySequenceReconciliationResult } from '../../types/contract/reconciliation';
 
 const MAX_ALREADY_OBSERVED_ADVANCES = 1_000;
 
-interface ReconciliationResult {
-  checkedBountyId: string;
-  found: boolean;
-  registered: boolean;
-  advancedAcrossObserved: number;
-}
-
-const reconcileNextContractBounty = async (): Promise<ReconciliationResult> => {
+const reconcileNextContractBounty = async (): Promise<BountySequenceReconciliationResult> => {
   const state = await ContractSyncState.findByIdAndUpdate(
     CONTRACT_BOUNTY_SYNC_STATE_ID,
     { $setOnInsert: { eventCursor: null, lastReconciledBountyId: '0' } },
@@ -30,6 +24,7 @@ const reconcileNextContractBounty = async (): Promise<ReconciliationResult> => {
 
   while (advancedAcrossObserved < MAX_ALREADY_OBSERVED_ADVANCES) {
     const nextId = lastReconciledId + 1n;
+
     const alreadyObserved = await ContractBounty.exists({ contractBountyId: nextId.toString() });
 
     if (!alreadyObserved) {
@@ -46,6 +41,7 @@ const reconcileNextContractBounty = async (): Promise<ReconciliationResult> => {
   }
 
   const nextId = lastReconciledId + 1n;
+
   const bounty = await getContractBounty(nextId);
 
   if (!bounty) {

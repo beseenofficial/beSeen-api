@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import decodeContractBounty from '../../src/utils/contract/contractBountyCodec';
 
 const sender = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const recipient = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
 
 describe('contract bounty codec', () => {

@@ -1,11 +1,8 @@
 import env from '../../env';
 import stellarSdk from './stellarSdk';
-import networkPassphraseFor from '../stellar/networkPassphraseFor';
 import { getContractSettlementConfig } from './contractConfig';
-
-interface ContractSettlementResult {
-  transactionHash: string;
-}
+import networkPassphraseFor from '../stellar/networkPassphraseFor';
+import type { ContractSettlementResult } from '../../types/contract/settlement';
 
 const settleContractBounties = async (
   contractBountyIds: bigint[],
@@ -69,4 +66,3 @@ const settleContractBounties = async (
 };
 
 export default settleContractBounties;
-export type { ContractSettlementResult };

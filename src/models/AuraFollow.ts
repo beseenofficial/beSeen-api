@@ -1,17 +1,6 @@
 import { Schema, model } from 'mongoose';
-import type { HydratedDocument, Types } from 'mongoose';
-
+import type { IAuraFollow } from '../types/aura';
 import isPositiveU64String from '../utils/contract/isPositiveU64String';
-
-interface IAuraFollow {
-  follower: Types.ObjectId;
-  subject: Types.ObjectId;
-  firstContractTokenId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type AuraFollowDocument = HydratedDocument<IAuraFollow>;
 
 const auraFollowSchema = new Schema<IAuraFollow>(
   {
@@ -40,4 +29,3 @@ auraFollowSchema.index({ subject: 1, createdAt: -1 }, { name: 'aura_follows_subj
 const AuraFollow = model<IAuraFollow>('AuraFollow', auraFollowSchema);
 
 export default AuraFollow;
-export type { AuraFollowDocument, IAuraFollow };

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import ContractBounty from '../../src/models/ContractBounty';
 
 const sender = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const recipient = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
 
 const bountyInput = () => ({

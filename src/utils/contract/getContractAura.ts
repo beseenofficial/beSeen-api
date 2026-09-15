@@ -35,6 +35,7 @@ const getContractAura = async (contractTokenId: bigint): Promise<ContractAuraDat
     )
     .setTimeout(30)
     .build();
+
   const simulation = await rpcServer.simulateTransaction(transaction);
 
   if (stellarSdk.rpc.Api.isSimulationError(simulation)) {

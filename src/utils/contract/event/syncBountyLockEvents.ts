@@ -1,22 +1,20 @@
-import stellarSdk from './stellarSdk';
-import getContractBounty from './getContractBounty';
-import getContractSyncConfig from './contractConfig';
-import MessageBounty from '../../models/MessageBounty';
-import decodeContractBounty from './contractBountyCodec';
-import upsertContractBounty from './upsertContractBounty';
-import ContractSyncState from '../../models/ContractSyncState';
-import type { ContractBountyData } from '../../types/contract/bounty';
-import { CONTRACT_BOUNTY_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../constant/contract';
-
-interface EventMetadata {
-  eventId: string;
-  ledger: number;
-  txHash: string;
-}
+import stellarSdk from '../stellarSdk';
+import getContractBounty from '../getContractBounty';
+import getContractSyncConfig from '../contractConfig';
+import decodeContractBounty from '../contractBountyCodec';
+import MessageBounty from '../../../models/MessageBounty';
+import upsertContractBounty from '../upsertContractBounty';
+import ContractSyncState from '../../../models/ContractSyncState';
+import type { ContractBountyData } from '../../../types/contract/bounty';
+import type { ContractEventMetadata, ContractEventSyncResult } from '../../../types/contract/event';
+import {
+  CONTRACT_BOUNTY_SYNC_STATE_ID,
+  CONTRACT_EVENT_PAGE_SIZE,
+} from '../../../constant/contract';
 
 const decodeLockEvent = async (
   nativeValue: unknown,
-  metadata: EventMetadata,
+  metadata: ContractEventMetadata,
 ): Promise<ContractBountyData> => {
   try {
     const value = nativeValue as Record<string, unknown>;
@@ -31,6 +29,7 @@ const decodeLockEvent = async (
     });
   } catch (decodeError: unknown) {
     const partial = nativeValue as { bounty_id?: unknown } | null;
+
     const idValue = partial?.bounty_id;
 
     if (
@@ -52,7 +51,7 @@ const decodeLockEvent = async (
   }
 };
 
-const syncBountyEvents = async (): Promise<{ processed: number; cursor: string }> => {
+const syncBountyLockEvents = async (): Promise<ContractEventSyncResult> => {
   const config = getContractSyncConfig();
 
   if (!config) {
@@ -99,6 +98,7 @@ const syncBountyEvents = async (): Promise<{ processed: number; cursor: string }
     }
 
     const nativeValue = stellarSdk.scValToNative(event.value) as { bounty_id?: unknown };
+
     const eventBountyId = nativeValue.bounty_id;
 
     if (
@@ -142,4 +142,4 @@ const syncBountyEvents = async (): Promise<{ processed: number; cursor: string }
   return { processed, cursor: response.cursor };
 };
 
-export default syncBountyEvents;
+export default syncBountyLockEvents;

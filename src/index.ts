@@ -1,22 +1,21 @@
-import type { Server } from 'node:http';
-
 import app from './app';
 import env from './env';
 import log from './logger';
+import type { Server } from 'node:http';
 import { connectDatabase, disconnectDatabase } from './db';
-import {
-  startBroadcastDraftCleanup,
-  stopBroadcastDraftCleanup,
-} from './utils/broadcast/broadcastDraftCleanupScheduler';
-import {
-  startDiscoverRankingScheduler,
-  stopDiscoverRankingScheduler,
-} from './utils/discover/discoverRankingScheduler';
 import runDatabaseMigrations from './migrations/runDatabaseMigrations';
 import {
   startContractBountySync,
   stopContractBountySync,
 } from './utils/contract/contractBountySyncScheduler';
+import {
+  startDiscoverRankingScheduler,
+  stopDiscoverRankingScheduler,
+} from './utils/discover/discoverRankingScheduler';
+import {
+  startBroadcastDraftCleanup,
+  stopBroadcastDraftCleanup,
+} from './utils/broadcast/broadcastDraftCleanupScheduler';
 
 let server: Server | undefined;
 

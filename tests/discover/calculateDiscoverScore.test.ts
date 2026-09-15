@@ -124,6 +124,7 @@ describe('calculateDiscoverScore', () => {
 
   it('awards two points for a stored avatar', () => {
     const withoutAvatar = calculateDiscoverScore(metrics({ hasAvatar: false }), NOW);
+
     const withAvatar = calculateDiscoverScore(metrics({ hasAvatar: true }), NOW);
 
     expect(withoutAvatar.breakdown.profileCompleteness).toBe(0);

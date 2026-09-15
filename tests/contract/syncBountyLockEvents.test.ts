@@ -49,9 +49,10 @@ vi.mock('../../src/utils/contract/getContractBounty', () => ({
   default: mocks.getContractBounty,
 }));
 
-import syncBountyEvents from '../../src/utils/contract/syncBountyEvents';
+import syncBountyLockEvents from '../../src/utils/contract/event/syncBountyLockEvents';
 
 const sender = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const recipient = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
 
 describe('bounty event synchronization', () => {
@@ -80,7 +81,7 @@ describe('bounty event synchronization', () => {
   });
 
   it('stores complete lock events without making a get_bounty fallback call', async () => {
-    await expect(syncBountyEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
+    await expect(syncBountyLockEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
     expect(mocks.upsertContractBounty).toHaveBeenCalledWith({
       contractBountyId: '1',
       sender,
@@ -108,7 +109,7 @@ describe('bounty event synchronization', () => {
       status: 'locked',
     });
 
-    await syncBountyEvents();
+    await syncBountyLockEvents();
 
     expect(mocks.getContractBounty).toHaveBeenCalledWith(1n);
     expect(mocks.upsertContractBounty).toHaveBeenCalledOnce();
@@ -117,7 +118,7 @@ describe('bounty event synchronization', () => {
   it('ignores contract calls that were not registered through the API', async () => {
     mocks.isRegistered.mockResolvedValue(null);
 
-    await expect(syncBountyEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
+    await expect(syncBountyLockEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
     expect(mocks.getContractBounty).not.toHaveBeenCalled();
     expect(mocks.upsertContractBounty).not.toHaveBeenCalled();
     expect(mocks.stateSave).toHaveBeenCalledOnce();

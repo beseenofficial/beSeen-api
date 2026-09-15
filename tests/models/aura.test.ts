@@ -1,12 +1,14 @@
 import { Types } from 'mongoose';
 import { describe, expect, it } from 'vitest';
-
-import AuraFollow from '../../src/models/AuraFollow';
 import AuraToken from '../../src/models/AuraToken';
+import AuraFollow from '../../src/models/AuraFollow';
 
 const buyer = new Types.ObjectId();
+
 const subject = new Types.ObjectId();
+
 const buyerAddress = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const subjectAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 describe('Aura models', () => {

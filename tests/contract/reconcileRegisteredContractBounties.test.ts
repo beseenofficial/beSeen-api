@@ -24,6 +24,7 @@ vi.mock('../../src/utils/contract/upsertContractBounty', () => ({
 import reconcileRegisteredContractBounties from '../../src/utils/contract/reconcileRegisteredContractBounties';
 
 const sender = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
 const recipient = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
 
 describe('registered contract bounty reconciliation', () => {

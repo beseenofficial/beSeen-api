@@ -1,9 +1,9 @@
 import User from '../../models/User';
-import ContractBounty from '../../models/ContractBounty';
-import MessageBounty from '../../models/MessageBounty';
-import { CONTRACT_BOUNTY_SETTLEMENT_LEASE_MS } from '../../constant/contract';
 import getContractBounty from './getContractBounty';
+import MessageBounty from '../../models/MessageBounty';
+import ContractBounty from '../../models/ContractBounty';
 import settleContractBounties from './settleContractBounties';
+import { CONTRACT_BOUNTY_SETTLEMENT_LEASE_MS } from '../../constant/contract';
 
 const errorMessage = (error: unknown): string =>
   (error instanceof Error ? error.message : 'Unknown contract settlement failure').slice(0, 1_000);
@@ -74,7 +74,9 @@ const markConfirmed = async (
 
 const processNextReplySettlement = async (): Promise<boolean> => {
   const now = new Date();
+
   const leaseUntil = new Date(now.getTime() + CONTRACT_BOUNTY_SETTLEMENT_LEASE_MS);
+
   const bounty = await MessageBounty.findOneAndUpdate(
     {
       contractBountyId: { $type: 'string' },

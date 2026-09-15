@@ -1,6 +1,6 @@
 import log from '../../logger';
-import syncAuraEvents from './syncAuraEvents';
-import syncBountyEvents from './syncBountyEvents';
+import syncBountyLockEvents from './event/syncBountyLockEvents';
+import syncAuraPurchaseEvents from './event/syncAuraPurchaseEvents';
 import processNextReplySettlement from './processNextReplySettlement';
 import reconcileNextContractBounty from './reconcileNextContractBounty';
 import reconcileRegisteredAuraPurchases from './reconcileRegisteredAuraPurchases';
@@ -27,7 +27,7 @@ const runBountyEventSync = async (): Promise<void> => {
   eventSyncRunning = true;
 
   try {
-    const [bounties, auras] = await Promise.all([syncBountyEvents(), syncAuraEvents()]);
+    const [bounties, auras] = await Promise.all([syncBountyLockEvents(), syncAuraPurchaseEvents()]);
 
     if (bounties.processed > 0 || auras.processed > 0) {
       log.info({ bounties, auras }, 'Contract events synchronized');
@@ -48,7 +48,9 @@ const runBountyReconciliation = async (): Promise<void> => {
 
   try {
     const registered = await reconcileRegisteredContractBounties();
+
     const sequence = await reconcileNextContractBounty();
+
     const auras = await reconcileRegisteredAuraPurchases();
 
     if (
@@ -124,10 +126,12 @@ const stopContractBountySync = (): void => {
     clearInterval(eventTimer);
     eventTimer = undefined;
   }
+
   if (reconciliationTimer) {
     clearInterval(reconciliationTimer);
     reconciliationTimer = undefined;
   }
+
   if (settlementTimer) {
     clearInterval(settlementTimer);
     settlementTimer = undefined;

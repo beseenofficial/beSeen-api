@@ -14,7 +14,4 @@ const registerAuraPurchaseBodySchema = z
   })
   .strict();
 
-type RegisterAuraPurchaseBody = z.infer<typeof registerAuraPurchaseBodySchema>;
-
 export default registerAuraPurchaseBodySchema;
-export type { RegisterAuraPurchaseBody };

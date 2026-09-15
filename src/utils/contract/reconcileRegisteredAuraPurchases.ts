@@ -1,14 +1,9 @@
 import AuraToken from '../../models/AuraToken';
-import confirmAuraPurchase from '../aura/confirmAuraPurchase';
 import getContractAura from './getContractAura';
+import confirmAuraPurchase from '../aura/confirmAuraPurchase';
+import type { AuraReconciliationResult } from '../../types/contract/reconciliation';
 
 const AURA_RECONCILIATION_BATCH_SIZE = 25;
-
-interface AuraReconciliationResult {
-  checked: number;
-  confirmed: number;
-  notFound: number;
-}
 
 const reconcileRegisteredAuraPurchases = async (): Promise<AuraReconciliationResult> => {
   const registrations = await AuraToken.find({ status: 'pending' })
@@ -26,7 +21,7 @@ const reconcileRegisteredAuraPurchases = async (): Promise<AuraReconciliationRes
       notFound += 1;
       continue;
     }
-    
+
     const result = await confirmAuraPurchase({ ...aura, buyer: aura.owner }, 'reconciliation');
 
     if (result.confirmed) {

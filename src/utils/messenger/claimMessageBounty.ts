@@ -1,11 +1,10 @@
-import type { ClientSession } from 'mongoose';
-
 import User from '../../models/User';
+import type { ClientSession } from 'mongoose';
 import { withDatabaseTransaction } from '../../db';
 import MessageBounty from '../../models/MessageBounty';
+import expireMessageBounty from './expireMessageBounty';
 import serializeMessageBounty from './serializeMessageBounty';
 import type { ClaimMessageBountyResult } from '../../types/messenger/bounty';
-import expireMessageBounty from './expireMessageBounty';
 
 const claimMessageBountyInTransaction = async (
   beneficiaryId: string,

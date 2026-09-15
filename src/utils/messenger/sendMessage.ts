@@ -1,10 +1,10 @@
-import type { ClientSession } from 'mongoose';
-
 import User from '../../models/User';
 import Message from '../../models/Message';
 import UserKey from '../../models/UserKey';
+import type { ClientSession } from 'mongoose';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
+import { parseDemoUsdcUnits } from './demoUsdcAmount';
 import resolveReplyBounty from './resolveReplyBounty';
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageDocument } from '../../models/Message';
@@ -12,7 +12,6 @@ import serializeMessageBounty from './serializeMessageBounty';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
-import { parseDemoUsdcUnits } from './demoUsdcAmount';
 import hasAuraConversationAccess from '../aura/hasAuraConversationAccess';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import type { SendMessageResult, SentMessage } from '../../types/messenger/message';

@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Conversation from '../../src/models/Conversation';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 import hasAuraConversationAccess from '../../src/utils/aura/hasAuraConversationAccess';
 
@@ -60,7 +59,9 @@ describe('getConversationAccess', () => {
 
   it('does not expose an old conversation without a confirmed Aura relationship', async () => {
     const viewer = createUser(new Types.ObjectId(), 'viewer_user');
+
     const otherParticipant = createUser(new Types.ObjectId(), 'other_user');
+
     const conversation = new Conversation({
       participantA: viewer._id,
       participantB: otherParticipant._id,

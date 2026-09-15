@@ -1,10 +1,9 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import getPublicProfile from '../../src/utils/user/getPublicProfile';
 
 const queryResult = (value: unknown) => ({
@@ -18,7 +17,9 @@ describe('getPublicProfile', () => {
 
   it('returns published broadcast and sent, received, and total message counts', async () => {
     const userId = new Types.ObjectId();
+
     const createdAt = new Date('2026-07-01T12:00:00.000Z');
+
     const user = new User({
       _id: userId,
       walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
@@ -30,10 +31,12 @@ describe('getPublicProfile', () => {
     const broadcastCountSpy = vi
       .spyOn(Broadcast, 'countDocuments')
       .mockReturnValue(queryResult(9) as never);
+
     const messageCountSpy = vi
       .spyOn(Message, 'countDocuments')
       .mockReturnValueOnce(queryResult(12) as never)
       .mockReturnValueOnce(queryResult(8) as never);
+
     const bountyAggregateSpy = vi
       .spyOn(MessageBounty, 'aggregate')
       .mockReturnValue(queryResult([{ total: '35.5' }]) as never);
@@ -74,7 +77,9 @@ describe('getPublicProfile', () => {
   it('does not query broadcasts when the user is unavailable', async () => {
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(null) as never);
     const broadcastCountSpy = vi.spyOn(Broadcast, 'countDocuments');
+
     const messageCountSpy = vi.spyOn(Message, 'countDocuments');
+
     const bountyAggregateSpy = vi.spyOn(MessageBounty, 'aggregate');
 
     await expect(getPublicProfile('missing_user')).resolves.toEqual({

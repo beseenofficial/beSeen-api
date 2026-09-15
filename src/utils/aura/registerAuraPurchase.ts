@@ -1,19 +1,14 @@
-import type { ClientSession } from 'mongoose';
-
-import { withDatabaseTransaction } from '../../db';
-import AuraToken from '../../models/AuraToken';
 import User from '../../models/User';
-import type { RegisterAuraPurchaseResult } from '../../types/aura';
-import type { RegisterAuraPurchaseBody } from '../../validation/user/auraPurchase';
-import getContractAura from '../contract/getContractAura';
+import type { ClientSession } from 'mongoose';
+import AuraToken from '../../models/AuraToken';
+import { withDatabaseTransaction } from '../../db';
 import confirmAuraPurchase from './confirmAuraPurchase';
-
-interface RegisteredPurchase {
-  created: boolean;
-  buyerId: string;
-  subjectId: string;
-  subjectUsername: string;
-}
+import getContractAura from '../contract/getContractAura';
+import type {
+  RegisteredPurchase,
+  RegisterAuraPurchaseBody,
+  RegisterAuraPurchaseResult,
+} from '../../types/aura';
 
 const registerPending = async (
   authenticatedBuyerId: string,

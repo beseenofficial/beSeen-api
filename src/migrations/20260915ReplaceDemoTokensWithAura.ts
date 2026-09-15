@@ -19,10 +19,12 @@ const replaceDemoTokensWithAura = async () => {
     { audienceType: 'token_holders' },
     { $set: { audienceType: 'demo_all_users' } },
   );
+
   const recipients = await BroadcastRecipient.collection.updateMany(
     { $or: [{ accessMode: 'token' }, { tokenId: { $exists: true } }] },
     { $set: { accessMode: 'demo', auraTokenId: null }, $unset: { tokenId: '' } },
   );
+
   const [droppedUserTokens, droppedTokenHoldings] = await Promise.all([
     dropCollectionIfPresent('usertokens'),
     dropCollectionIfPresent('tokenholdings'),

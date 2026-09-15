@@ -1,7 +1,6 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import app from '../../src/app';
 import getPublicProfile from '../../src/utils/user/getPublicProfile';
 
 vi.mock('../../src/utils/user/getPublicProfile', () => ({

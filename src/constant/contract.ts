@@ -15,10 +15,6 @@ const CONTRACT_BOUNTY_SETTLEMENT_STATUSES = [
   'failed',
 ] as const;
 
-type ContractBountyStatus = (typeof CONTRACT_BOUNTY_STATUSES)[number];
-type ContractBountySource = (typeof CONTRACT_BOUNTY_SOURCES)[number];
-type ContractBountySettlementStatus = (typeof CONTRACT_BOUNTY_SETTLEMENT_STATUSES)[number];
-
 export {
   CONTRACT_BOUNTY_SOURCES,
   CONTRACT_BOUNTY_STATUSES,
@@ -31,4 +27,3 @@ export {
   CONTRACT_BOUNTY_SETTLEMENT_LEASE_MS,
   CONTRACT_BOUNTY_EVENT_POLL_INTERVAL_MS,
 };
-export type { ContractBountySettlementStatus, ContractBountySource, ContractBountyStatus };

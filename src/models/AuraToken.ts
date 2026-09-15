@@ -1,32 +1,7 @@
 import { Schema, model } from 'mongoose';
-import type { HydratedDocument, Types } from 'mongoose';
-
+import type { IAuraToken } from '../types/aura';
 import isPositiveU64String from '../utils/contract/isPositiveU64String';
-
-const AURA_TOKEN_STATUSES = ['pending', 'confirmed', 'failed'] as const;
-const AURA_CONFIRMATION_SOURCES = ['event', 'reconciliation'] as const;
-
-type AuraTokenStatus = (typeof AURA_TOKEN_STATUSES)[number];
-type AuraConfirmationSource = (typeof AURA_CONFIRMATION_SOURCES)[number];
-
-interface IAuraToken {
-  contractTokenId: string;
-  buyer: Types.ObjectId;
-  subject: Types.ObjectId;
-  buyerAddress: string;
-  subjectAddress: string;
-  purchaseTransactionHash: string;
-  status: AuraTokenStatus;
-  confirmationSource: AuraConfirmationSource | null;
-  eventId: string | null;
-  eventLedger: number | null;
-  confirmedAt: Date | null;
-  failureReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type AuraTokenDocument = HydratedDocument<IAuraToken>;
+import { AURA_CONFIRMATION_SOURCES, AURA_TOKEN_STATUSES } from '../constant/aura';
 
 const auraTokenSchema = new Schema<IAuraToken>(
   {
@@ -93,5 +68,3 @@ auraTokenSchema.index(
 const AuraToken = model<IAuraToken>('AuraToken', auraTokenSchema);
 
 export default AuraToken;
-export { AURA_CONFIRMATION_SOURCES, AURA_TOKEN_STATUSES };
-export type { AuraConfirmationSource, AuraTokenDocument, AuraTokenStatus, IAuraToken };

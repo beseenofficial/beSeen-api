@@ -1,6 +1,7 @@
 import type { ContractBountyData } from '../../types/contract/bounty';
 
 const U64_MAX = (1n << 64n) - 1n;
+
 const I128_MAX = (1n << 127n) - 1n;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -50,7 +51,9 @@ const decodeContractBounty = (value: unknown): ContractBountyData => {
   }
 
   const id = asBigInt(value.id, 'id');
+
   const amount = asBigInt(value.amount, 'amount');
+
   const deadline = asBigInt(value.deadline, 'deadline');
 
   if (id < 1n || id > U64_MAX) {

@@ -1,6 +1,5 @@
-import type { ClientSession, Types } from 'mongoose';
-
 import User from '../../models/User';
+import type { ClientSession, Types } from 'mongoose';
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 

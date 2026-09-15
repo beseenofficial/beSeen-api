@@ -3,8 +3,8 @@ import Message from '../models/Message';
 import Broadcast from '../models/Broadcast';
 import AuraFollow from '../models/AuraFollow';
 import MessageBounty from '../models/MessageBounty';
-import type { DiscoverRankingMigrationResult } from '../types/discover';
 import { DISCOVER_SCORE_VERSION } from '../constant/discover';
+import type { DiscoverRankingMigrationResult } from '../types/discover';
 
 const DISCOVER_INDEX_COUNT = 5;
 

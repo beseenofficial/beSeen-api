@@ -1,3 +1,8 @@
+interface AuraPriceParams {
+  basePrice: bigint;
+  increment: bigint;
+}
+
 interface ContractAuraData {
   contractTokenId: string;
   owner: string;
@@ -13,4 +18,4 @@ interface ObservedAuraPurchase extends ContractAuraData {
   eventLedger?: number;
 }
 
-export type { ContractAuraData, ObservedAuraPurchase };
+export type { AuraPriceParams, ContractAuraData, ObservedAuraPurchase };
