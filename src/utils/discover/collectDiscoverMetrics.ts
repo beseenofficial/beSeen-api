@@ -17,7 +17,7 @@ const createEmptyMetrics = (user: DiscoverRankingUser): DiscoverRankingMetrics =
   lastActiveAt: user.lastActiveAt,
   followerCount: 0,
   newFollowerCount30d: 0,
-  lastTokenPurchaseAt: null,
+  lastAuraPurchaseAt: null,
   claimedBountyCount: 0,
   claimedUsdcAmount: 0,
   reciprocalConversationCount30d: 0,
@@ -56,7 +56,7 @@ const collectDiscoverMetrics = async (
     if (metrics) {
       metrics.followerCount = record.followerCount;
       metrics.newFollowerCount30d = record.newFollowerCount30d;
-      metrics.lastTokenPurchaseAt = record.lastTokenPurchaseAt;
+      metrics.lastAuraPurchaseAt = record.lastAuraPurchaseAt;
     }
   }
 

@@ -19,7 +19,7 @@ interface CreatedBroadcastDraft {
   id: string;
   clientBroadcastId: string;
   status: 'draft';
-  audience: { type: 'token_holders'; count: number };
+  audience: { type: 'aura_holders'; count: number };
   encryption: { version: number; contentSuite: string; keyWrapSuite: string };
   creatorKey: { keyVersion: number; encryptionPublicKey: string };
   progress: { uploadedCount: number; remainingCount: number; complete: boolean };
@@ -59,8 +59,8 @@ interface BroadcastAudienceMember {
   username: string;
   keyVersion: number;
   encryptionPublicKey: string;
-  accessMode: 'token';
-  tokenId: string;
+  accessMode: 'aura';
+  auraTokenId: string | null;
 }
 
 interface BroadcastDraftCleanupResult {

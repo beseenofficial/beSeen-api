@@ -5,7 +5,7 @@ interface DiscoverRankingMetrics {
   lastActiveAt: Date | null;
   followerCount: number;
   newFollowerCount30d: number;
-  lastTokenPurchaseAt: Date | null;
+  lastAuraPurchaseAt: Date | null;
   claimedBountyCount: number;
   claimedUsdcAmount: number;
   reciprocalConversationCount30d: number;
@@ -26,7 +26,7 @@ interface DiscoverFollowerMetrics {
   userId: string;
   followerCount: number;
   newFollowerCount30d: number;
-  lastTokenPurchaseAt: Date;
+  lastAuraPurchaseAt: Date;
 }
 
 interface DiscoverBountyMetrics {

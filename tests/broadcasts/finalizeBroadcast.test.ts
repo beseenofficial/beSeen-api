@@ -72,7 +72,7 @@ describe('finalizeBroadcast', () => {
       creatorKeyVersion: 1,
       encryptionVersion: 1,
       ...unsignedBody,
-      audienceType: 'token_holders',
+      audienceType: 'aura_holders',
       audienceCount: 1,
       recipientKeysDigest,
     });

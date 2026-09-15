@@ -21,7 +21,7 @@ const openApiDocument = {
       description: 'Wallet login, rotating sessions, and protocol configuration.',
     },
     { name: 'Profiles', description: 'Private and public user profiles.' },
-    { name: 'Tokens', description: 'Database-backed demo token acquisition and ownership.' },
+    { name: 'Aura', description: 'Verified on-chain Aura purchases and social access.' },
     {
       name: 'Broadcasts',
       description: 'End-to-end encrypted, signed, ciphertext-only broadcasts.',
@@ -29,7 +29,7 @@ const openApiDocument = {
     {
       name: 'Messenger',
       description:
-        'Token-enabled one-to-one conversations, public encryption context, and signed ciphertext-only messages.',
+        'Aura-enabled one-to-one conversations, public encryption context, and signed ciphertext-only messages.',
     },
   ],
   paths: openApiPaths,

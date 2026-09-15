@@ -42,7 +42,7 @@ describe('recalculateDiscoverRankings', () => {
       lastActiveAt: null,
       followerCount: 1_000,
       newFollowerCount30d: 0,
-      lastTokenPurchaseAt: null,
+      lastAuraPurchaseAt: null,
       claimedBountyCount: 0,
       claimedUsdcAmount: 0,
       reciprocalConversationCount30d: 0,

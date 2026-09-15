@@ -13,6 +13,7 @@ import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
 import { parseDemoUsdcUnits } from './demoUsdcAmount';
+import hasAuraConversationAccess from '../aura/hasAuraConversationAccess';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import type { SendMessageResult, SentMessage } from '../../types/messenger/message';
 import {
@@ -162,6 +163,10 @@ const sendMessageInTransaction = async (
   const recipientId = conversation.participantA.equals(sender._id)
     ? conversation.participantB
     : conversation.participantA;
+
+  if (!(await hasAuraConversationAccess(sender._id, recipientId, session))) {
+    return { ok: false, reason: 'conversation_not_found' };
+  }
 
   const recipient = await User.findOne({
     _id: recipientId,

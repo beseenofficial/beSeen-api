@@ -11,16 +11,19 @@ import sendMessage from '../../src/utils/messenger/sendMessage';
 import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
 import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
+import hasAuraConversationAccess from '../../src/utils/aura/hasAuraConversationAccess';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/crypto/verifyEd25519Signature', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/resolveReplyBounty', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/aura/hasAuraConversationAccess', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
 
 const verifySignatureMock = vi.mocked(verifyEd25519Signature);
 
 const resolveReplyBountyMock = vi.mocked(resolveReplyBounty);
+const hasAuraAccessMock = vi.mocked(hasAuraConversationAccess);
 
 const senderId = new Types.ObjectId('000000000000000000000001');
 
@@ -91,6 +94,8 @@ describe('sendMessage', () => {
     verifySignatureMock.mockReset();
     resolveReplyBountyMock.mockReset();
     resolveReplyBountyMock.mockResolvedValue(null);
+    hasAuraAccessMock.mockReset();
+    hasAuraAccessMock.mockResolvedValue(true);
   });
 
   afterEach(() => {

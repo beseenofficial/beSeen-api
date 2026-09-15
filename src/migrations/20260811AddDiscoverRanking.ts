@@ -1,7 +1,7 @@
 import User from '../models/User';
 import Message from '../models/Message';
 import Broadcast from '../models/Broadcast';
-import TokenHolding from '../models/TokenHolding';
+import AuraFollow from '../models/AuraFollow';
 import MessageBounty from '../models/MessageBounty';
 import type { DiscoverRankingMigrationResult } from '../types/discover';
 import { DISCOVER_SCORE_VERSION } from '../constant/discover';
@@ -35,9 +35,9 @@ const addDiscoverRanking = async (): Promise<DiscoverRankingMigrationResult> => 
       { status: 1, discoverScore: -1, _id: -1 },
       { name: 'users_discover_ranking' },
     ),
-    TokenHolding.collection.createIndex(
-      { token: 1, createdAt: -1 },
-      { name: 'token_holdings_token_activity' },
+    AuraFollow.collection.createIndex(
+      { subject: 1, createdAt: -1 },
+      { name: 'aura_follows_subject_activity' },
     ),
     Message.collection.createIndex(
       { createdAt: -1, conversation: 1 },

@@ -42,6 +42,7 @@ describe('getPublicProfile', () => {
       ok: true,
       user: {
         id: userId.toString(),
+        walletAddress: user.walletAddress,
         username: 'alice',
         avatar: null,
         bio: null,

@@ -20,6 +20,7 @@ describe('GET /v1/users/:username', () => {
       ok: true,
       user: {
         id: '507f1f77bcf86cd799439011',
+        walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
         username: 'sample_user',
         avatar: null,
         bio: 'Private social, made simple',
@@ -36,10 +37,13 @@ describe('GET /v1/users/:username', () => {
     const response = await request(app).get('/v1/users/Sample_User');
 
     expect(response.status).toBe(200);
-    expect(response.body.result.user).not.toHaveProperty('walletAddress');
+    expect(response.body.result.user.walletAddress).toBe(
+      'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
+    );
     expect(response.body.result.user.createdAt).toBe('2026-07-01T12:00:00.000Z');
     expect(response.body.result.user).toMatchObject({
       id: '507f1f77bcf86cd799439011',
+      walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
       username: 'sample_user',
       avatar: null,
       bio: 'Private social, made simple',

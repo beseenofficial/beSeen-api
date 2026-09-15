@@ -1,6 +1,6 @@
+import User from '../../models/User';
 import ContractBounty from '../../models/ContractBounty';
 import MessageBounty from '../../models/MessageBounty';
-import User from '../../models/User';
 import type { ContractBountyDocument } from '../../models/ContractBounty';
 import type { ObservedContractBounty } from '../../types/contract/bounty';
 
@@ -67,9 +67,11 @@ const upsertContractBounty = async (
   if (observed.eventId !== undefined) {
     setMetadata.eventId = observed.eventId;
   }
+
   if (observed.eventLedger !== undefined) {
     setMetadata.eventLedger = observed.eventLedger;
   }
+
   if (observed.lockTransactionHash !== undefined) {
     setMetadata.lockTransactionHash = observed.lockTransactionHash.toLowerCase();
   }

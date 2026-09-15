@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
-import TokenHolding from '../../src/models/TokenHolding';
+import AuraFollow from '../../src/models/AuraFollow';
 import MessageBounty from '../../src/models/MessageBounty';
 import UserActivityDay from '../../src/models/UserActivityDay';
 import collectDiscoverMetrics from '../../src/utils/discover/collectDiscoverMetrics';
@@ -22,13 +22,13 @@ describe('collectDiscoverMetrics', () => {
 
     const activityAt = new Date('2026-08-10T12:00:00.000Z');
 
-    vi.spyOn(TokenHolding, 'aggregate').mockReturnValue(
+    vi.spyOn(AuraFollow, 'aggregate').mockReturnValue(
       aggregateResult([
         {
           _id: userId,
           followerCount: 20,
           newFollowerCount30d: 5,
-          lastTokenPurchaseAt: activityAt,
+          lastAuraPurchaseAt: activityAt,
         },
       ]) as never,
     );
@@ -76,7 +76,7 @@ describe('collectDiscoverMetrics', () => {
       lastActiveAt: activityAt,
       followerCount: 20,
       newFollowerCount30d: 5,
-      lastTokenPurchaseAt: activityAt,
+      lastAuraPurchaseAt: activityAt,
       claimedBountyCount: 3,
       claimedUsdcAmount: 25,
       reciprocalConversationCount30d: 4,
@@ -116,7 +116,7 @@ describe('collectDiscoverMetrics', () => {
   });
 
   it('does not query activity collections when there are no active users', async () => {
-    const holdingAggregateSpy = vi.spyOn(TokenHolding, 'aggregate');
+    const holdingAggregateSpy = vi.spyOn(AuraFollow, 'aggregate');
 
     const messageAggregateSpy = vi.spyOn(Message, 'aggregate');
     const activityAggregateSpy = vi.spyOn(UserActivityDay, 'aggregate');

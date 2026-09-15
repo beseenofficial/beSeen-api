@@ -1,12 +1,12 @@
-import ContractSyncState from '../../models/ContractSyncState';
-import MessageBounty from '../../models/MessageBounty';
-import { CONTRACT_BOUNTY_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../constant/contract';
-import type { ContractBountyData } from '../../types/contract/bounty';
+import stellarSdk from './stellarSdk';
 import getContractBounty from './getContractBounty';
 import getContractSyncConfig from './contractConfig';
+import MessageBounty from '../../models/MessageBounty';
 import decodeContractBounty from './contractBountyCodec';
 import upsertContractBounty from './upsertContractBounty';
-import stellarSdk from './stellarSdk';
+import ContractSyncState from '../../models/ContractSyncState';
+import type { ContractBountyData } from '../../types/contract/bounty';
+import { CONTRACT_BOUNTY_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../constant/contract';
 
 interface EventMetadata {
   eventId: string;
@@ -72,10 +72,13 @@ const syncBountyEvents = async (): Promise<{ processed: number; cursor: string }
   const rpcServer = new stellarSdk.rpc.Server(config.rpcUrl, {
     allowHttp: new URL(config.rpcUrl).protocol === 'http:',
   });
+
   const topic = stellarSdk.xdr.ScVal.scvSymbol('lock_bnty').toXDR('base64');
+
   const pagination = state.eventCursor
     ? { cursor: state.eventCursor }
     : { startLedger: config.startLedger };
+
   const response = await rpcServer.getEvents({
     filters: [
       {

@@ -6,6 +6,7 @@ import serializeConversation from './serializeConversation';
 import { encodeConversationCursor } from './conversationCursor';
 import type { GetConversationsResult } from '../../types/messenger/conversation';
 import type { ConversationListQuery } from '../../validation/messenger/conversation';
+import AuraFollow from '../../models/AuraFollow';
 
 const getConversations = async (
   userId: string,
@@ -17,7 +18,26 @@ const getConversations = async (
     return { ok: false, reason: 'account_unavailable' };
   }
 
-  const participantMatch = [{ participantA: viewer._id }, { participantB: viewer._id }];
+  const follows = await AuraFollow.find({
+    $or: [{ follower: viewer._id }, { subject: viewer._id }],
+  })
+    .select({ follower: 1, subject: 1 })
+    .exec();
+  const allowedParticipantIds = follows.map((follow) =>
+    follow.follower.equals(viewer._id) ? follow.subject : follow.follower,
+  );
+
+  if (allowedParticipantIds.length === 0) {
+    return {
+      ok: true,
+      conversations: { items: [], nextCursor: null, hasMore: false },
+    };
+  }
+
+  const participantMatch = [
+    { participantA: viewer._id, participantB: { $in: allowedParticipantIds } },
+    { participantB: viewer._id, participantA: { $in: allowedParticipantIds } },
+  ];
 
   const match: Record<string, unknown> = { $or: participantMatch };
 

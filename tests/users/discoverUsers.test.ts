@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import TokenHolding from '../../src/models/TokenHolding';
+import AuraFollow from '../../src/models/AuraFollow';
 import User from '../../src/models/User';
 import discoverUsers from '../../src/utils/user/discoverUsers';
 import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
@@ -50,7 +50,7 @@ describe('discoverUsers', () => {
     const extra = user('000000000000000000000001', 'first_user', 60);
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([first, second, extra]) as never);
-    vi.spyOn(TokenHolding, 'aggregate').mockReturnValue(
+    vi.spyOn(AuraFollow, 'aggregate').mockReturnValue(
       aggregateResult([
         {
           followerCounts: [
@@ -89,7 +89,7 @@ describe('discoverUsers', () => {
       hasMore: true,
     });
     expect(User.find).toHaveBeenCalledWith({ status: 'active', deletedAt: null });
-    expect(TokenHolding.aggregate).toHaveBeenCalledOnce();
+    expect(AuraFollow.aggregate).toHaveBeenCalledOnce();
     expect(result.users[0]).not.toHaveProperty('walletAddress');
   });
 
@@ -100,7 +100,7 @@ describe('discoverUsers', () => {
     };
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([]) as never);
-    const aggregateSpy = vi.spyOn(TokenHolding, 'aggregate');
+    const aggregateSpy = vi.spyOn(AuraFollow, 'aggregate');
 
     await expect(discoverUsers({ cursor, limit: 20 })).resolves.toEqual({
       users: [],

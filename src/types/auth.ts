@@ -24,6 +24,7 @@ interface AuthRequestContext {
 }
 
 interface PublicUserProfile extends AuthenticatedUser {
+  walletAddress: string;
   broadcastCount: number;
   sentMessageCount: number;
   receivedMessageCount: number;

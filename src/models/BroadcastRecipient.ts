@@ -14,7 +14,7 @@ interface IBroadcastRecipient {
   encryptionPublicKey: string;
   encryptedBroadcastKey: string | null;
   accessMode: BroadcastAccessMode;
-  tokenId: string | null;
+  auraTokenId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,10 +69,10 @@ const broadcastRecipientSchema = new Schema<IBroadcastRecipient>(
       type: String,
       enum: BROADCAST_ACCESS_MODES,
       required: true,
-      default: 'token',
+      default: 'aura',
       immutable: true,
     },
-    tokenId: {
+    auraTokenId: {
       type: String,
       default: null,
       immutable: true,

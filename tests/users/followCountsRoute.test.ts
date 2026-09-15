@@ -2,9 +2,9 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import app from '../../src/app';
-import getFollowCounts from '../../src/utils/token/getFollowCounts';
+import getFollowCounts from '../../src/utils/aura/getFollowCounts';
 
-vi.mock('../../src/utils/token/getFollowCounts', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/aura/getFollowCounts', () => ({ default: vi.fn() }));
 
 const getFollowCountsMock = vi.mocked(getFollowCounts);
 

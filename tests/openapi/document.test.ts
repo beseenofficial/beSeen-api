@@ -19,10 +19,8 @@ describe('OpenAPI contract', () => {
         '/v1/auth/logout',
         '/v1/users/me',
         '/v1/users/discover',
-        '/v1/users/me/tokens',
         '/v1/users/username/availability',
-        '/v1/users/{username}/token',
-        '/v1/users/{username}/token/purchase',
+        '/v1/users/{username}/aura/purchases',
         '/v1/users/{username}/follow-counts',
         '/v1/users/{username}/keys',
         '/v1/users/{username}',
@@ -41,7 +39,7 @@ describe('OpenAPI contract', () => {
       ]),
     );
     expect(openApiDocument.paths).not.toHaveProperty('/v1/auth/registration/verify');
-    expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
+    expect(openApiDocument.components.schemas.PublicUser.properties).toHaveProperty(
       'walletAddress',
     );
     expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(

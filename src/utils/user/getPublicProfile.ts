@@ -35,6 +35,7 @@ const getPublicProfile = async (username: string): Promise<GetPublicProfileResul
     ok: true,
     user: {
       id: user._id.toString(),
+      walletAddress: user.walletAddress,
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,

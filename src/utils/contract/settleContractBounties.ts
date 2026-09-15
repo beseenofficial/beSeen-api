@@ -1,7 +1,7 @@
 import env from '../../env';
+import stellarSdk from './stellarSdk';
 import networkPassphraseFor from '../stellar/networkPassphraseFor';
 import { getContractSettlementConfig } from './contractConfig';
-import stellarSdk from './stellarSdk';
 
 interface ContractSettlementResult {
   transactionHash: string;
@@ -33,8 +33,11 @@ const settleContractBounties = async (
   const rpcServer = new stellarSdk.rpc.Server(config.rpcUrl, {
     allowHttp: new URL(config.rpcUrl).protocol === 'http:',
   });
+
   const account = await rpcServer.getAccount(verifier.publicKey());
+
   const contract = new stellarSdk.Contract(config.contractId);
+
   const transaction = new stellarSdk.TransactionBuilder(account, {
     fee: stellarSdk.BASE_FEE,
     networkPassphrase: networkPassphraseFor(env.STELLAR_NETWORK),

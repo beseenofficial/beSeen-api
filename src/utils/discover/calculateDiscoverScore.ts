@@ -56,7 +56,7 @@ const calculateDiscoverScore = (
     DISCOVER_RECENT_FOLLOWER_WEIGHT *
       normalizeLogarithmically(metrics.newFollowerCount30d, DISCOVER_RECENT_FOLLOWER_CAP) +
     DISCOVER_LAST_TOKEN_PURCHASE_WEIGHT *
-      calculateRecency(metrics.lastTokenPurchaseAt, now, DISCOVER_RECENCY_HALF_LIFE_DAYS);
+      calculateRecency(metrics.lastAuraPurchaseAt, now, DISCOVER_RECENCY_HALF_LIFE_DAYS);
 
   const claimedBounties =
     DISCOVER_CLAIMED_BOUNTY_COUNT_WEIGHT *

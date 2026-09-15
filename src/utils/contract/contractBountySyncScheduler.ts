@@ -1,14 +1,16 @@
 import log from '../../logger';
+import syncAuraEvents from './syncAuraEvents';
+import syncBountyEvents from './syncBountyEvents';
+import processNextReplySettlement from './processNextReplySettlement';
+import reconcileNextContractBounty from './reconcileNextContractBounty';
+import reconcileRegisteredAuraPurchases from './reconcileRegisteredAuraPurchases';
+import getContractSyncConfig, { getContractSettlementConfig } from './contractConfig';
+import reconcileRegisteredContractBounties from './reconcileRegisteredContractBounties';
 import {
   CONTRACT_BOUNTY_EVENT_POLL_INTERVAL_MS,
   CONTRACT_BOUNTY_RECONCILE_INTERVAL_MS,
   CONTRACT_BOUNTY_SETTLEMENT_INTERVAL_MS,
 } from '../../constant/contract';
-import getContractSyncConfig, { getContractSettlementConfig } from './contractConfig';
-import processNextReplySettlement from './processNextReplySettlement';
-import reconcileNextContractBounty from './reconcileNextContractBounty';
-import reconcileRegisteredContractBounties from './reconcileRegisteredContractBounties';
-import syncBountyEvents from './syncBountyEvents';
 
 let eventTimer: NodeJS.Timeout | undefined;
 let reconciliationTimer: NodeJS.Timeout | undefined;
@@ -25,10 +27,10 @@ const runBountyEventSync = async (): Promise<void> => {
   eventSyncRunning = true;
 
   try {
-    const result = await syncBountyEvents();
+    const [bounties, auras] = await Promise.all([syncBountyEvents(), syncAuraEvents()]);
 
-    if (result.processed > 0) {
-      log.info({ processed: result.processed }, 'Contract bounty events synchronized');
+    if (bounties.processed > 0 || auras.processed > 0) {
+      log.info({ bounties, auras }, 'Contract events synchronized');
     }
   } catch (error: unknown) {
     log.error({ error }, 'Contract bounty event synchronization failed');
@@ -47,9 +49,15 @@ const runBountyReconciliation = async (): Promise<void> => {
   try {
     const registered = await reconcileRegisteredContractBounties();
     const sequence = await reconcileNextContractBounty();
+    const auras = await reconcileRegisteredAuraPurchases();
 
-    if (registered.synchronized > 0 || sequence.found || sequence.advancedAcrossObserved > 0) {
-      log.info({ registered, sequence }, 'Contract bounty reconciliation advanced');
+    if (
+      registered.synchronized > 0 ||
+      sequence.found ||
+      sequence.advancedAcrossObserved > 0 ||
+      auras.confirmed > 0
+    ) {
+      log.info({ registered, sequence, auras }, 'Contract reconciliation advanced');
     }
   } catch (error: unknown) {
     log.error({ error }, 'Contract bounty reconciliation failed');

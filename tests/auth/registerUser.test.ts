@@ -3,13 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import User from '../../src/models/User';
 import UserKey from '../../src/models/UserKey';
-import UserToken from '../../src/models/UserToken';
 import { withDatabaseTransaction } from '../../src/db';
 import AuthSession from '../../src/models/AuthSession';
 import registerUser from '../../src/utils/auth/registerUser';
 import verifyBluxWallet from '../../src/utils/blux/verifyBluxWallet';
 import { deleteAvatar, uploadAvatar } from '../../src/utils/avatar/avatarStorage';
-import ensureOfficialFollow from '../../src/utils/user/ensureOfficialFollow';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/blux/verifyBluxWallet', () => ({ default: vi.fn() }));
@@ -17,7 +15,6 @@ vi.mock('../../src/utils/avatar/avatarStorage', () => ({
   uploadAvatar: vi.fn(),
   deleteAvatar: vi.fn(),
 }));
-vi.mock('../../src/utils/user/ensureOfficialFollow', () => ({ default: vi.fn() }));
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
@@ -28,7 +25,6 @@ const verifyBluxWalletMock = vi.mocked(verifyBluxWallet);
 const uploadAvatarMock = vi.mocked(uploadAvatar);
 
 const deleteAvatarMock = vi.mocked(deleteAvatar);
-const ensureOfficialFollowMock = vi.mocked(ensureOfficialFollow);
 let savedDerivationVersion: number | undefined;
 const body = {
   walletAddress: WALLET,
@@ -62,12 +58,6 @@ describe('registerUser', () => {
     });
     uploadAvatarMock.mockReset();
     deleteAvatarMock.mockReset();
-    ensureOfficialFollowMock.mockReset();
-    ensureOfficialFollowMock.mockResolvedValue({
-      followed: true,
-      holdingCreated: true,
-      conversationCreated: true,
-    });
     vi.spyOn(User, 'exists').mockReturnValue(existsResult(null) as never);
     vi.spyOn(UserKey, 'exists').mockReturnValue(existsResult(null) as never);
     vi.spyOn(User.prototype, 'save').mockImplementation(async function saveUser() {
@@ -76,9 +66,6 @@ describe('registerUser', () => {
     });
     vi.spyOn(UserKey.prototype, 'save').mockImplementation(async function saveUserKey() {
       savedDerivationVersion = this.derivationVersion;
-      return this;
-    });
-    vi.spyOn(UserToken.prototype, 'save').mockImplementation(async function saveUserToken() {
       return this;
     });
     vi.spyOn(AuthSession.prototype, 'save').mockImplementation(async function saveSession() {
@@ -111,8 +98,6 @@ describe('registerUser', () => {
       auth: { tokenType: 'Bearer' },
     });
     expect(UserKey.prototype.save).toHaveBeenCalledOnce();
-    expect(UserToken.prototype.save).toHaveBeenCalledOnce();
-    expect(ensureOfficialFollowMock).toHaveBeenCalledWith(expect.anything(), expect.anything());
     expect(savedDerivationVersion).toBe(1);
   });
 

@@ -1,8 +1,7 @@
 import { Types } from 'mongoose';
 
-import TokenHolding from '../../models/TokenHolding';
+import AuraFollow from '../../models/AuraFollow';
 import User from '../../models/User';
-import UserToken from '../../models/UserToken';
 import getUserVerification from './getUserVerification';
 import type { DiscoverUsersPage } from '../../types/user';
 import type { DiscoverUsersQuery } from '../../validation/user/discover';
@@ -55,25 +54,16 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   const userIds = pageRows.map((user) => user._id);
 
   const followCounts = userIds.length
-    ? await TokenHolding.aggregate<DiscoverFollowCounts>([
+    ? await AuraFollow.aggregate<DiscoverFollowCounts>([
         {
           $facet: {
             followerCounts: [
-              {
-                $lookup: {
-                  from: UserToken.collection.name,
-                  localField: 'token',
-                  foreignField: '_id',
-                  as: 'tokenDocument',
-                },
-              },
-              { $unwind: '$tokenDocument' },
-              { $match: { 'tokenDocument.owner': { $in: userIds } } },
-              { $group: { _id: '$tokenDocument.owner', count: { $sum: 1 } } },
+              { $match: { subject: { $in: userIds } } },
+              { $group: { _id: '$subject', count: { $sum: 1 } } },
             ],
             followingCounts: [
-              { $match: { holder: { $in: userIds } } },
-              { $group: { _id: '$holder', count: { $sum: 1 } } },
+              { $match: { follower: { $in: userIds } } },
+              { $group: { _id: '$follower', count: { $sum: 1 } } },
             ],
           },
         },

@@ -1,39 +1,29 @@
 import type { Types } from 'mongoose';
 
-import UserToken from '../../../models/UserToken';
-import TokenHolding from '../../../models/TokenHolding';
+import AuraFollow from '../../../models/AuraFollow';
 import type { DiscoverFollowerMetrics } from '../../../types/discover';
 
 interface FollowerMetricsRecord {
   _id: Types.ObjectId;
   followerCount: number;
   newFollowerCount30d: number;
-  lastTokenPurchaseAt: Date;
+  lastAuraPurchaseAt: Date;
 }
 
 const collectFollowerMetrics = async (
   userIds: Types.ObjectId[],
   activityCutoff: Date,
 ): Promise<DiscoverFollowerMetrics[]> => {
-  const records = await TokenHolding.aggregate<FollowerMetricsRecord>([
-    {
-      $lookup: {
-        from: UserToken.collection.name,
-        localField: 'token',
-        foreignField: '_id',
-        as: 'tokenDocument',
-      },
-    },
-    { $unwind: '$tokenDocument' },
-    { $match: { 'tokenDocument.owner': { $in: userIds } } },
+  const records = await AuraFollow.aggregate<FollowerMetricsRecord>([
+    { $match: { subject: { $in: userIds } } },
     {
       $group: {
-        _id: '$tokenDocument.owner',
+        _id: '$subject',
         followerCount: { $sum: 1 },
         newFollowerCount30d: {
           $sum: { $cond: [{ $gte: ['$createdAt', activityCutoff] }, 1, 0] },
         },
-        lastTokenPurchaseAt: { $max: '$createdAt' },
+        lastAuraPurchaseAt: { $max: '$createdAt' },
       },
     },
   ]).exec();
@@ -42,7 +32,7 @@ const collectFollowerMetrics = async (
     userId: record._id.toString(),
     followerCount: record.followerCount,
     newFollowerCount30d: record.newFollowerCount30d,
-    lastTokenPurchaseAt: record.lastTokenPurchaseAt,
+    lastAuraPurchaseAt: record.lastAuraPurchaseAt,
   }));
 };
 

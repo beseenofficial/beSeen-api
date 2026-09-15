@@ -1,9 +1,14 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import User from '../../src/models/User';
 import Conversation from '../../src/models/Conversation';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
+import hasAuraConversationAccess from '../../src/utils/aura/hasAuraConversationAccess';
+
+vi.mock('../../src/utils/aura/hasAuraConversationAccess', () => ({ default: vi.fn() }));
+
+const hasAuraAccessMock = vi.mocked(hasAuraConversationAccess);
 
 const walletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
@@ -13,6 +18,7 @@ const createUser = (id: Types.ObjectId, username: string) =>
   new User({ _id: id, walletAddress, username, avatar: null });
 
 describe('getConversationAccess', () => {
+  beforeEach(() => hasAuraAccessMock.mockResolvedValue(true));
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -49,6 +55,22 @@ describe('getConversationAccess', () => {
 
     await expect(
       getConversationAccess(viewer._id.toString(), new Types.ObjectId().toString()),
+    ).resolves.toEqual({ ok: false, reason: 'conversation_not_found' });
+  });
+
+  it('does not expose an old conversation without a confirmed Aura relationship', async () => {
+    const viewer = createUser(new Types.ObjectId(), 'viewer_user');
+    const otherParticipant = createUser(new Types.ObjectId(), 'other_user');
+    const conversation = new Conversation({
+      participantA: viewer._id,
+      participantB: otherParticipant._id,
+    });
+    vi.spyOn(User, 'findOne').mockReturnValueOnce(queryResult(viewer) as never);
+    vi.spyOn(Conversation, 'findOne').mockReturnValue(queryResult(conversation) as never);
+    hasAuraAccessMock.mockResolvedValue(false);
+
+    await expect(
+      getConversationAccess(viewer._id.toString(), conversation._id.toString()),
     ).resolves.toEqual({ ok: false, reason: 'conversation_not_found' });
   });
 });
