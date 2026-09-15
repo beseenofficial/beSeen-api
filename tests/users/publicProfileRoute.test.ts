@@ -20,6 +20,7 @@ describe('GET /v1/users/:username', () => {
       user: {
         id: '507f1f77bcf86cd799439011',
         walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
+        auraPrice: '10000000',
         username: 'sample_user',
         avatar: null,
         bio: 'Private social, made simple',
@@ -43,6 +44,7 @@ describe('GET /v1/users/:username', () => {
     expect(response.body.result.user).toMatchObject({
       id: '507f1f77bcf86cd799439011',
       walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
+      auraPrice: '10000000',
       username: 'sample_user',
       avatar: null,
       bio: 'Private social, made simple',

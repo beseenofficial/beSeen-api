@@ -5,6 +5,11 @@ import Broadcast from '../../src/models/Broadcast';
 import MessageBounty from '../../src/models/MessageBounty';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import getPublicProfile from '../../src/utils/user/getPublicProfile';
+import getContractAuraPrices from '../../src/utils/contract/getContractAuraPrices';
+
+vi.mock('../../src/utils/contract/getContractAuraPrices', () => ({ default: vi.fn() }));
+
+const getContractAuraPricesMock = vi.mocked(getContractAuraPrices);
 
 const queryResult = (value: unknown) => ({
   exec: vi.fn().mockResolvedValue(value),
@@ -12,6 +17,7 @@ const queryResult = (value: unknown) => ({
 
 describe('getPublicProfile', () => {
   afterEach(() => {
+    getContractAuraPricesMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -26,6 +32,8 @@ describe('getPublicProfile', () => {
       username: 'alice',
       createdAt,
     });
+
+    getContractAuraPricesMock.mockResolvedValue(new Map([[user.walletAddress, '25000000']]));
 
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(user) as never);
     const broadcastCountSpy = vi
@@ -46,6 +54,7 @@ describe('getPublicProfile', () => {
       user: {
         id: userId.toString(),
         walletAddress: user.walletAddress,
+        auraPrice: '25000000',
         username: 'alice',
         avatar: null,
         bio: null,
@@ -72,6 +81,7 @@ describe('getPublicProfile', () => {
       { $group: { _id: null, total: { $sum: { $toDecimal: '$amount' } } } },
       { $project: { _id: 0, total: { $toString: '$total' } } },
     ]);
+    expect(getContractAuraPricesMock).toHaveBeenCalledWith([user.walletAddress]);
   });
 
   it('does not query broadcasts when the user is unavailable', async () => {
@@ -89,5 +99,6 @@ describe('getPublicProfile', () => {
     expect(broadcastCountSpy).not.toHaveBeenCalled();
     expect(messageCountSpy).not.toHaveBeenCalled();
     expect(bountyAggregateSpy).not.toHaveBeenCalled();
+    expect(getContractAuraPricesMock).not.toHaveBeenCalled();
   });
 });

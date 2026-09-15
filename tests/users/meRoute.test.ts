@@ -1,11 +1,10 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
 import getCurrentUser from '../../src/utils/user/getCurrentUser';
 import signAccessToken from '../../src/utils/auth/signAccessToken';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/utils/user/getCurrentUser', () => ({
   default: vi.fn(),
@@ -38,6 +37,7 @@ describe('GET /v1/users/me', () => {
         username: 'sample_user',
         avatar: null,
         bio: 'Private social, made simple',
+        auraPrice: '10000000',
         verification: { isVerified: false, grantedAt: null, expiresAt: null },
         demoUsdcBalance: '20',
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
@@ -54,6 +54,7 @@ describe('GET /v1/users/me', () => {
       username: 'sample_user',
       avatar: null,
       bio: 'Private social, made simple',
+      auraPrice: '10000000',
       verification: { isVerified: false, grantedAt: null, expiresAt: null },
       demoUsdcBalance: '20',
       createdAt: '2026-07-01T12:00:00.000Z',

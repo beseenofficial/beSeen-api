@@ -47,7 +47,12 @@ describe('OpenAPI contract', () => {
     expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty(
       'demoUsdcBalance',
     );
+    expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty('auraPrice');
+
+    expect(openApiDocument.components.schemas.PublicUser.properties).toHaveProperty('auraPrice');
+
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('bio');
+    expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('auraPrice');
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
       'followerCount',
     );

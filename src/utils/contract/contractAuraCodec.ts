@@ -54,6 +54,16 @@ const decodeContractAura = (value: unknown): ContractAuraData => {
   };
 };
 
+const decodeContractAuraPrice = (value: unknown): string => {
+  const price = positiveI128(value, 'price');
+
+  if (price === '0') {
+    throw new RangeError('Contract aura price must be positive');
+  }
+
+  return price;
+};
+
 const decodeAuraPurchasedEvent = (value: unknown): ObservedAuraPurchase => {
   if (!isRecord(value)) {
     throw new TypeError('Aura purchase event value must be a record');
@@ -69,4 +79,4 @@ const decodeAuraPurchasedEvent = (value: unknown): ObservedAuraPurchase => {
   };
 };
 
-export { decodeAuraPurchasedEvent, decodeContractAura };
+export { decodeAuraPurchasedEvent, decodeContractAura, decodeContractAuraPrice };

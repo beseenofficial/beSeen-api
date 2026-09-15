@@ -4,6 +4,7 @@ import Broadcast from '../../models/Broadcast';
 import MessageBounty from '../../models/MessageBounty';
 import getUserVerification from './getUserVerification';
 import type { GetPublicProfileResult } from '../../types/user';
+import getContractAuraPrices from '../contract/getContractAuraPrices';
 
 const getPublicProfile = async (username: string): Promise<GetPublicProfileResult> => {
   const user = await User.findOne({ username, status: 'active', deletedAt: null }).exec();
@@ -11,7 +12,14 @@ const getPublicProfile = async (username: string): Promise<GetPublicProfileResul
     return { ok: false, reason: 'user_not_found' };
   }
 
-  const [broadcastCount, sentMessageCount, receivedMessageCount, bountyTotals] = await Promise.all([
+  const [
+    auraPriceByWalletAddress,
+    broadcastCount,
+    sentMessageCount,
+    receivedMessageCount,
+    bountyTotals,
+  ] = await Promise.all([
+    getContractAuraPrices([user.walletAddress]),
     Broadcast.countDocuments({
       creator: user._id,
       status: 'published',
@@ -36,6 +44,7 @@ const getPublicProfile = async (username: string): Promise<GetPublicProfileResul
     user: {
       id: user._id.toString(),
       walletAddress: user.walletAddress,
+      auraPrice: auraPriceByWalletAddress.get(user.walletAddress) ?? null,
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,

@@ -4,6 +4,11 @@ import AuraFollow from '../../src/models/AuraFollow';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import discoverUsers from '../../src/utils/user/discoverUsers';
 import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
+import getContractAuraPrices from '../../src/utils/contract/getContractAuraPrices';
+
+vi.mock('../../src/utils/contract/getContractAuraPrices', () => ({ default: vi.fn() }));
+
+const getContractAuraPricesMock = vi.mocked(getContractAuraPrices);
 
 const user = (
   id: string,
@@ -32,6 +37,7 @@ const aggregateResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(v
 
 describe('discoverUsers', () => {
   afterEach(() => {
+    getContractAuraPricesMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -46,7 +52,11 @@ describe('discoverUsers', () => {
 
     const second = user('000000000000000000000002', 'second_user', 70);
 
+    second.walletAddress = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
     const extra = user('000000000000000000000001', 'first_user', 60);
+
+    getContractAuraPricesMock.mockResolvedValue(new Map([[first.walletAddress, '15000000']]));
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([first, second, extra]) as never);
     vi.spyOn(AuraFollow, 'aggregate').mockReturnValue(
@@ -70,6 +80,7 @@ describe('discoverUsers', () => {
           username: 'third_user',
           avatar: 'https://img.example/3.webp',
           bio: 'Building private social tools',
+          auraPrice: '15000000',
           followerCount: 12,
           followingCount: 7,
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
@@ -79,6 +90,7 @@ describe('discoverUsers', () => {
           username: 'second_user',
           avatar: null,
           bio: null,
+          auraPrice: null,
           followerCount: 4,
           followingCount: 0,
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
@@ -89,6 +101,10 @@ describe('discoverUsers', () => {
     });
     expect(User.find).toHaveBeenCalledWith({ status: 'active', deletedAt: null });
     expect(AuraFollow.aggregate).toHaveBeenCalledOnce();
+    expect(getContractAuraPricesMock).toHaveBeenCalledWith([
+      first.walletAddress,
+      second.walletAddress,
+    ]);
     expect(result.users[0]).not.toHaveProperty('walletAddress');
   });
 
@@ -99,6 +115,9 @@ describe('discoverUsers', () => {
     };
 
     vi.spyOn(User, 'find').mockReturnValue(queryResult([]) as never);
+
+    getContractAuraPricesMock.mockResolvedValue(new Map());
+
     const aggregateSpy = vi.spyOn(AuraFollow, 'aggregate');
 
     await expect(discoverUsers({ cursor, limit: 20 })).resolves.toEqual({

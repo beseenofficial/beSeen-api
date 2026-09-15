@@ -25,6 +25,7 @@ interface AuthRequestContext {
 
 interface PublicUserProfile extends AuthenticatedUser {
   walletAddress: string;
+  auraPrice: string | null;
   broadcastCount: number;
   sentMessageCount: number;
   receivedMessageCount: number;

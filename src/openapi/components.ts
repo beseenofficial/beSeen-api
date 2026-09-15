@@ -47,6 +47,13 @@ const userProperties = {
   createdAt: { type: 'string', format: 'date-time' },
 };
 
+const auraPriceSchema = {
+  oneOf: [{ type: 'string', pattern: '^[1-9]\\d*$' }, { type: 'null' }],
+  description:
+    'Current on-chain aura_price result in the contract token base units; null when the contract read is temporarily unavailable.',
+  example: '10000000',
+};
+
 const publicUserProperties = {
   ...userProperties,
   walletAddress: {
@@ -54,6 +61,7 @@ const publicUserProperties = {
     pattern: '^G[A-Z2-7]{55}$',
     description: 'Public Stellar address required by clients to call buy_aura.',
   },
+  auraPrice: auraPriceSchema,
   broadcastCount: {
     type: 'integer',
     minimum: 0,
@@ -84,6 +92,7 @@ const publicUserProperties = {
 
 const currentUserProperties = {
   ...userProperties,
+  auraPrice: auraPriceSchema,
   demoUsdcBalance: {
     type: 'string',
     pattern: '^(?:0|[1-9]\\d*)(?:\\.\\d{1,7})?$',
@@ -158,6 +167,7 @@ const openApiComponents = {
         'username',
         'avatar',
         'bio',
+        'auraPrice',
         'followerCount',
         'followingCount',
         'verification',
@@ -167,6 +177,7 @@ const openApiComponents = {
         username: userProperties.username,
         avatar: nullableUrlSchema,
         bio: userProperties.bio,
+        auraPrice: auraPriceSchema,
         followerCount: {
           type: 'integer',
           minimum: 0,

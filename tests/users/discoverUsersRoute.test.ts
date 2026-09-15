@@ -1,7 +1,6 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import app from '../../src/app';
 import discoverUsers from '../../src/utils/user/discoverUsers';
 import { encodeDiscoverCursor } from '../../src/utils/discover/discoverCursor';
 
@@ -22,6 +21,7 @@ describe('GET /v1/users/discover', () => {
           username: 'sample_user',
           avatar: null,
           bio: 'Building private social tools',
+          auraPrice: '10000000',
           followerCount: 12,
           followingCount: 7,
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
@@ -41,6 +41,7 @@ describe('GET /v1/users/discover', () => {
           username: 'sample_user',
           avatar: null,
           bio: 'Building private social tools',
+          auraPrice: '10000000',
           followerCount: 12,
           followingCount: 7,
           verification: { isVerified: false, grantedAt: null, expiresAt: null },
