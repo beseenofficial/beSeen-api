@@ -1,3 +1,5 @@
+import type { Types } from 'mongoose';
+
 import type { AuthenticatedUser, PublicUserProfile, UserVerification } from './auth';
 
 interface UsernameAvailabilityResult {
@@ -11,6 +13,7 @@ interface DiscoverUser {
   username: string;
   avatar: string | null;
   bio: string | null;
+  auraPrice: string | null;
   followerCount: number;
   followingCount: number;
   verification: UserVerification;
@@ -29,7 +32,17 @@ interface UserActivityHeartbeat {
 }
 
 interface CurrentUserProfile extends AuthenticatedUser {
-  demoUsdcBalance: string;
+  auraPrice: string | null;
+}
+
+interface FollowCountRecord {
+  _id: Types.ObjectId;
+  count: number;
+}
+
+interface DiscoverFollowCounts {
+  followerCounts: FollowCountRecord[];
+  followingCounts: FollowCountRecord[];
 }
 
 type RecordUserActivityResult =
@@ -63,6 +76,7 @@ type GetPublicUserKeysResult =
 
 export type {
   DiscoverUser,
+  DiscoverFollowCounts,
   DiscoverUsersPage,
   GetCurrentUserResult,
   GetPublicProfileResult,

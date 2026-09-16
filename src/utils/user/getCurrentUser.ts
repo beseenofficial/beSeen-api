@@ -1,13 +1,15 @@
 import User from '../../models/User';
 import getUserVerification from './getUserVerification';
 import type { GetCurrentUserResult } from '../../types/user';
-import { formatDemoUsdcUnits } from '../messenger/demoUsdcAmount';
+import getContractAuraPrices from '../contract/getContractAuraPrices';
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
   const user = await User.findOne({ _id: userId, status: 'active', deletedAt: null }).exec();
   if (!user) {
     return { ok: false, reason: 'account_unavailable' };
   }
+
+  const auraPriceByWalletAddress = await getContractAuraPrices([user.walletAddress]);
 
   return {
     ok: true,
@@ -16,8 +18,8 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
       username: user.username,
       avatar: user.avatar,
       bio: user.bio,
+      auraPrice: auraPriceByWalletAddress.get(user.walletAddress) ?? null,
       verification: getUserVerification(user),
-      demoUsdcBalance: formatDemoUsdcUnits(user.demoUsdcBalanceUnits),
       createdAt: user.createdAt,
     },
   };

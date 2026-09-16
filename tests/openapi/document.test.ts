@@ -1,8 +1,7 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import SwaggerParser from '@apidevtools/swagger-parser';
-
-import app from '../../src/app';
 import openApiDocument from '../../src/openapi/document';
 
 describe('OpenAPI contract', () => {
@@ -19,10 +18,8 @@ describe('OpenAPI contract', () => {
         '/v1/auth/logout',
         '/v1/users/me',
         '/v1/users/discover',
-        '/v1/users/me/tokens',
         '/v1/users/username/availability',
-        '/v1/users/{username}/token',
-        '/v1/users/{username}/token/purchase',
+        '/v1/users/{username}/aura/purchases',
         '/v1/users/{username}/follow-counts',
         '/v1/users/{username}/keys',
         '/v1/users/{username}',
@@ -31,7 +28,6 @@ describe('OpenAPI contract', () => {
         '/v1/messenger/conversations/{conversationId}/context',
         '/v1/messenger/conversations/{conversationId}/messages',
         '/v1/messenger/conversations/{conversationId}/read',
-        '/v1/messenger/bounties/{bountyId}/claim',
         '/v1/broadcasts/feed',
         '/v1/broadcasts/drafts',
         '/v1/broadcasts/drafts/{draftId}/recipients',
@@ -41,21 +37,27 @@ describe('OpenAPI contract', () => {
       ]),
     );
     expect(openApiDocument.paths).not.toHaveProperty('/v1/auth/registration/verify');
-    expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
+    expect(openApiDocument.paths).not.toHaveProperty('/v1/messenger/bounties/{bountyId}/claim');
+    expect(openApiDocument.components.schemas.PublicUser.properties).toHaveProperty(
       'walletAddress',
     );
-    expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
+    expect(openApiDocument.components.schemas.CurrentUser.properties).not.toHaveProperty(
       'demoUsdcBalance',
     );
-    expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty(
-      'demoUsdcBalance',
-    );
+    expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty('auraPrice');
+
+    expect(openApiDocument.components.schemas.PublicUser.properties).toHaveProperty('auraPrice');
+
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('bio');
+    expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty('auraPrice');
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
       'followerCount',
     );
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
       'followingCount',
+    );
+    expect(openApiDocument.components.schemas.MessengerBountyTerms.required).toContain(
+      'contractBountyId',
     );
     expect(openApiDocument.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',

@@ -23,6 +23,26 @@ const envSchema = z
       .default('mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true'),
     DB_NAME: z.string().min(1).default('beseen'),
     STELLAR_NETWORK: z.enum(['public', 'testnet']).default('testnet'),
+    STELLAR_RPC_URL: z.url().optional(),
+    BESEEN_CONTRACT_ID: z
+      .string()
+      .regex(/^C[A-Z2-7]{55}$/)
+      .optional(),
+    BESEEN_RPC_SOURCE_ACCOUNT: z
+      .string()
+      .regex(/^G[A-Z2-7]{55}$/)
+      .optional(),
+    BESEEN_CONTRACT_START_LEDGER: z.coerce.number().int().nonnegative().optional(),
+    BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(1_000_000)
+      .default(10_000),
+    BESEEN_VERIFIER_SECRET: z
+      .string()
+      .regex(/^S[A-Z2-7]{55}$/)
+      .optional(),
     AUTH_DOMAIN: z.string().min(1).default('beseen.fi'),
     BLUX_BASE_URL: z.url().default('https://api.blux.cc'),
     BLUX_APP_ID: z.string().min(1).default(DEVELOPMENT_BLUX_APP_ID),
@@ -49,6 +69,25 @@ const envSchema = z
       .default('info'),
   })
   .superRefine((value, context) => {
+    const contractSyncValues = [
+      value.STELLAR_RPC_URL,
+      value.BESEEN_CONTRACT_ID,
+      value.BESEEN_RPC_SOURCE_ACCOUNT,
+      value.BESEEN_CONTRACT_START_LEDGER,
+    ];
+
+    if (
+      contractSyncValues.some((item) => item !== undefined) &&
+      contractSyncValues.some((item) => item === undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['BESEEN_CONTRACT_ID'],
+        message:
+          'STELLAR_RPC_URL, BESEEN_CONTRACT_ID, BESEEN_RPC_SOURCE_ACCOUNT, and BESEEN_CONTRACT_START_LEDGER must be configured together',
+      });
+    }
+
     if (
       value.NODE_ENV === 'production' &&
       value.ACCESS_TOKEN_SECRET === DEVELOPMENT_ACCESS_TOKEN_SECRET

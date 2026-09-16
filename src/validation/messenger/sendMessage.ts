@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import isCanonicalBase64 from '../../utils/crypto/isCanonicalBase64';
+import isPositiveU64String from '../../utils/contract/isPositiveU64String';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_MAX_DURATION_SECONDS,
@@ -22,6 +23,9 @@ const objectIdSchema = z
 
 const bountyTermsSchema = z
   .object({
+    contractBountyId: z
+      .string()
+      .refine(isPositiveU64String, 'Contract bounty ID must be a positive u64 integer'),
     assetCode: z.literal('USDC'),
     amount: z
       .string()

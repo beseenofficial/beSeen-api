@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 
-import getFollowCounts from '../../utils/token/getFollowCounts';
+import getFollowCounts from '../../utils/aura/getFollowCounts';
 import { publicUsernameParamsSchema } from '../../validation/user/updateProfile';
 
 const getFollowCountsRoute: RequestHandler = async (req, res) => {

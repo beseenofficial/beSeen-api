@@ -437,65 +437,56 @@ const openApiPaths = {
       },
     },
   },
-  '/v1/users/me/tokens': {
-    get: {
-      tags: ['Tokens'],
-      summary: 'List the current user’s demo token holdings',
-      operationId: 'getMyTokens',
-      security: [{ bearerAuth: [] }],
-      responses: {
-        '200': jsonResponse('Owned tokens retrieved.', {
-          type: 'object',
-          required: ['tokens'],
-          properties: {
-            tokens: { type: 'array', items: { $ref: '#/components/schemas/UserToken' } },
-          },
-        }),
-        '401': unauthorized,
-      },
-    },
-  },
-  '/v1/users/{username}/token': {
-    get: {
-      tags: ['Tokens'],
-      summary: 'Get the single demo token belonging to a user',
-      operationId: 'getUserToken',
-      parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
-      responses: {
-        '200': jsonResponse('User token retrieved.', {
-          type: 'object',
-          required: ['token'],
-          properties: { token: { $ref: '#/components/schemas/UserToken' } },
-        }),
-        '400': validationError,
-        '404': genericError,
-      },
-    },
-  },
-  '/v1/users/{username}/token/purchase': {
+  '/v1/users/{username}/aura/purchases': {
     post: {
-      tags: ['Tokens'],
-      summary: 'Acquire a user’s token in demo mode',
+      tags: ['Aura'],
+      summary: 'Register a client-signed buy_aura transaction for confirmation',
       description:
-        'No payment or blockchain transaction occurs. The existing token holding also grants Broadcast access and ensures exactly one shared Messenger conversation for the buyer/owner pair. Repeating or reverse purchases do not create duplicate conversations.',
-      operationId: 'purchaseUserToken',
+        'The authenticated buyer calls buy_aura in the client first. Follow and conversation access are created only after the matching buyer, subject, token ID, and transaction are confirmed from the contract.',
+      operationId: 'registerAuraPurchase',
       security: [{ bearerAuth: [] }],
       parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['tokenId', 'buyerAddress', 'subjectAddress', 'transactionHash'],
+              properties: {
+                tokenId: { type: 'string', pattern: '^[1-9]\\d*$' },
+                buyerAddress: { type: 'string', pattern: '^G[A-Z2-7]{55}$' },
+                subjectAddress: { type: 'string', pattern: '^G[A-Z2-7]{55}$' },
+                transactionHash: { type: 'string', pattern: '^[a-fA-F\\d]{64}$' },
+              },
+            },
+          },
+        },
+      },
       responses: {
-        '201': jsonResponse('Token purchased.', {
+        '200': jsonResponse('Previously registered Aura purchase confirmed.', {
           type: 'object',
-          required: ['holding', 'conversation'],
+          required: ['purchase', 'conversation'],
           properties: {
-            holding: { $ref: '#/components/schemas/TokenHolding' },
-            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+            purchase: { $ref: '#/components/schemas/AuraPurchaseRegistration' },
+            conversation: { $ref: '#/components/schemas/AuraPurchaseConversation' },
           },
         }),
-        '200': jsonResponse('Token already owned.', {
+        '201': jsonResponse('Aura purchase confirmed.', {
           type: 'object',
-          required: ['holding', 'conversation'],
+          required: ['purchase', 'conversation'],
           properties: {
-            holding: { $ref: '#/components/schemas/TokenHolding' },
-            conversation: { $ref: '#/components/schemas/TokenPurchaseConversation' },
+            purchase: { $ref: '#/components/schemas/AuraPurchaseRegistration' },
+            conversation: { $ref: '#/components/schemas/AuraPurchaseConversation' },
+          },
+        }),
+        '202': jsonResponse('Aura purchase queued for confirmation.', {
+          type: 'object',
+          required: ['purchase', 'conversation'],
+          properties: {
+            purchase: { $ref: '#/components/schemas/AuraPurchaseRegistration' },
+            conversation: { type: 'null' },
           },
         }),
         '400': validationError,
@@ -507,10 +498,9 @@ const openApiPaths = {
   },
   '/v1/users/{username}/follow-counts': {
     get: {
-      tags: ['Tokens'],
+      tags: ['Aura'],
       summary: 'Get follower and following counts for a user',
-      description:
-        "Follower count is the number of unique holders of this user's token. Following count is the number of user tokens held by this user.",
+      description: 'Multiple confirmed Auras purchased for the same subject count as one follow.',
       operationId: 'getUserFollowCounts',
       parameters: [{ in: 'path', name: 'username', required: true, schema: userPathSchema }],
       responses: {
@@ -582,7 +572,8 @@ const openApiPaths = {
     get: {
       tags: ['Profiles'],
       summary: 'Get a public profile by username',
-      description: 'The public profile intentionally excludes the Stellar wallet address.',
+      description:
+        'Includes the public Stellar address required for client-side buy_aura calls. No private wallet material is ever returned.',
       operationId: 'getPublicProfile',
       parameters: [
         {
@@ -605,43 +596,6 @@ const openApiPaths = {
         }),
         '400': validationError,
         '404': genericError,
-      },
-    },
-  },
-  '/v1/messenger/bounties/{bountyId}/claim': {
-    post: {
-      tags: ['Messenger'],
-      summary: 'Claim an unlocked demo message bounty',
-      description:
-        'Only the bounty beneficiary can call this endpoint. A timely direct reply first changes the bounty from offered to claimable. Claiming is idempotent and records demo state only; it performs no payment, balance change, escrow action, or blockchain transfer.',
-      operationId: 'claimMessengerMessageBounty',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          in: 'path',
-          name: 'bountyId',
-          required: true,
-          schema: { $ref: '#/components/schemas/ObjectId' },
-        },
-      ],
-      responses: {
-        '200': jsonResponse('Demo bounty claimed or was already claimed.', {
-          type: 'object',
-          required: ['bounty', 'claimedNow'],
-          properties: {
-            bounty: { $ref: '#/components/schemas/MessengerBounty' },
-            claimedNow: {
-              type: 'boolean',
-              description: 'True only for the request that performed the claim transition.',
-            },
-          },
-        }),
-        '400': validationError,
-        '401': unauthorized,
-        '404': genericError,
-        '409': genericError,
-        '410': genericError,
-        '429': rateLimited,
       },
     },
   },
@@ -791,7 +745,7 @@ const openApiPaths = {
       tags: ['Messenger'],
       summary: 'Send one signed end-to-end encrypted direct message',
       description:
-        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. The client sends ciphertext, two wrapped content-key copies, an optional reply target, an optional demo bounty, a UUID, and its Ed25519 signature. Bounty terms are part of the signed manifest and are created atomically with the message. No real payment occurs. Plaintext and private keys are rejected.',
+        'The authenticated user is always the sender. The conversation determines the recipient, and the server supplies both current public-key snapshots and protocol versions. A confirmed local Aura relationship and a fresh successful can_message contract read are both required before anything is stored. The client sends ciphertext, two wrapped content-key copies, an optional reply target, an optional bounty, a UUID, and its Ed25519 signature. Bounty terms are part of the signed manifest and are created atomically with the message. Plaintext and private keys are rejected.',
       operationId: 'sendMessengerMessage',
       security: [{ bearerAuth: [] }],
       parameters: [
@@ -823,9 +777,11 @@ const openApiPaths = {
         }),
         '400': validationError,
         '401': unauthorized,
+        '403': genericError,
         '404': genericError,
         '409': genericError,
         '429': rateLimited,
+        '503': genericError,
       },
     },
   },
@@ -969,7 +925,7 @@ const openApiPaths = {
       tags: ['Broadcasts'],
       summary: 'Create an encrypted broadcast draft and freeze its audience',
       description:
-        'Every active user may broadcast. The API snapshots active users who currently hold the sender’s demo token and stores the token entitlement per recipient. Returns the sender key and first recipient page. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
+        'Every active user may broadcast. The API snapshots users with a confirmed Aura follow for the sender. Returns the sender key and first recipient page. Plaintext, private keys, content keys, and client-supplied recipient lists are rejected.',
       operationId: 'createBroadcastDraft',
       security: [{ bearerAuth: [] }],
       requestBody: jsonBody({
@@ -1051,7 +1007,7 @@ const openApiPaths = {
                 id: { $ref: '#/components/schemas/ObjectId' },
                 clientBroadcastId: { type: 'string', format: 'uuid' },
                 status: { type: 'string', const: 'draft' },
-                audienceType: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
+                audienceType: { type: 'string', enum: ['demo_all_users', 'aura_holders'] },
                 audienceCount: { type: 'integer', minimum: 0 },
                 progress: { $ref: '#/components/schemas/BroadcastDraftProgress' },
                 expiresAt: { type: 'string', format: 'date-time' },

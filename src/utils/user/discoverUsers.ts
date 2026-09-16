@@ -1,22 +1,11 @@
 import { Types } from 'mongoose';
-
-import TokenHolding from '../../models/TokenHolding';
 import User from '../../models/User';
-import UserToken from '../../models/UserToken';
+import AuraFollow from '../../models/AuraFollow';
 import getUserVerification from './getUserVerification';
-import type { DiscoverUsersPage } from '../../types/user';
-import type { DiscoverUsersQuery } from '../../validation/user/discover';
 import { encodeDiscoverCursor } from '../discover/discoverCursor';
-
-interface FollowCountRecord {
-  _id: Types.ObjectId;
-  count: number;
-}
-
-interface DiscoverFollowCounts {
-  followerCounts: FollowCountRecord[];
-  followingCounts: FollowCountRecord[];
-}
+import getContractAuraPrices from '../contract/getContractAuraPrices';
+import type { DiscoverUsersQuery } from '../../validation/user/discover';
+import type { DiscoverFollowCounts, DiscoverUsersPage } from '../../types/user';
 
 const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPage> => {
   const filter: Record<string, unknown> = {
@@ -39,6 +28,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
       username: 1,
       avatar: 1,
       bio: 1,
+      walletAddress: 1,
       verificationGrantedAt: 1,
       verificationExpiresAt: 1,
       discoverScore: 1,
@@ -52,37 +42,33 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
 
   const lastUser = pageRows.at(-1);
+
   const userIds = pageRows.map((user) => user._id);
 
-  const followCounts = userIds.length
-    ? await TokenHolding.aggregate<DiscoverFollowCounts>([
-        {
-          $facet: {
-            followerCounts: [
-              {
-                $lookup: {
-                  from: UserToken.collection.name,
-                  localField: 'token',
-                  foreignField: '_id',
-                  as: 'tokenDocument',
-                },
-              },
-              { $unwind: '$tokenDocument' },
-              { $match: { 'tokenDocument.owner': { $in: userIds } } },
-              { $group: { _id: '$tokenDocument.owner', count: { $sum: 1 } } },
-            ],
-            followingCounts: [
-              { $match: { holder: { $in: userIds } } },
-              { $group: { _id: '$holder', count: { $sum: 1 } } },
-            ],
+  const [followCounts, auraPriceByWalletAddress] = await Promise.all([
+    userIds.length
+      ? AuraFollow.aggregate<DiscoverFollowCounts>([
+          {
+            $facet: {
+              followerCounts: [
+                { $match: { subject: { $in: userIds } } },
+                { $group: { _id: '$subject', count: { $sum: 1 } } },
+              ],
+              followingCounts: [
+                { $match: { follower: { $in: userIds } } },
+                { $group: { _id: '$follower', count: { $sum: 1 } } },
+              ],
+            },
           },
-        },
-      ]).exec()
-    : [];
+        ]).exec()
+      : [],
+    getContractAuraPrices(pageRows.map((user) => user.walletAddress)),
+  ]);
 
   const followerCountByUserId = new Map(
     (followCounts[0]?.followerCounts ?? []).map((record) => [record._id.toString(), record.count]),
   );
+
   const followingCountByUserId = new Map(
     (followCounts[0]?.followingCounts ?? []).map((record) => [record._id.toString(), record.count]),
   );
@@ -96,6 +82,7 @@ const discoverUsers = async (query: DiscoverUsersQuery): Promise<DiscoverUsersPa
         username: user.username,
         avatar: user.avatar,
         bio: user.bio,
+        auraPrice: auraPriceByWalletAddress.get(user.walletAddress) ?? null,
         followerCount: followerCountByUserId.get(userId) ?? 0,
         followingCount: followingCountByUserId.get(userId) ?? 0,
         verification: getUserVerification(user),

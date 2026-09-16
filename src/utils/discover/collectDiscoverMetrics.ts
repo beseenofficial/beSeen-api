@@ -1,11 +1,10 @@
 import type { Types } from 'mongoose';
-
 import collectChatMetrics from './metrics/collectChatMetrics';
 import collectBountyMetrics from './metrics/collectBountyMetrics';
+import collectActivityMetrics from './metrics/collectActivityMetrics';
 import collectFollowerMetrics from './metrics/collectFollowerMetrics';
 import { DISCOVER_ACTIVITY_WINDOW_DAYS } from '../../constant/discover';
 import collectBroadcastMetrics from './metrics/collectBroadcastMetrics';
-import collectActivityMetrics from './metrics/collectActivityMetrics';
 import type { DiscoverRankingMetrics, DiscoverRankingUser } from '../../types/discover';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1_000;
@@ -17,7 +16,7 @@ const createEmptyMetrics = (user: DiscoverRankingUser): DiscoverRankingMetrics =
   lastActiveAt: user.lastActiveAt,
   followerCount: 0,
   newFollowerCount30d: 0,
-  lastTokenPurchaseAt: null,
+  lastAuraPurchaseAt: null,
   claimedBountyCount: 0,
   claimedUsdcAmount: 0,
   reciprocalConversationCount30d: 0,
@@ -56,7 +55,7 @@ const collectDiscoverMetrics = async (
     if (metrics) {
       metrics.followerCount = record.followerCount;
       metrics.newFollowerCount30d = record.newFollowerCount30d;
-      metrics.lastTokenPurchaseAt = record.lastTokenPurchaseAt;
+      metrics.lastAuraPurchaseAt = record.lastAuraPurchaseAt;
     }
   }
 

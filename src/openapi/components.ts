@@ -47,8 +47,21 @@ const userProperties = {
   createdAt: { type: 'string', format: 'date-time' },
 };
 
+const auraPriceSchema = {
+  oneOf: [{ type: 'string', pattern: '^[1-9]\\d*$' }, { type: 'null' }],
+  description:
+    'Current on-chain aura_price result in the contract token base units; null when the contract read is temporarily unavailable.',
+  example: '10000000',
+};
+
 const publicUserProperties = {
   ...userProperties,
+  walletAddress: {
+    type: 'string',
+    pattern: '^G[A-Z2-7]{55}$',
+    description: 'Public Stellar address required by clients to call buy_aura.',
+  },
+  auraPrice: auraPriceSchema,
   broadcastCount: {
     type: 'integer',
     minimum: 0,
@@ -79,12 +92,7 @@ const publicUserProperties = {
 
 const currentUserProperties = {
   ...userProperties,
-  demoUsdcBalance: {
-    type: 'string',
-    pattern: '^(?:0|[1-9]\\d*)(?:\\.\\d{1,7})?$',
-    description: 'Private demo-only USDC balance represented as an exact decimal string.',
-    example: '20',
-  },
+  auraPrice: auraPriceSchema,
 };
 
 const openApiComponents = {
@@ -153,6 +161,7 @@ const openApiComponents = {
         'username',
         'avatar',
         'bio',
+        'auraPrice',
         'followerCount',
         'followingCount',
         'verification',
@@ -162,55 +171,45 @@ const openApiComponents = {
         username: userProperties.username,
         avatar: nullableUrlSchema,
         bio: userProperties.bio,
+        auraPrice: auraPriceSchema,
         followerCount: {
           type: 'integer',
           minimum: 0,
-          description: "Number of unique holders of this user's token.",
+          description: "Number of users holding at least one of this user's confirmed Auras.",
         },
         followingCount: {
           type: 'integer',
           minimum: 0,
-          description: 'Number of user tokens held by this user.',
+          description: 'Number of users whose Aura this user has confirmed on-chain.',
         },
         verification: userVerificationSchema,
       },
     },
-    UserToken: {
+    AuraPurchaseRegistration: {
       type: 'object',
       additionalProperties: false,
-      required: ['id', 'owner', 'createdAt'],
+      required: [
+        'tokenId',
+        'buyerId',
+        'subjectId',
+        'subjectUsername',
+        'transactionHash',
+        'status',
+        'confirmedAt',
+      ],
       properties: {
-        id: objectIdSchema,
-        owner: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['id', 'username', 'avatar'],
-          properties: {
-            id: objectIdSchema,
-            username: userProperties.username,
-            avatar: nullableUrlSchema,
-          },
-        },
-        createdAt: { type: 'string', format: 'date-time' },
-        acquiredAt: {
-          type: 'string',
-          format: 'date-time',
-          description: 'Present when returned as one of the current user’s holdings.',
+        tokenId: { type: 'string', pattern: '^[1-9]\\d*$' },
+        buyerId: objectIdSchema,
+        subjectId: objectIdSchema,
+        subjectUsername: userProperties.username,
+        transactionHash: { type: 'string', pattern: '^[a-f\\d]{64}$' },
+        status: { type: 'string', enum: ['pending', 'confirmed', 'failed'] },
+        confirmedAt: {
+          oneOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
         },
       },
     },
-    TokenHolding: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['tokenId', 'ownerId', 'ownerUsername', 'acquiredAt'],
-      properties: {
-        tokenId: objectIdSchema,
-        ownerId: objectIdSchema,
-        ownerUsername: userProperties.username,
-        acquiredAt: { type: 'string', format: 'date-time' },
-      },
-    },
-    TokenPurchaseConversation: {
+    AuraPurchaseConversation: {
       type: 'object',
       additionalProperties: false,
       required: ['id', 'created'],
@@ -218,7 +217,7 @@ const openApiComponents = {
         id: objectIdSchema,
         created: {
           type: 'boolean',
-          description: 'True only when this token purchase created the pair conversation.',
+          description: 'True only when confirmation created social access for this pair.',
         },
       },
     },
@@ -373,7 +372,7 @@ const openApiComponents = {
         bounty: {
           oneOf: [{ $ref: '#/components/schemas/MessengerBountyTerms' }, { type: 'null' }],
           description:
-            'Optional demo bounty terms. No payment, balance, escrow, or blockchain transfer occurs.',
+            'Optional signed terms for a bounty already locked by the client in the BeSeen contract.',
         },
         signature: {
           type: 'string',
@@ -564,8 +563,15 @@ const openApiComponents = {
     MessengerBountyTerms: {
       type: 'object',
       additionalProperties: false,
-      required: ['assetCode', 'amount', 'durationSeconds'],
+      required: ['contractBountyId', 'assetCode', 'amount', 'durationSeconds'],
       properties: {
+        contractBountyId: {
+          type: 'string',
+          pattern: '^[1-9]\\d*$',
+          description:
+            'Global u64 ID returned by the client-side BeSeen lock_bounty contract call.',
+          example: '1',
+        },
         assetCode: {
           type: 'string',
           const: 'USDC',
@@ -591,10 +597,13 @@ const openApiComponents = {
       additionalProperties: false,
       required: [
         'id',
+        'contractBountyId',
         'assetCode',
         'amount',
         'durationSeconds',
         'status',
+        'settlementStatus',
+        'settlementTransactionHash',
         'expiresAt',
         'replyMessageId',
         'claimableAt',
@@ -602,6 +611,11 @@ const openApiComponents = {
       ],
       properties: {
         id: objectIdSchema,
+        contractBountyId: {
+          type: 'string',
+          pattern: '^[1-9]\\d*$',
+          description: 'Global u64 bounty ID generated by the BeSeen contract.',
+        },
         assetCode: { type: 'string', const: 'USDC' },
         amount: {
           type: 'string',
@@ -611,6 +625,14 @@ const openApiComponents = {
         status: {
           type: 'string',
           enum: ['offered', 'claimable', 'claimed', 'expired'],
+        },
+        settlementStatus: {
+          type: 'string',
+          enum: ['pending', 'processing', 'confirmed', 'failed'],
+          description: 'On-chain settle_replies state.',
+        },
+        settlementTransactionHash: {
+          oneOf: [{ type: 'string', pattern: '^[a-f\\d]{64}$' }, { type: 'null' }],
         },
         expiresAt: { type: 'string', format: 'date-time' },
         replyMessageId: {
@@ -779,7 +801,7 @@ const openApiComponents = {
           additionalProperties: false,
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', const: 'token_holders' },
+            type: { type: 'string', const: 'aura_holders' },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -843,7 +865,7 @@ const openApiComponents = {
           type: 'object',
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
+            type: { type: 'string', enum: ['demo_all_users', 'aura_holders'] },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -899,7 +921,7 @@ const openApiComponents = {
           additionalProperties: false,
           required: ['type', 'count'],
           properties: {
-            type: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
+            type: { type: 'string', enum: ['demo_all_users', 'aura_holders'] },
             count: { type: 'integer', minimum: 0 },
           },
         },
@@ -979,7 +1001,7 @@ const openApiComponents = {
             contentCiphertext: { type: 'string', format: 'byte' },
             contentNonce: { type: 'string', format: 'byte' },
             creatorEncryptedBroadcastKey: { type: 'string', format: 'byte' },
-            audienceType: { type: 'string', enum: ['demo_all_users', 'token_holders'] },
+            audienceType: { type: 'string', enum: ['demo_all_users', 'aura_holders'] },
             audienceCount: { type: 'integer', minimum: 0 },
             recipientKeysDigest: { type: 'string', pattern: '^[a-f0-9]{64}$' },
           },

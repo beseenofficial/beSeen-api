@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
-
 import User from '../../models/User';
+import AuraFollow from '../../models/AuraFollow';
 import Conversation from '../../models/Conversation';
 import serializeConversation from './serializeConversation';
 import { encodeConversationCursor } from './conversationCursor';
@@ -17,7 +17,27 @@ const getConversations = async (
     return { ok: false, reason: 'account_unavailable' };
   }
 
-  const participantMatch = [{ participantA: viewer._id }, { participantB: viewer._id }];
+  const follows = await AuraFollow.find({
+    $or: [{ follower: viewer._id }, { subject: viewer._id }],
+  })
+    .select({ follower: 1, subject: 1 })
+    .exec();
+
+  const allowedParticipantIds = follows.map((follow) =>
+    follow.follower.equals(viewer._id) ? follow.subject : follow.follower,
+  );
+
+  if (allowedParticipantIds.length === 0) {
+    return {
+      ok: true,
+      conversations: { items: [], nextCursor: null, hasMore: false },
+    };
+  }
+
+  const participantMatch = [
+    { participantA: viewer._id, participantB: { $in: allowedParticipantIds } },
+    { participantB: viewer._id, participantA: { $in: allowedParticipantIds } },
+  ];
 
   const match: Record<string, unknown> = { $or: participantMatch };
 

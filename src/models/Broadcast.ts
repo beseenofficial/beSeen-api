@@ -1,7 +1,6 @@
+import env from '../env';
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
-
-import env from '../env';
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
 import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
 import type { BroadcastAudienceType, BroadcastStatus } from '../constant/broadcast';
@@ -64,7 +63,7 @@ const broadcastSchema = new Schema<IBroadcast>(
     audienceType: {
       type: String,
       enum: BROADCAST_AUDIENCE_TYPES,
-      default: 'token_holders',
+      default: 'aura_holders',
       required: true,
     },
     audienceSnapshotCount: {

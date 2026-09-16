@@ -43,6 +43,7 @@ const serializeMessageHistoryItem = (
       replyToMessageId: message.replyToMessage?.toString() ?? null,
       bountyTerms: message.bountyAssetCode
         ? {
+            contractBountyId: message.contractBountyId,
             assetCode: message.bountyAssetCode,
             amount: message.bountyAmount!,
             durationSeconds: message.bountyDurationSeconds!,
@@ -73,10 +74,13 @@ const serializeMessageHistoryItem = (
     bounty: bounty
       ? {
           id: bounty._id.toString(),
+          contractBountyId: bounty.contractBountyId,
           assetCode: bounty.assetCode,
           amount: bounty.amount,
           durationSeconds: bounty.durationSeconds,
           status: bounty.status,
+          settlementStatus: bounty.settlementStatus,
+          settlementTransactionHash: bounty.settlementTransactionHash,
           expiresAt: bounty.expiresAt,
           replyMessageId: bounty.replyMessage?.toString() ?? null,
           claimableAt: bounty.claimableAt,

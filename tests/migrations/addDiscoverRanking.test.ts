@@ -1,10 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import Broadcast from '../../src/models/Broadcast';
-import TokenHolding from '../../src/models/TokenHolding';
+import AuraFollow from '../../src/models/AuraFollow';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import addDiscoverRanking from '../../src/migrations/20260811AddDiscoverRanking';
 
 describe('20260811AddDiscoverRanking migration', () => {
@@ -21,7 +20,7 @@ describe('20260811AddDiscoverRanking migration', () => {
     const userIndexSpy = vi.spyOn(User.collection, 'createIndex').mockResolvedValue('index');
 
     const holdingIndexSpy = vi
-      .spyOn(TokenHolding.collection, 'createIndex')
+      .spyOn(AuraFollow.collection, 'createIndex')
       .mockResolvedValue('index');
 
     const messageIndexSpy = vi.spyOn(Message.collection, 'createIndex').mockResolvedValue('index');
@@ -52,7 +51,7 @@ describe('20260811AddDiscoverRanking migration', () => {
         {
           $set: {
             discoverScore: { $ifNull: ['$discoverScore', 0] },
-              discoverScoreVersion: { $ifNull: ['$discoverScoreVersion', 3] },
+            discoverScoreVersion: { $ifNull: ['$discoverScoreVersion', 3] },
             discoverScoreUpdatedAt: { $ifNull: ['$discoverScoreUpdatedAt', null] },
           },
         },

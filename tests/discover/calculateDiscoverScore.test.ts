@@ -12,7 +12,7 @@ const metrics = (overrides: Partial<DiscoverRankingMetrics> = {}): DiscoverRanki
   lastActiveAt: null,
   followerCount: 0,
   newFollowerCount30d: 0,
-  lastTokenPurchaseAt: null,
+  lastAuraPurchaseAt: null,
   claimedBountyCount: 0,
   claimedUsdcAmount: 0,
   reciprocalConversationCount30d: 0,
@@ -29,7 +29,7 @@ describe('calculateDiscoverScore', () => {
       metrics({
         followerCount: 1_000,
         newFollowerCount30d: 100,
-        lastTokenPurchaseAt: NOW,
+        lastAuraPurchaseAt: NOW,
         claimedBountyCount: 50,
         claimedUsdcAmount: 1_000,
         reciprocalConversationCount30d: 30,
@@ -65,7 +65,7 @@ describe('calculateDiscoverScore', () => {
 
     const result = calculateDiscoverScore(
       metrics({
-        lastTokenPurchaseAt: sevenDaysAgo,
+        lastAuraPurchaseAt: sevenDaysAgo,
         lastReciprocalChatAt: sevenDaysAgo,
         lastPublishedBroadcastAt: sevenDaysAgo,
       }),
@@ -86,7 +86,7 @@ describe('calculateDiscoverScore', () => {
         lastActiveAt: NOW,
         followerCount: 1_000_000,
         newFollowerCount30d: 100_000,
-        lastTokenPurchaseAt: NOW,
+        lastAuraPurchaseAt: NOW,
         claimedBountyCount: 100_000,
         claimedUsdcAmount: 1_000_000,
         reciprocalConversationCount30d: 100_000,
@@ -124,6 +124,7 @@ describe('calculateDiscoverScore', () => {
 
   it('awards two points for a stored avatar', () => {
     const withoutAvatar = calculateDiscoverScore(metrics({ hasAvatar: false }), NOW);
+
     const withAvatar = calculateDiscoverScore(metrics({ hasAvatar: true }), NOW);
 
     expect(withoutAvatar.breakdown.profileCompleteness).toBe(0);

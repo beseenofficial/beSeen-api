@@ -1,18 +1,21 @@
-import type { Server } from 'node:http';
-
 import app from './app';
 import env from './env';
 import log from './logger';
+import type { Server } from 'node:http';
 import { connectDatabase, disconnectDatabase } from './db';
+import runDatabaseMigrations from './migrations/runDatabaseMigrations';
 import {
-  startBroadcastDraftCleanup,
-  stopBroadcastDraftCleanup,
-} from './utils/broadcast/broadcastDraftCleanupScheduler';
+  startContractBountySync,
+  stopContractBountySync,
+} from './utils/contract/contractBountySyncScheduler';
 import {
   startDiscoverRankingScheduler,
   stopDiscoverRankingScheduler,
 } from './utils/discover/discoverRankingScheduler';
-import runDatabaseMigrations from './migrations/runDatabaseMigrations';
+import {
+  startBroadcastDraftCleanup,
+  stopBroadcastDraftCleanup,
+} from './utils/broadcast/broadcastDraftCleanupScheduler';
 
 let server: Server | undefined;
 
@@ -20,6 +23,7 @@ const shutdown = (signal: NodeJS.Signals): void => {
   log.info({ signal }, 'Shutdown started');
   stopBroadcastDraftCleanup();
   stopDiscoverRankingScheduler();
+  stopContractBountySync();
 
   if (!server) {
     void disconnectDatabase().finally(() => process.exit(0));
@@ -41,6 +45,7 @@ const bootstrap = async (): Promise<void> => {
   await runDatabaseMigrations();
   startBroadcastDraftCleanup();
   startDiscoverRankingScheduler();
+  startContractBountySync();
 
   server = app.listen(env.PORT, () => {
     log.info({ port: env.PORT }, 'BeSeen API started');

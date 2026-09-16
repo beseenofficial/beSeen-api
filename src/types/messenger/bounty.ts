@@ -1,13 +1,17 @@
 import type { ClientSession, Types } from 'mongoose';
 
 import type { MessengerBountyStatus } from '../../constant/messenger';
+import type { ContractBountySettlementStatus } from '../contract/bounty';
 
 interface SerializedMessageBounty {
   id: string;
+  contractBountyId: string;
   assetCode: string;
   amount: string;
   durationSeconds: number;
   status: MessengerBountyStatus;
+  settlementStatus: ContractBountySettlementStatus;
+  settlementTransactionHash: string | null;
   expiresAt: Date;
   replyMessageId: string | null;
   claimableAt: Date | null;
@@ -24,16 +28,4 @@ interface ResolveReplyBountyInput {
   session: ClientSession;
 }
 
-type ClaimMessageBountyFailureReason =
-  'account_unavailable' | 'bounty_not_found' | 'bounty_not_claimable' | 'bounty_expired';
-
-type ClaimMessageBountyResult =
-  | { ok: true; bounty: SerializedMessageBounty; claimedNow: boolean }
-  | { ok: false; reason: ClaimMessageBountyFailureReason };
-
-export type {
-  ClaimMessageBountyFailureReason,
-  ClaimMessageBountyResult,
-  ResolveReplyBountyInput,
-  SerializedMessageBounty,
-};
+export type { ResolveReplyBountyInput, SerializedMessageBounty };

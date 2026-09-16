@@ -18,6 +18,7 @@ interface MessageSignatureMessageInput {
   recipientEncryptedMessageKey: string;
   replyToMessageId: string | null;
   bounty?: {
+    contractBountyId: string;
     assetCode: string;
     amount: string;
     durationSeconds: number;
@@ -60,6 +61,7 @@ interface MessageHistoryItem {
     recipientEncryptedMessageKey: string;
     replyToMessageId: string | null;
     bountyTerms: {
+      contractBountyId: string | null;
       assetCode: string;
       amount: string;
       durationSeconds: number;
@@ -96,7 +98,8 @@ type SendMessageFailureReason =
   | 'active_keys_not_found'
   | 'reply_not_found'
   | 'invalid_signature'
-  | 'insufficient_demo_usdc_balance'
+  | 'contract_access_denied'
+  | 'contract_access_unavailable'
   | 'message_conflict';
 
 type SendMessageResult =

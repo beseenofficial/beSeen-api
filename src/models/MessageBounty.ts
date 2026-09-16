@@ -1,6 +1,8 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
-
+import isPositiveU64String from '../utils/contract/isPositiveU64String';
+import { CONTRACT_BOUNTY_SETTLEMENT_STATUSES } from '../constant/contract';
+import type { ContractBountySettlementStatus } from '../types/contract/bounty';
 import type { MessengerBountyFundingStatus, MessengerBountyStatus } from '../constant/messenger';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
@@ -12,14 +14,20 @@ import {
 } from '../constant/messenger';
 
 interface IMessageBounty {
+  contractBountyId: string;
   message: Types.ObjectId;
   conversation: Types.ObjectId;
   sponsor: Types.ObjectId;
   beneficiary: Types.ObjectId;
   assetCode: string;
   amount: string;
-  amountUnits: number | null;
+  amountUnits: string;
   fundingStatus: MessengerBountyFundingStatus;
+  settlementStatus: ContractBountySettlementStatus;
+  settlementAttempts: number;
+  settlementLeaseUntil: Date | null;
+  settlementTransactionHash: string | null;
+  settlementLastError: string | null;
   durationSeconds: number;
   status: MessengerBountyStatus;
   expiresAt: Date;
@@ -34,6 +42,15 @@ type MessageBountyDocument = HydratedDocument<IMessageBounty>;
 
 const messageBountySchema = new Schema<IMessageBounty>(
   {
+    contractBountyId: {
+      type: String,
+      required: true,
+      immutable: true,
+      validate: {
+        validator: isPositiveU64String,
+        message: 'Contract bounty ID must be a positive u64 integer',
+      },
+    },
     message: {
       type: Schema.Types.ObjectId,
       ref: 'Message',
@@ -75,20 +92,46 @@ const messageBountySchema = new Schema<IMessageBounty>(
       },
     },
     amountUnits: {
-      type: Number,
-      default: null,
+      type: String,
+      required: true,
       immutable: true,
-      min: 1,
-      validate: {
-        validator: (value: number | null) => value === null || Number.isSafeInteger(value),
-        message: 'Bounty amount units must be a safe integer',
-      },
+      match: [/^[1-9]\d*$/, 'Bounty amount units must be a positive integer string'],
     },
     fundingStatus: {
       type: String,
       enum: MESSENGER_BOUNTY_FUNDING_STATUSES,
-      default: 'legacy',
+      default: 'contract_locked',
       required: true,
+    },
+    settlementStatus: {
+      type: String,
+      enum: CONTRACT_BOUNTY_SETTLEMENT_STATUSES,
+      default: 'pending',
+      required: true,
+    },
+    settlementAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Settlement attempts must be a safe integer',
+      },
+    },
+    settlementLeaseUntil: {
+      type: Date,
+      default: null,
+    },
+    settlementTransactionHash: {
+      type: String,
+      default: null,
+      lowercase: true,
+      match: [/^[a-f\d]{64}$/, 'Settlement transaction hash must be a 64-character hex value'],
+    },
+    settlementLastError: {
+      type: String,
+      default: null,
+      maxlength: 1_000,
     },
     durationSeconds: {
       type: Number,
@@ -142,15 +185,11 @@ messageBountySchema.pre('validate', function validateBountyParticipants() {
     this.invalidate('beneficiary', 'A bounty requires different sponsor and beneficiary users');
   }
 
-  if (this.fundingStatus !== 'legacy' && this.amountUnits === null) {
-    this.invalidate('amountUnits', 'Funded bounties require exact amount units');
-  }
-
   const validFundingStatus =
-    (this.status === 'claimed' && ['legacy', 'paid'].includes(this.fundingStatus)) ||
-    (this.status === 'expired' && ['legacy', 'refunded'].includes(this.fundingStatus)) ||
-    (['offered', 'claimable'].includes(this.status) &&
-      ['legacy', 'reserved'].includes(this.fundingStatus));
+    (this.status === 'claimed' && this.fundingStatus === 'contract_settled') ||
+    (this.status === 'expired' &&
+      ['contract_locked', 'contract_refunded'].includes(this.fundingStatus)) ||
+    (['offered', 'claimable'].includes(this.status) && this.fundingStatus === 'contract_locked');
 
   if (!validFundingStatus) {
     this.invalidate('fundingStatus', 'Bounty funding status does not match its lifecycle status');
@@ -160,6 +199,14 @@ messageBountySchema.pre('validate', function validateBountyParticipants() {
 messageBountySchema.index(
   { message: 1 },
   { unique: true, name: 'message_bounties_message_unique' },
+);
+messageBountySchema.index(
+  { contractBountyId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { contractBountyId: { $type: 'string' } },
+    name: 'message_bounties_contract_id_unique',
+  },
 );
 messageBountySchema.index(
   { beneficiary: 1, status: 1, expiresAt: 1 },
@@ -173,6 +220,10 @@ messageBountySchema.index({ status: 1, expiresAt: 1 }, { name: 'message_bounties
 messageBountySchema.index(
   { status: 1, beneficiary: 1, claimedAt: -1 },
   { name: 'message_bounties_claimed_beneficiary' },
+);
+messageBountySchema.index(
+  { settlementStatus: 1, status: 1, settlementLeaseUntil: 1 },
+  { name: 'message_bounties_settlement_queue' },
 );
 
 const MessageBounty = model<IMessageBounty>('MessageBounty', messageBountySchema);

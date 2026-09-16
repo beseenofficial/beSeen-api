@@ -1,18 +1,19 @@
-import type { ClientSession } from 'mongoose';
-
 import User from '../../models/User';
+import parseUsdcUnits from './usdcAmount';
 import Message from '../../models/Message';
 import UserKey from '../../models/UserKey';
+import type { ClientSession } from 'mongoose';
 import { withDatabaseTransaction } from '../../db';
 import Conversation from '../../models/Conversation';
 import resolveReplyBounty from './resolveReplyBounty';
 import MessageBounty from '../../models/MessageBounty';
 import type { MessageDocument } from '../../models/Message';
 import serializeMessageBounty from './serializeMessageBounty';
+import canMessageOnContract from '../contract/canMessageOnContract';
 import verifyEd25519Signature from '../crypto/verifyEd25519Signature';
 import type { MessageBountyDocument } from '../../models/MessageBounty';
 import buildMessageSignatureMessage from './buildMessageSignatureMessage';
-import { parseDemoUsdcUnits } from './demoUsdcAmount';
+import hasAuraConversationAccess from '../aura/hasAuraConversationAccess';
 import type { SendMessageBody } from '../../validation/messenger/sendMessage';
 import type { SendMessageResult, SentMessage } from '../../types/messenger/message';
 import {
@@ -63,6 +64,7 @@ const hasSameClientEnvelope = (
     message.senderEncryptedMessageKey === body.senderEncryptedMessageKey &&
     message.recipientEncryptedMessageKey === body.recipientEncryptedMessageKey &&
     replyToMessageId === body.replyToMessageId &&
+    message.contractBountyId === (bounty?.contractBountyId ?? null) &&
     message.bountyAssetCode === (bounty?.assetCode ?? null) &&
     message.bountyAmount === (bounty?.amount ?? null) &&
     message.bountyDurationSeconds === (bounty?.durationSeconds ?? null) &&
@@ -162,6 +164,10 @@ const sendMessageInTransaction = async (
     ? conversation.participantB
     : conversation.participantA;
 
+  if (!(await hasAuraConversationAccess(sender._id, recipientId, session))) {
+    return { ok: false, reason: 'conversation_not_found' };
+  }
+
   const recipient = await User.findOne({
     _id: recipientId,
     status: 'active',
@@ -172,6 +178,21 @@ const sendMessageInTransaction = async (
 
   if (!recipient) {
     return { ok: false, reason: 'participant_unavailable' };
+  }
+
+  let contractAllowsMessage: boolean;
+
+  try {
+    contractAllowsMessage = await canMessageOnContract(
+      sender.walletAddress,
+      recipient.walletAddress,
+    );
+  } catch {
+    return { ok: false, reason: 'contract_access_unavailable' };
+  }
+
+  if (!contractAllowsMessage) {
+    return { ok: false, reason: 'contract_access_denied' };
   }
 
   const senderKey = await UserKey.findOne({
@@ -230,34 +251,6 @@ const sendMessageInTransaction = async (
     return { ok: false, reason: 'invalid_signature' };
   }
 
-  let bountyAmountUnits: number | null = null;
-
-  if (body.bounty) {
-    try {
-      bountyAmountUnits = parseDemoUsdcUnits(body.bounty.amount);
-    } catch (error: unknown) {
-      if (error instanceof RangeError) {
-        return { ok: false, reason: 'insufficient_demo_usdc_balance' };
-      }
-      throw error;
-    }
-
-    const fundedSender = await User.findOneAndUpdate(
-      {
-        _id: sender._id,
-        status: 'active',
-        deletedAt: null,
-        demoUsdcBalanceUnits: { $gte: bountyAmountUnits },
-      },
-      { $inc: { demoUsdcBalanceUnits: -bountyAmountUnits } },
-      { returnDocument: 'after', runValidators: true, session },
-    ).exec();
-
-    if (!fundedSender) {
-      return { ok: false, reason: 'insufficient_demo_usdc_balance' };
-    }
-  }
-
   const createdAt = new Date();
 
   const recipientUnreadField = conversation.participantA.equals(recipient._id)
@@ -304,6 +297,7 @@ const sendMessageInTransaction = async (
         senderEncryptedMessageKey: body.senderEncryptedMessageKey,
         recipientEncryptedMessageKey: body.recipientEncryptedMessageKey,
         replyToMessage: body.replyToMessageId,
+        contractBountyId: body.bounty?.contractBountyId ?? null,
         bountyAssetCode: body.bounty?.assetCode ?? null,
         bountyAmount: body.bounty?.amount ?? null,
         bountyDurationSeconds: body.bounty?.durationSeconds ?? null,
@@ -325,11 +319,14 @@ const sendMessageInTransaction = async (
   let unlockedBounty: MessageBountyDocument | null = null;
 
   if (body.bounty) {
+    const bountyAmountUnits = parseUsdcUnits(body.bounty.amount).toString();
+
     const expiresAt = new Date(createdAt.getTime() + body.bounty.durationSeconds * 1_000);
 
     const createdBounties = await MessageBounty.create(
       [
         {
+          contractBountyId: body.bounty.contractBountyId,
           message: createdMessage._id,
           conversation: conversation._id,
           sponsor: sender._id,
@@ -337,7 +334,8 @@ const sendMessageInTransaction = async (
           assetCode: body.bounty.assetCode,
           amount: body.bounty.amount,
           amountUnits: bountyAmountUnits,
-          fundingStatus: 'reserved',
+          fundingStatus: 'contract_locked',
+          settlementStatus: 'pending',
           durationSeconds: body.bounty.durationSeconds,
           status: 'offered',
           expiresAt,

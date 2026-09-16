@@ -1,5 +1,6 @@
 import User from '../../models/User';
 import Conversation from '../../models/Conversation';
+import hasAuraConversationAccess from '../aura/hasAuraConversationAccess';
 import type { GetConversationAccessResult } from '../../types/messenger/conversation';
 
 const getConversationAccess = async (
@@ -24,6 +25,10 @@ const getConversationAccess = async (
   const otherParticipantId = conversation.participantA.equals(viewer._id)
     ? conversation.participantB
     : conversation.participantA;
+
+  if (!(await hasAuraConversationAccess(viewer._id, otherParticipantId))) {
+    return { ok: false, reason: 'conversation_not_found' };
+  }
 
   const otherParticipant = await User.findOne({
     _id: otherParticipantId,

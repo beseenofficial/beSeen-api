@@ -55,7 +55,15 @@ describe('message manifest canonicalization', () => {
       { ...input, senderEncryptedMessageKey: `${input.senderEncryptedMessageKey}changed` },
       { ...input, recipientEncryptedMessageKey: `${input.recipientEncryptedMessageKey}changed` },
       { ...input, replyToMessageId: '507f1f77bcf86cd799439014' },
-      { ...input, bounty: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 } },
+      {
+        ...input,
+        bounty: {
+          contractBountyId: '1',
+          assetCode: 'USDC',
+          amount: '10',
+          durationSeconds: 3_600,
+        },
+      },
     ];
 
     for (const mutation of mutations) {

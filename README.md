@@ -1,10 +1,10 @@
 # BeSeen
 
-BeSeen is a privacy-focused social protocol built around wallet-owned identity, encrypted communication, and token-based audience access.
+BeSeen is a privacy-focused social protocol built around wallet-owned identity, encrypted communication, and Aura-based audience access.
 
 Instead of asking users to create and manage a separate cryptographic identity, BeSeen derives an application-specific signing key and encryption key from a fixed Stellar wallet signature. Private keys and plaintext remain on the client. The API coordinates identity, delivery, audience membership, replay protection, discovery, and encrypted state without needing access to message content.
 
-This repository contains the BeSeen API: the protocol coordination and persistence layer for authentication, profiles, discovery, broadcasts, direct messages, social tokens, and message bounties.
+This repository contains the BeSeen API: the protocol coordination and persistence layer for authentication, profiles, discovery, broadcasts, direct messages, on-chain Aura ownership, and message bounties.
 
 ## The problem
 
@@ -16,7 +16,7 @@ BeSeen connects these two layers:
 - Deterministic key derivation makes the same communication identity recoverable from the same wallet.
 - Separate signing and encryption keys prevent one key from being reused for unrelated cryptographic purposes.
 - Content is encrypted before it reaches the API.
-- Social-token ownership defines who can access a creator's broadcasts.
+- Confirmed on-chain Aura ownership defines who can follow, message, and access a creator's broadcasts.
 - The server verifies authorization and integrity without receiving private keys or plaintext.
 
 ## Core protocol
@@ -92,7 +92,7 @@ Canonical Base64 encoding, exact byte-length validation, immutable encrypted fie
 
 ## Encrypted direct messaging
 
-Every pair of users shares one canonical conversation. Purchasing another user's social token establishes or reuses that conversation, including when acquisition later occurs in the reverse direction.
+Every authorized pair of users shares one canonical conversation. A confirmed `buy_aura` purchase establishes or reuses that conversation; an unverified client claim never opens access.
 
 For every message, the signed manifest binds:
 
@@ -111,27 +111,34 @@ Read receipts do not require plaintext access. Each participant advances a monot
 
 ## Encrypted broadcasts
 
-Broadcasts extend the same hybrid encryption model from one recipient to a token-defined audience.
+Broadcasts extend the same hybrid encryption model from one recipient to an Aura-defined audience.
 
-When a draft is created, the API freezes an audience snapshot from the active holders of the creator's token and returns their X25519 public keys. The client encrypts the content only once, wraps the content key once per recipient, and also creates a sender copy.
+When a draft is created, the API freezes an audience snapshot from users with a confirmed Aura follow for the creator and returns their X25519 public keys. The client encrypts the content only once, wraps the content key once per recipient, and also creates a sender copy.
 
 Recipient key entries are sorted canonically and reduced to a SHA-256 digest. The creator signs a manifest containing this digest together with the ciphertext, nonce, audience count, creator key version, and encrypted sender key. The API verifies the complete manifest before atomically publishing the broadcast.
 
 This produces two useful properties:
 
 - Encryption cost for the content itself stays constant as the audience grows; only small wrapped-key records scale with recipient count.
-- Audience access is fixed at publication time, so later token transfers cannot silently change the authorized readers of an existing broadcast.
+- Audience access is fixed at publication time, so later Aura ownership changes cannot rewrite the authorized readers of an existing broadcast.
 
 Draft creation, paginated recipient retrieval, batched wrapped-key upload, finalization, cancellation, expiration, and feed delivery are separate operations. This makes large audience preparation resumable without publishing a partially prepared envelope.
 
-## Token-based social graph
+## Aura-based social graph
 
-Each user owns one application token. Holding another user's token acts as a social relationship and currently provides two capabilities:
+The client buys an Aura by calling `buy_aura(buyer, subject)` and signing the transaction in the user's wallet. It then registers the returned global token ID, buyer address, subject address, and transaction hash through `POST /v1/users/:username/aura/purchases`.
 
-- inclusion in that creator's future broadcast audience snapshots; and
-- access to the canonical direct conversation with that creator.
+- The API first stores the claim as pending.
+- A matching `buy_aura` event confirms it; `get_aura` reconciliation recovers missed or event-before-API cases.
+- Only matching authenticated buyer, subject, token ID, and on-chain ownership create the unique Aura follow and conversation.
+- Multiple Auras for the same subject still create one follow relationship.
+- Sending requires both the confirmed local Aura relationship and a fresh on-chain `can_message` read. A `false` result or an unavailable contract read fails closed before any message or bounty is stored.
 
-Token acquisition is idempotent and protected by unique database constraints. The current implementation models acquisition without payment or an on-chain asset transfer, keeping the protocol boundary ready for a future Stellar-backed ownership or payment module.
+Unregistered direct contract purchases are ignored by the social index. The removed `UserToken` and `TokenHolding` demo collections are not used as an authorization source.
+
+All contract function reads use the shared typed `readContract` executor. Verifier-signed writes use the separate typed `submitContractTransaction` executor; domain wrappers only provide the contract function name and typed parameters.
+
+Discover cards, public profiles, and the current-user profile include `auraPrice`, read from the contract's `aura_price` function and serialized as an exact base-unit integer string. If that read is temporarily unavailable, the profile remains available with `auraPrice: null`.
 
 ## Message bounties
 
@@ -145,7 +152,9 @@ offered ── valid direct reply ──► claimable ── beneficiary claim �
    └── response window elapsed ──► expired
 ```
 
-The first valid reply to the referenced message unlocks the bounty. Claim retries are idempotent. At the current prototype stage, this state machine does not custody funds, move Stellar assets, or represent on-chain escrow.
+The first valid reply to the referenced message queues its contract bounty for settlement. A leased retry worker verifies the on-chain sender, recipient, amount, status, and deadline, then signs `settle_replies` with the configured verifier. The bounty becomes `claimed` only after the transaction succeeds (or the worker confirms that it was already settled), so retries are idempotent and a failed submission cannot move database state ahead of the contract. The legacy demo-balance claim path cannot finalize contract-funded bounties.
+
+The API mirrors BeSeen contract bounties in a dedicated collection without replacing MongoDB `_id` values. Successful `lock_bnty` events are the primary ingestion path and `contractBountyId` stores the contract-generated global ID. Only IDs registered by the official message API are mirrored; unrelated direct interactions with the public contract are ignored. A persisted event cursor makes event replay idempotent. Every minute, reconciliation calls `get_bounty` for the next global contract ID and separately recovers registered-but-unmirrored IDs whose event arrived before their API registration or was missed.
 
 ## Discovery ranking
 
@@ -183,14 +192,14 @@ The API necessarily observes service metadata such as accounts, relationships, c
 
 ## Integrity and consistency
 
-MongoDB replica-set transactions are used wherever several records must change as one operation, including registration, session creation and rotation, message sequencing, bounty transitions, token acquisition, and conversation creation.
+MongoDB replica-set transactions are used wherever several records must change as one operation, including registration, session creation and rotation, message sequencing, bounty transitions, Aura confirmation, follow activation, and conversation creation.
 
 Additional consistency controls include:
 
 - unique indexes for replay IDs and client-generated operation IDs;
 - one active key record per user;
 - one canonical conversation per user pair;
-- one ownership record per user and token;
+- one confirmed Aura follow per buyer and subject pair;
 - immutable encrypted message fields;
 - frozen broadcast audience snapshots;
 - strict schemas and canonical encoding validation;
@@ -227,7 +236,7 @@ Additional consistency controls include:
 The API is versioned under `/v1` and grouped into four domains:
 
 - `/v1/auth` — client protocol configuration, registration, signed login, refresh, and logout
-- `/v1/users` — profiles, public keys, discovery, activity, social tokens, and follower data
+- `/v1/users` — profiles, public keys, discovery, activity, Aura purchase registration, and follower data
 - `/v1/broadcasts` — encrypted drafts, audience snapshots, wrapped-key batches, publication, and feed
 - `/v1/messenger` — conversations, encrypted history, messages, read state, and bounty claims
 
@@ -244,7 +253,7 @@ The repository implements the complete server-side flow described above, includi
 Two boundaries are intentionally explicit in the current prototype:
 
 1. Registration verifies the Stellar address through BLUX and validates the format of submitted derived public keys, but it does not yet require an additional wallet ownership challenge that cryptographically binds those keys during registration.
-2. Token acquisition and message bounties currently model entitlement and lifecycle state without on-chain payment, asset transfer, custody, or escrow.
+2. Aura buying and contract bounty locking remain client-owned. The API confirms registered Aura purchases, mirrors registered bounty locks, and submits verifier-authorized reply settlements; it never signs either user purchase or `lock_bounty` transactions.
 
 The protocol is versioned so these components can be replaced with stronger production mechanisms without changing the encrypted content model. A production registration ceremony can bind the wallet, derived public keys, network, domain, and one-time server challenge in a single signed transcript. Likewise, the current token and bounty state machines can be connected to verified Stellar transactions or escrow contracts.
 
@@ -256,7 +265,9 @@ The fastest way to run the API and its required single-node MongoDB replica set 
 Copy-Item .env.example .env
 ```
 
-Set the BLUX, Cloudflare R2, and access-token credentials in `.env`, then run:
+Set the BLUX, Cloudflare R2, access-token, and BeSeen contract credentials in `.env`. Contract synchronization requires `STELLAR_RPC_URL`, `BESEEN_CONTRACT_ID`, `BESEEN_RPC_SOURCE_ACCOUNT`, and the contract deployment ledger in `BESEEN_CONTRACT_START_LEDGER`. Reply settlement additionally requires `BESEEN_VERIFIER_SECRET`; its public key must equal `BESEEN_RPC_SOURCE_ACCOUNT`. Keep this secret server-side and never send it to a client.
+
+Then run:
 
 ```bash
 docker compose up --build
@@ -274,7 +285,7 @@ npm run dev
 
 ## Verification
 
-The repository includes unit and route-level coverage for authentication, cryptographic manifests, replay handling, broadcasts, messaging, bounties, discovery ranking, migrations, avatars, tokens, and user activity.
+The repository includes unit and route-level coverage for authentication, cryptographic manifests, replay handling, broadcasts, messaging, bounties, Aura confirmation, discovery ranking, migrations, avatars, and user activity.
 
 ```bash
 npm run format:check

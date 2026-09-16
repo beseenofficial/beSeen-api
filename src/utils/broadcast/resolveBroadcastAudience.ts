@@ -1,21 +1,16 @@
-import { Types } from 'mongoose';
-
 import User from '../../models/User';
 import UserKey from '../../models/UserKey';
-import TokenHolding from '../../models/TokenHolding';
-import getOrCreateUserToken from '../token/getOrCreateUserToken';
+import AuraFollow from '../../models/AuraFollow';
 import type { BroadcastAudienceMember } from '../../types/broadcast';
 
 const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAudienceMember[]> => {
-  const token = await getOrCreateUserToken(new Types.ObjectId(creatorId));
-
-  const holdings = await TokenHolding.find({ token: token._id }).sort({ _id: 1 }).exec();
-  if (holdings.length === 0) {
+  const follows = await AuraFollow.find({ subject: creatorId }).sort({ _id: 1 }).exec();
+  if (follows.length === 0) {
     return [];
   }
 
   const users = await User.find({
-    _id: { $in: holdings.map((holding) => holding.holder), $ne: creatorId },
+    _id: { $in: follows.map((follow) => follow.follower), $ne: creatorId },
     status: 'active',
     deletedAt: null,
   })
@@ -44,8 +39,10 @@ const resolveBroadcastAudience = async (creatorId: string): Promise<BroadcastAud
             username: user.username,
             keyVersion: key.derivationVersion,
             encryptionPublicKey: key.encryptionPublicKey,
-            accessMode: 'token',
-            tokenId: token._id.toString(),
+            accessMode: 'aura',
+            auraTokenId:
+              follows.find((follow) => follow.follower.equals(user._id))?.firstContractTokenId ??
+              null,
           },
         ]
       : [];

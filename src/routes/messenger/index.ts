@@ -5,19 +5,12 @@ import getConversationRoute from './getConversation';
 import authenticate from '../../middleware/authenticate';
 import getMessageHistoryRoute from './getMessageHistory';
 import listConversationsRoute from './listConversations';
-import claimMessageBountyRoute from './claimMessageBounty';
 import markConversationReadRoute from './markConversationRead';
 import getConversationContextRoute from './getConversationContext';
 import messengerMutationRateLimit from '../../middleware/messengerMutationRateLimit';
 
 const messengerRoutes = Router();
 
-messengerRoutes.post(
-  '/bounties/:bountyId/claim',
-  authenticate,
-  messengerMutationRateLimit,
-  claimMessageBountyRoute,
-);
 messengerRoutes.get('/conversations', authenticate, listConversationsRoute);
 messengerRoutes.get(
   '/conversations/:conversationId/context',

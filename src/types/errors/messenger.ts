@@ -1,5 +1,4 @@
 import type { SendMessageFailureReason } from '../messenger/message';
-import type { ClaimMessageBountyFailureReason } from '../messenger/bounty';
 import type {
   ConversationAccessFailureReason,
   MarkConversationReadFailureReason,
@@ -48,10 +47,15 @@ const messengerSendErrors: Record<
     code: 'INVALID_MESSAGE_SIGNATURE',
     message: 'The encrypted message signature is invalid',
   },
-  insufficient_demo_usdc_balance: {
-    statusCode: 409,
-    code: 'INSUFFICIENT_DEMO_USDC_BALANCE',
-    message: 'The demo USDC balance is insufficient for this bounty',
+  contract_access_denied: {
+    statusCode: 403,
+    code: 'CONTRACT_MESSAGE_ACCESS_DENIED',
+    message: 'The contract no longer permits messaging between these users',
+  },
+  contract_access_unavailable: {
+    statusCode: 503,
+    code: 'CONTRACT_MESSAGE_ACCESS_UNAVAILABLE',
+    message: 'Contract message access could not be verified',
   },
   message_conflict: {
     statusCode: 409,
@@ -73,32 +77,5 @@ const messengerReadErrors: Record<
   },
 };
 
-const messengerBountyClaimErrors: Record<
-  ClaimMessageBountyFailureReason,
-  { statusCode: number; code: string; message: string }
-> = {
-  account_unavailable: messengerConversationErrors.account_unavailable,
-  bounty_not_found: {
-    statusCode: 404,
-    code: 'BOUNTY_NOT_FOUND',
-    message: 'Demo bounty was not found',
-  },
-  bounty_not_claimable: {
-    statusCode: 409,
-    code: 'BOUNTY_NOT_CLAIMABLE',
-    message: 'Demo bounty is not claimable yet',
-  },
-  bounty_expired: {
-    statusCode: 410,
-    code: 'BOUNTY_EXPIRED',
-    message: 'Demo bounty expired before a valid reply',
-  },
-};
-
-export {
-  messengerBountyClaimErrors,
-  messengerConversationErrors,
-  messengerReadErrors,
-  messengerSendErrors,
-};
+export { messengerConversationErrors, messengerReadErrors, messengerSendErrors };
 export type { MessengerConversationErrorReason };

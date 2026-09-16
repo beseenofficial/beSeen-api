@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
+import AuraFollow from '../../src/models/AuraFollow';
 import Conversation from '../../src/models/Conversation';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import getConversations from '../../src/utils/messenger/getConversations';
 import { encodeConversationCursor } from '../../src/utils/messenger/conversationCursor';
 
@@ -13,6 +13,11 @@ const queryResult = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value
 const listResult = (value: unknown) => ({
   sort: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
+  exec: vi.fn().mockResolvedValue(value),
+});
+
+const selectedResult = (value: unknown) => ({
+  select: vi.fn().mockReturnThis(),
   exec: vi.fn().mockResolvedValue(value),
 });
 
@@ -59,6 +64,12 @@ describe('getConversations', () => {
     }
     secondConversation.createdAt = new Date('2026-08-07T11:00:00.000Z');
     vi.spyOn(User, 'findOne').mockReturnValue(queryResult(viewer) as never);
+    vi.spyOn(AuraFollow, 'find').mockReturnValue(
+      selectedResult([
+        { follower: viewer._id, subject: firstOther._id },
+        { follower: secondOther._id, subject: viewer._id },
+      ]) as never,
+    );
     vi.spyOn(Conversation, 'find').mockReturnValue(
       listResult([firstConversation, secondConversation, extraConversation]) as never,
     );
@@ -100,7 +111,16 @@ describe('getConversations', () => {
       },
     });
     expect(Conversation.find).toHaveBeenCalledWith({
-      $or: [{ participantA: viewer._id }, { participantB: viewer._id }],
+      $or: [
+        {
+          participantA: viewer._id,
+          participantB: { $in: [firstOther._id, secondOther._id] },
+        },
+        {
+          participantB: viewer._id,
+          participantA: { $in: [firstOther._id, secondOther._id] },
+        },
+      ],
     });
     expect(result).not.toHaveProperty('conversations.items.0.otherParticipant.walletAddress');
   });

@@ -8,7 +8,7 @@ import {
 const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): string => {
   const bounty = input.bounty ?? null;
 
-  return [
+  const fields = [
     'BeSeen Encrypted Direct Message',
     `Signature Version: ${MESSENGER_SIGNATURE_VERSION}`,
     `Encryption Version: ${input.encryptionVersion}`,
@@ -28,10 +28,19 @@ const buildMessageSignatureMessage = (input: MessageSignatureMessageInput): stri
     `Sender Encrypted Message Key: ${input.senderEncryptedMessageKey}`,
     `Recipient Encrypted Message Key: ${input.recipientEncryptedMessageKey}`,
     `Reply To Message ID: ${input.replyToMessageId?.toLowerCase() ?? 'none'}`,
+  ];
+
+  if (bounty?.contractBountyId) {
+    fields.push(`Bounty Contract ID: ${bounty.contractBountyId}`);
+  }
+
+  fields.push(
     `Bounty Asset Code: ${bounty?.assetCode ?? 'none'}`,
     `Bounty Amount: ${bounty?.amount ?? 'none'}`,
     `Bounty Duration Seconds: ${bounty?.durationSeconds ?? 'none'}`,
-  ].join('\n');
+  );
+
+  return fields.join('\n');
 };
 
 export default buildMessageSignatureMessage;

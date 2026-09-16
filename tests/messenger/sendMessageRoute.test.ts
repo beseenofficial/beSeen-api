@@ -1,9 +1,8 @@
+import app from '../../src/app';
 import request from 'supertest';
 import { Types } from 'mongoose';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import app from '../../src/app';
 import AuthSession from '../../src/models/AuthSession';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import sendMessage from '../../src/utils/messenger/sendMessage';
 import signAccessToken from '../../src/utils/auth/signAccessToken';
 
@@ -105,31 +104,36 @@ describe('POST /v1/messenger/conversations/:conversationId/messages', () => {
     expect(response.body.result.code).toBe('MESSAGE_ID_CONFLICT');
   });
 
-  it('returns a stable conflict when the demo USDC balance is insufficient', async () => {
-    sendMessageMock.mockResolvedValue({
-      ok: false,
-      reason: 'insufficient_demo_usdc_balance',
-    });
-
+  it('rejects non-USDC contract bounties before calling the service', async () => {
     const response = await request(app)
       .post(`/v1/messenger/conversations/${conversationId.toString()}/messages`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         ...validBody(),
-        bounty: { assetCode: 'USDC', amount: '21', durationSeconds: 3_600 },
+        bounty: {
+          contractBountyId: '1',
+          assetCode: 'XLM',
+          amount: '1',
+          durationSeconds: 3_600,
+        },
       });
 
-    expect(response.status).toBe(409);
-    expect(response.body.result.code).toBe('INSUFFICIENT_DEMO_USDC_BALANCE');
+    expect(response.status).toBe(400);
+    expect(response.body.result.code).toBe('VALIDATION_ERROR');
+    expect(sendMessageMock).not.toHaveBeenCalled();
   });
 
-  it('rejects non-USDC demo bounties before calling the service', async () => {
+  it('rejects bounty terms without a contract-generated bounty ID', async () => {
     const response = await request(app)
       .post(`/v1/messenger/conversations/${conversationId.toString()}/messages`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         ...validBody(),
-        bounty: { assetCode: 'XLM', amount: '1', durationSeconds: 3_600 },
+        bounty: {
+          assetCode: 'USDC',
+          amount: '1',
+          durationSeconds: 3_600,
+        },
       });
 
     expect(response.status).toBe(400);

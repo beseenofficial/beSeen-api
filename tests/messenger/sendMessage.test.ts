@@ -1,6 +1,4 @@
 import { Types } from 'mongoose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import UserKey from '../../src/models/UserKey';
@@ -8,19 +6,28 @@ import { withDatabaseTransaction } from '../../src/db';
 import Conversation from '../../src/models/Conversation';
 import MessageBounty from '../../src/models/MessageBounty';
 import sendMessage from '../../src/utils/messenger/sendMessage';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import resolveReplyBounty from '../../src/utils/messenger/resolveReplyBounty';
+import canMessageOnContract from '../../src/utils/contract/canMessageOnContract';
 import verifyEd25519Signature from '../../src/utils/crypto/verifyEd25519Signature';
+import hasAuraConversationAccess from '../../src/utils/aura/hasAuraConversationAccess';
 import buildMessageSignatureMessage from '../../src/utils/messenger/buildMessageSignatureMessage';
 
 vi.mock('../../src/db', () => ({ withDatabaseTransaction: vi.fn() }));
 vi.mock('../../src/utils/crypto/verifyEd25519Signature', () => ({ default: vi.fn() }));
 vi.mock('../../src/utils/messenger/resolveReplyBounty', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/aura/hasAuraConversationAccess', () => ({ default: vi.fn() }));
+vi.mock('../../src/utils/contract/canMessageOnContract', () => ({ default: vi.fn() }));
 
 const transactionMock = vi.mocked(withDatabaseTransaction);
 
 const verifySignatureMock = vi.mocked(verifyEd25519Signature);
 
 const resolveReplyBountyMock = vi.mocked(resolveReplyBounty);
+
+const hasAuraAccessMock = vi.mocked(hasAuraConversationAccess);
+
+const canMessageOnContractMock = vi.mocked(canMessageOnContract);
 
 const senderId = new Types.ObjectId('000000000000000000000001');
 
@@ -37,6 +44,10 @@ const senderEncryptionPublicKey = Buffer.alloc(32, 2).toString('base64');
 const recipientEncryptionPublicKey = Buffer.alloc(32, 3).toString('base64');
 
 const createdAt = new Date('2026-08-07T12:00:00.000Z');
+
+const senderWalletAddress = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV';
+
+const recipientWalletAddress = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
 const body = () => ({
   clientMessageId: '2f2b1762-f0f5-4b1b-8acd-70afcf043365',
@@ -58,8 +69,12 @@ const execQuery = (value: unknown) => ({ exec: vi.fn().mockResolvedValue(value) 
 const setupNewMessageReads = () => {
   vi.spyOn(Message, 'findOne').mockReturnValue(sessionQuery(null) as never);
   vi.spyOn(User, 'findOne')
-    .mockReturnValueOnce(sessionQuery({ _id: senderId }) as never)
-    .mockReturnValueOnce(sessionQuery({ _id: recipientId }) as never);
+    .mockReturnValueOnce(
+      sessionQuery({ _id: senderId, walletAddress: senderWalletAddress }) as never,
+    )
+    .mockReturnValueOnce(
+      sessionQuery({ _id: recipientId, walletAddress: recipientWalletAddress }) as never,
+    );
   vi.spyOn(Conversation, 'findOne').mockReturnValue(
     sessionQuery({
       _id: conversationId,
@@ -91,6 +106,10 @@ describe('sendMessage', () => {
     verifySignatureMock.mockReset();
     resolveReplyBountyMock.mockReset();
     resolveReplyBountyMock.mockResolvedValue(null);
+    hasAuraAccessMock.mockReset();
+    hasAuraAccessMock.mockResolvedValue(true);
+    canMessageOnContractMock.mockReset();
+    canMessageOnContractMock.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -178,104 +197,69 @@ describe('sendMessage', () => {
     );
   });
 
-  it('creates an optional signed demo bounty in the same transaction as its message', async () => {
+  it('registers a client-locked contract bounty with exact USDC base units', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(createdAt);
     const requestBody = {
       ...body(),
-      bounty: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 },
+      bounty: {
+        contractBountyId: '42',
+        assetCode: 'USDC' as const,
+        amount: '10',
+        durationSeconds: 3_600,
+      },
     };
     setupNewMessageReads();
     verifySignatureMock.mockReturnValue(true);
-    const balanceSpy = vi
-      .spyOn(User, 'findOneAndUpdate')
-      .mockReturnValue(execQuery({ _id: senderId, demoUsdcBalanceUnits: 100_000_000 }) as never);
     vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
       execQuery({ nextSequence: 1 }) as never,
     );
-    vi.spyOn(Message, 'create').mockImplementation(async (documents) => {
-      const input = documents[0] as Record<string, unknown>;
+    vi.spyOn(Message, 'create').mockImplementation(
+      async (documents) =>
+        [
+          new Message({
+            ...(documents[0] as Record<string, unknown>),
+            _id: new Types.ObjectId('000000000000000000000004'),
+            createdAt,
+            updatedAt: createdAt,
+          }),
+        ] as never,
+    );
+    vi.spyOn(MessageBounty, 'create').mockImplementation(
+      async (documents) =>
+        [
+          new MessageBounty({
+            ...(documents[0] as Record<string, unknown>),
+            _id: new Types.ObjectId('000000000000000000000005'),
+            createdAt,
+            updatedAt: createdAt,
+          }),
+        ] as never,
+    );
 
-      return [
-        new Message({
-          ...input,
-          _id: new Types.ObjectId('000000000000000000000004'),
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      ] as never;
-    });
-    vi.spyOn(MessageBounty, 'create').mockImplementation(async (documents) => {
-      const input = documents[0] as Record<string, unknown>;
-
-      return [
-        new MessageBounty({
-          ...input,
-          _id: new Types.ObjectId('000000000000000000000005'),
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      ] as never;
-    });
-
-    const result = await sendMessage(senderId.toString(), conversationId.toString(), requestBody);
-
-    expect(result).toMatchObject({
+    await expect(
+      sendMessage(senderId.toString(), conversationId.toString(), requestBody),
+    ).resolves.toMatchObject({
       ok: true,
-      created: true,
       message: {
         bounty: {
-          assetCode: 'USDC',
-          amount: '10',
-          durationSeconds: 3_600,
-          status: 'offered',
-          expiresAt: new Date('2026-08-07T13:00:00.000Z'),
+          contractBountyId: '42',
+          settlementStatus: 'pending',
         },
       },
     });
-    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Asset Code: USDC');
-    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Amount: 10');
+    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Contract ID: 42');
     expect(MessageBounty.create).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          sponsor: senderId,
-          beneficiary: recipientId,
-          assetCode: 'USDC',
-          amount: '10',
-          amountUnits: 100_000_000,
-          fundingStatus: 'reserved',
-          durationSeconds: 3_600,
-          status: 'offered',
+          contractBountyId: '42',
+          amountUnits: '100000000',
+          fundingStatus: 'contract_locked',
+          settlementStatus: 'pending',
         }),
       ],
       { session },
     );
-    expect(balanceSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        _id: senderId,
-        demoUsdcBalanceUnits: { $gte: 100_000_000 },
-      }),
-      { $inc: { demoUsdcBalanceUnits: -100_000_000 } },
-      { returnDocument: 'after', runValidators: true, session },
-    );
-  });
-
-  it('rejects a bounty before allocating a message sequence when the balance is insufficient', async () => {
-    const requestBody = {
-      ...body(),
-      bounty: { assetCode: 'USDC' as const, amount: '20.0000001', durationSeconds: 3_600 },
-    };
-    setupNewMessageReads();
-    verifySignatureMock.mockReturnValue(true);
-    vi.spyOn(User, 'findOneAndUpdate').mockReturnValue(execQuery(null) as never);
-    const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
-    const messageSpy = vi.spyOn(Message, 'create');
-
-    await expect(
-      sendMessage(senderId.toString(), conversationId.toString(), requestBody),
-    ).resolves.toEqual({ ok: false, reason: 'insufficient_demo_usdc_balance' });
-    expect(sequenceSpy).not.toHaveBeenCalled();
-    expect(messageSpy).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid derived-key signature before allocating a sequence', async () => {
@@ -288,6 +272,38 @@ describe('sendMessage', () => {
     await expect(
       sendMessage(senderId.toString(), conversationId.toString(), body()),
     ).resolves.toEqual({ ok: false, reason: 'invalid_signature' });
+    expect(sequenceSpy).not.toHaveBeenCalled();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not persist a message when can_message returns false', async () => {
+    setupNewMessageReads();
+    canMessageOnContractMock.mockResolvedValue(false);
+    const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
+
+    const createSpy = vi.spyOn(Message, 'create');
+
+    await expect(
+      sendMessage(senderId.toString(), conversationId.toString(), body()),
+    ).resolves.toEqual({ ok: false, reason: 'contract_access_denied' });
+    expect(canMessageOnContractMock).toHaveBeenCalledWith(
+      senderWalletAddress,
+      recipientWalletAddress,
+    );
+    expect(sequenceSpy).not.toHaveBeenCalled();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it('fails closed without persisting when can_message cannot be read', async () => {
+    setupNewMessageReads();
+    canMessageOnContractMock.mockRejectedValue(new Error('RPC unavailable'));
+    const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
+
+    const createSpy = vi.spyOn(Message, 'create');
+
+    await expect(
+      sendMessage(senderId.toString(), conversationId.toString(), body()),
+    ).resolves.toEqual({ ok: false, reason: 'contract_access_unavailable' });
     expect(sequenceSpy).not.toHaveBeenCalled();
     expect(createSpy).not.toHaveBeenCalled();
   });

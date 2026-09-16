@@ -1,8 +1,8 @@
 import { Schema, model } from 'mongoose';
 import type { HydratedDocument, Types } from 'mongoose';
-
 import isBase64PublicKey from '../utils/auth/isBase64PublicKey';
 import isCanonicalBase64 from '../utils/crypto/isCanonicalBase64';
+import isPositiveU64String from '../utils/contract/isPositiveU64String';
 import {
   MESSENGER_BOUNTY_AMOUNT_PATTERN,
   MESSENGER_BOUNTY_ASSET_CODE_PATTERN,
@@ -35,6 +35,7 @@ interface IMessage {
   senderEncryptedMessageKey: string;
   recipientEncryptedMessageKey: string;
   replyToMessage: Types.ObjectId | null;
+  contractBountyId: string | null;
   bountyAssetCode: string | null;
   bountyAmount: string | null;
   bountyDurationSeconds: number | null;
@@ -195,6 +196,15 @@ const messageSchema = new Schema<IMessage>(
       default: null,
       immutable: true,
     },
+    contractBountyId: {
+      type: String,
+      default: null,
+      immutable: true,
+      validate: {
+        validator: (value: string | null) => value === null || isPositiveU64String(value),
+        message: 'Contract bounty ID must be a positive u64 integer',
+      },
+    },
     bountyAssetCode: {
       type: String,
       default: null,
@@ -252,7 +262,12 @@ messageSchema.pre('validate', function validateParticipants() {
     this.invalidate('recipient', 'A message requires two different users');
   }
 
-  const bountyTerms = [this.bountyAssetCode, this.bountyAmount, this.bountyDurationSeconds];
+  const bountyTerms = [
+    this.contractBountyId,
+    this.bountyAssetCode,
+    this.bountyAmount,
+    this.bountyDurationSeconds,
+  ];
 
   const suppliedBountyTerms = bountyTerms.filter((value) => value !== null && value !== undefined);
 

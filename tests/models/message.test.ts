@@ -67,6 +67,7 @@ describe('Message model', () => {
     await expect(
       new Message({
         ...messageInput(),
+        contractBountyId: '1',
         bountyAssetCode: 'USDC',
         bountyAmount: '10',
         bountyDurationSeconds: 3_600,

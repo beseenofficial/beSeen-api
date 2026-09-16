@@ -1,7 +1,6 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DiscoverRankingMetrics } from '../../src/types/discover';
 import collectDiscoverMetrics from '../../src/utils/discover/collectDiscoverMetrics';
 import recalculateDiscoverRankings from '../../src/utils/discover/recalculateDiscoverRankings';
@@ -42,7 +41,7 @@ describe('recalculateDiscoverRankings', () => {
       lastActiveAt: null,
       followerCount: 1_000,
       newFollowerCount30d: 0,
-      lastTokenPurchaseAt: null,
+      lastAuraPurchaseAt: null,
       claimedBountyCount: 0,
       claimedUsdcAmount: 0,
       reciprocalConversationCount30d: 0,
