@@ -22,6 +22,7 @@ const openApiDocument = {
     },
     { name: 'Profiles', description: 'Private and public user profiles.' },
     { name: 'Aura', description: 'Verified on-chain Aura purchases and social access.' },
+    { name: 'Earnings', description: 'Confirmed bounty reply earning history.' },
     {
       name: 'Broadcasts',
       description: 'End-to-end encrypted, signed, ciphertext-only broadcasts.',

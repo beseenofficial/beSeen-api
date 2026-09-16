@@ -1,4 +1,5 @@
 import getMeRoute from './me';
+import getEarningsRoute from './earnings';
 import { Router } from 'express';
 import updateMeRoute from './updateMe';
 import discoverUsersRoute from './discover';
@@ -16,6 +17,7 @@ import usernameAvailabilityRateLimit from '../../middleware/usernameAvailability
 const userRoutes = Router();
 
 userRoutes.get('/me', authenticate, getMeRoute);
+userRoutes.get('/me/earnings', authenticate, getEarningsRoute);
 userRoutes.patch('/me', authenticate, avatarUpload, updateMeRoute);
 userRoutes.post('/me/activity', authenticate, userActivityRateLimit, recordUserActivityRoute);
 userRoutes.get('/discover', discoverUsersRoute);

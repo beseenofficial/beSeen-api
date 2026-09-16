@@ -331,6 +331,83 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/users/me/earnings': {
+    get: {
+      tags: ['Earnings'],
+      summary: 'List confirmed bounty reply earnings',
+      description:
+        'Returns the authenticated user\'s confirmed bounty reply rewards. Amount is the net USDC amount after the on-chain bounty fee.',
+      operationId: 'getCurrentUserEarnings',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'before',
+          in: 'query',
+          schema: { type: 'string', pattern: '^[a-fA-F0-9]{24}$' },
+          description: 'Return earning transactions created before this item ID.',
+        },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
+        },
+      ],
+      responses: {
+        '200': jsonResponse('Earning transactions retrieved.', {
+          type: 'object',
+          required: ['earnings'],
+          properties: {
+            earnings: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['assetCode', 'totalAmount', 'items', 'nextCursor', 'hasMore'],
+              properties: {
+                assetCode: { type: 'string', const: 'USDC' },
+                totalAmount: {
+                  type: 'string',
+                  description: 'All-time net bounty reply earnings in USDC.',
+                },
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: [
+                      'id',
+                      'type',
+                      'reason',
+                      'contractBountyId',
+                      'assetCode',
+                      'amount',
+                      'transactionHash',
+                      'earnedAt',
+                    ],
+                    properties: {
+                      id: { type: 'string' },
+                      type: { type: 'string', const: 'bounty_reply' },
+                      reason: { type: 'string', const: 'Bounty reply reward' },
+                      contractBountyId: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                      assetCode: { type: 'string', const: 'USDC' },
+                      amount: {
+                        type: 'string',
+                        description: 'Net USDC amount after the bounty fee.',
+                      },
+                      transactionHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+                      earnedAt: { type: 'string', format: 'date-time' },
+                    },
+                  },
+                },
+                nextCursor: { type: ['string', 'null'] },
+                hasMore: { type: 'boolean' },
+              },
+            },
+          },
+        }),
+        '400': validationError,
+        '401': unauthorized,
+      },
+    },
+  },
   '/v1/users/me/activity': {
     post: {
       tags: ['Profiles'],
