@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  getHealth: vi.fn(),
   getEvents: vi.fn(),
   scValToNative: vi.fn(),
   stateSave: vi.fn(),
@@ -15,13 +16,14 @@ vi.mock('../../src/utils/contract/contractConfig', () => ({
     contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM',
     sourceAccount: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV',
     startLedger: 100,
+    eventLedgerBatchSize: 10_000,
   }),
 }));
 vi.mock('../../src/utils/contract/stellarSdk', () => ({
   default: {
     rpc: {
       Server: vi.fn(function MockServer() {
-        return { getEvents: mocks.getEvents };
+        return { getHealth: mocks.getHealth, getEvents: mocks.getEvents };
       }),
     },
     xdr: {
@@ -35,7 +37,11 @@ vi.mock('../../src/utils/contract/stellarSdk', () => ({
 vi.mock('../../src/models/ContractSyncState', () => ({
   default: {
     findByIdAndUpdate: vi.fn(() => ({
-      exec: async () => ({ eventCursor: null, save: mocks.stateSave }),
+      exec: async () => ({
+        eventCursor: null,
+        lastProcessedLedger: null,
+        save: mocks.stateSave,
+      }),
     })),
   },
 }));
@@ -58,6 +64,8 @@ const recipient = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
 describe('bounty event synchronization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getHealth.mockResolvedValue({ oldestLedger: 100, latestLedger: 20_000 });
+
     mocks.getEvents.mockResolvedValue({
       events: [
         {
@@ -81,7 +89,22 @@ describe('bounty event synchronization', () => {
   });
 
   it('stores complete lock events without making a get_bounty fallback call', async () => {
-    await expect(syncBountyLockEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
+    await expect(syncBountyLockEvents()).resolves.toEqual({
+      processed: 1,
+      lastProcessedLedger: 10_099,
+    });
+    expect(mocks.getEvents).toHaveBeenCalledWith({
+      filters: [
+        {
+          type: 'contract',
+          contractIds: ['CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM'],
+          topics: [['lock-bounty-topic']],
+        },
+      ],
+      startLedger: 100,
+      endLedger: 10_100,
+      limit: 100,
+    });
     expect(mocks.upsertContractBounty).toHaveBeenCalledWith({
       contractBountyId: '1',
       sender,
@@ -118,7 +141,10 @@ describe('bounty event synchronization', () => {
   it('ignores contract calls that were not registered through the API', async () => {
     mocks.isRegistered.mockResolvedValue(null);
 
-    await expect(syncBountyLockEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
+    await expect(syncBountyLockEvents()).resolves.toEqual({
+      processed: 0,
+      lastProcessedLedger: 10_099,
+    });
     expect(mocks.getContractBounty).not.toHaveBeenCalled();
     expect(mocks.upsertContractBounty).not.toHaveBeenCalled();
     expect(mocks.stateSave).toHaveBeenCalledOnce();

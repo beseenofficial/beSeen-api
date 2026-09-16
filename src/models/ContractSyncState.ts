@@ -15,6 +15,15 @@ const contractSyncStateSchema = new Schema<IContractSyncState>(
       type: String,
       default: null,
     },
+    lastProcessedLedger: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: (value: number | null) => value === null || Number.isSafeInteger(value),
+        message: 'Last processed contract ledger must be a safe integer',
+      },
+    },
     lastReconciledBountyId: {
       type: String,
       required: true,

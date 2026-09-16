@@ -1,16 +1,13 @@
 import stellarSdk from '../stellarSdk';
 import getContractBounty from '../getContractBounty';
-import getContractSyncConfig from '../contractConfig';
+import fetchContractEvents from './fetchContractEvents';
 import decodeContractBounty from '../contractBountyCodec';
 import MessageBounty from '../../../models/MessageBounty';
 import upsertContractBounty from '../upsertContractBounty';
 import ContractSyncState from '../../../models/ContractSyncState';
 import type { ContractBountyData } from '../../../types/contract/bounty';
+import { CONTRACT_BOUNTY_SYNC_STATE_ID } from '../../../constant/contract';
 import type { ContractEventMetadata, ContractEventSyncResult } from '../../../types/contract/event';
-import {
-  CONTRACT_BOUNTY_SYNC_STATE_ID,
-  CONTRACT_EVENT_PAGE_SIZE,
-} from '../../../constant/contract';
 
 const decodeLockEvent = async (
   nativeValue: unknown,
@@ -52,15 +49,16 @@ const decodeLockEvent = async (
 };
 
 const syncBountyLockEvents = async (): Promise<ContractEventSyncResult> => {
-  const config = getContractSyncConfig();
-
-  if (!config) {
-    throw new Error('BeSeen contract synchronization is not configured');
-  }
-
   const state = await ContractSyncState.findByIdAndUpdate(
     CONTRACT_BOUNTY_SYNC_STATE_ID,
-    { $setOnInsert: { eventCursor: null, lastReconciledBountyId: '0' } },
+    {
+      $setOnInsert: {
+        eventCursor: null,
+        auraEventCursor: null,
+        lastProcessedLedger: null,
+        lastReconciledBountyId: '0',
+      },
+    },
     { upsert: true, returnDocument: 'after', runValidators: true },
   ).exec();
 
@@ -68,31 +66,13 @@ const syncBountyLockEvents = async (): Promise<ContractEventSyncResult> => {
     throw new Error('Contract synchronization state could not be created');
   }
 
-  const rpcServer = new stellarSdk.rpc.Server(config.rpcUrl, {
-    allowHttp: new URL(config.rpcUrl).protocol === 'http:',
-  });
-
   const topic = stellarSdk.xdr.ScVal.scvSymbol('lock_bnty').toXDR('base64');
 
-  const pagination = state.eventCursor
-    ? { cursor: state.eventCursor }
-    : { startLedger: config.startLedger };
-
-  const response = await rpcServer.getEvents({
-    filters: [
-      {
-        type: 'contract',
-        contractIds: [config.contractId],
-        topics: [[topic]],
-      },
-    ],
-    ...pagination,
-    limit: CONTRACT_EVENT_PAGE_SIZE,
-  });
+  const batch = await fetchContractEvents(topic, state.lastProcessedLedger ?? null);
 
   let processed = 0;
 
-  for (const event of response.events) {
+  for (const event of batch.events) {
     if (!event.inSuccessfulContractCall) {
       continue;
     }
@@ -136,10 +116,13 @@ const syncBountyLockEvents = async (): Promise<ContractEventSyncResult> => {
     processed += 1;
   }
 
-  state.eventCursor = response.cursor;
-  await state.save();
+  if (batch.lastProcessedLedger !== null) {
+    state.lastProcessedLedger = batch.lastProcessedLedger;
+    state.eventCursor = null;
+    await state.save();
+  }
 
-  return { processed, cursor: response.cursor };
+  return { processed, lastProcessedLedger: batch.lastProcessedLedger };
 };
 
 export default syncBountyLockEvents;

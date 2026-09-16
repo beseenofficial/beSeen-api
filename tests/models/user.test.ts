@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
 import User from '../../src/models/User';
+import { describe, expect, it } from 'vitest';
 
 const WALLET = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 
@@ -16,7 +15,6 @@ describe('User model', () => {
     expect(user.bio).toBeNull();
     expect(user.verificationGrantedAt).toBeNull();
     expect(user.verificationExpiresAt).toBeNull();
-    expect(user.demoUsdcBalanceUnits).toBe(200_000_000);
     expect(user.role).toBe('user');
     expect(user.status).toBe('active');
     expect(user.discoverScore).toBe(0);

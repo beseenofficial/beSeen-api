@@ -28,7 +28,6 @@ describe('OpenAPI contract', () => {
         '/v1/messenger/conversations/{conversationId}/context',
         '/v1/messenger/conversations/{conversationId}/messages',
         '/v1/messenger/conversations/{conversationId}/read',
-        '/v1/messenger/bounties/{bountyId}/claim',
         '/v1/broadcasts/feed',
         '/v1/broadcasts/drafts',
         '/v1/broadcasts/drafts/{draftId}/recipients',
@@ -38,13 +37,11 @@ describe('OpenAPI contract', () => {
       ]),
     );
     expect(openApiDocument.paths).not.toHaveProperty('/v1/auth/registration/verify');
+    expect(openApiDocument.paths).not.toHaveProperty('/v1/messenger/bounties/{bountyId}/claim');
     expect(openApiDocument.components.schemas.PublicUser.properties).toHaveProperty(
       'walletAddress',
     );
-    expect(openApiDocument.components.schemas.PublicUser.properties).not.toHaveProperty(
-      'demoUsdcBalance',
-    );
-    expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty(
+    expect(openApiDocument.components.schemas.CurrentUser.properties).not.toHaveProperty(
       'demoUsdcBalance',
     );
     expect(openApiDocument.components.schemas.CurrentUser.properties).toHaveProperty('auraPrice');
@@ -58,6 +55,9 @@ describe('OpenAPI contract', () => {
     );
     expect(openApiDocument.components.schemas.DiscoverUser.properties).toHaveProperty(
       'followingCount',
+    );
+    expect(openApiDocument.components.schemas.MessengerBountyTerms.required).toContain(
+      'contractBountyId',
     );
     expect(openApiDocument.components.securitySchemes.bearerAuth).toMatchObject({
       type: 'http',

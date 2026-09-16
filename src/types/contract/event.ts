@@ -6,7 +6,7 @@ interface ContractEventMetadata {
 
 interface ContractEventSyncResult {
   processed: number;
-  cursor: string;
+  lastProcessedLedger: number | null;
 }
 
 export type { ContractEventMetadata, ContractEventSyncResult };

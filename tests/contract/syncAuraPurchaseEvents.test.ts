@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  getHealth: vi.fn(),
   getEvents: vi.fn(),
   scValToNative: vi.fn(),
   stateSave: vi.fn(),
@@ -14,13 +15,14 @@ vi.mock('../../src/utils/contract/contractConfig', () => ({
     contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM',
     sourceAccount: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV',
     startLedger: 100,
+    eventLedgerBatchSize: 10_000,
   }),
 }));
 vi.mock('../../src/utils/contract/stellarSdk', () => ({
   default: {
     rpc: {
       Server: vi.fn(function MockServer() {
-        return { getEvents: mocks.getEvents };
+        return { getHealth: mocks.getHealth, getEvents: mocks.getEvents };
       }),
     },
     xdr: { ScVal: { scvSymbol: () => ({ toXDR: () => 'buy-aura-topic' }) } },
@@ -30,7 +32,11 @@ vi.mock('../../src/utils/contract/stellarSdk', () => ({
 vi.mock('../../src/models/ContractSyncState', () => ({
   default: {
     findByIdAndUpdate: vi.fn(() => ({
-      exec: async () => ({ auraEventCursor: null, save: mocks.stateSave }),
+      exec: async () => ({
+        auraEventCursor: null,
+        lastProcessedLedger: null,
+        save: mocks.stateSave,
+      }),
     })),
   },
 }));
@@ -48,6 +54,8 @@ const subject = 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR';
 describe('Aura purchase event synchronization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getHealth.mockResolvedValue({ oldestLedger: 100, latestLedger: 20_000 });
+
     mocks.getEvents.mockResolvedValue({
       events: [
         {
@@ -72,7 +80,10 @@ describe('Aura purchase event synchronization', () => {
   });
 
   it('confirms only a matching API-registered transaction', async () => {
-    await expect(syncAuraPurchaseEvents()).resolves.toEqual({ processed: 1, cursor: 'cursor-1' });
+    await expect(syncAuraPurchaseEvents()).resolves.toEqual({
+      processed: 1,
+      lastProcessedLedger: 10_099,
+    });
     expect(mocks.isRegistered).toHaveBeenCalledWith({
       contractTokenId: '42',
       purchaseTransactionHash: 'a'.repeat(64),
@@ -91,7 +102,10 @@ describe('Aura purchase event synchronization', () => {
 
   it('ignores an unrelated direct contract purchase', async () => {
     mocks.isRegistered.mockResolvedValue(null);
-    await expect(syncAuraPurchaseEvents()).resolves.toEqual({ processed: 0, cursor: 'cursor-1' });
+    await expect(syncAuraPurchaseEvents()).resolves.toEqual({
+      processed: 0,
+      lastProcessedLedger: 10_099,
+    });
     expect(mocks.confirmAuraPurchase).not.toHaveBeenCalled();
     expect(mocks.stateSave).toHaveBeenCalledOnce();
   });

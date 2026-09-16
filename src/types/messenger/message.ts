@@ -18,7 +18,7 @@ interface MessageSignatureMessageInput {
   recipientEncryptedMessageKey: string;
   replyToMessageId: string | null;
   bounty?: {
-    contractBountyId?: string;
+    contractBountyId: string;
     assetCode: string;
     amount: string;
     durationSeconds: number;
@@ -100,7 +100,6 @@ type SendMessageFailureReason =
   | 'invalid_signature'
   | 'contract_access_denied'
   | 'contract_access_unavailable'
-  | 'insufficient_demo_usdc_balance'
   | 'message_conflict';
 
 type SendMessageResult =

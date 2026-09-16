@@ -1,8 +1,8 @@
 import log from '../logger';
 import addUserBio from './20260828AddUserBio';
+import removeDemoUsdc from './20260915RemoveDemoUsdc';
 import addUserActivity from './20260827AddUserActivity';
 import addDiscoverRanking from './20260811AddDiscoverRanking';
-import addDemoUsdcBalances from './20260828AddDemoUsdcBalances';
 import addUserVerification from './20260828AddUserVerification';
 import verifyOfficialBeseenUser from './20260828VerifyOfficialBeseenUser';
 import replaceDemoTokensWithAura from './20260915ReplaceDemoTokensWithAura';
@@ -23,7 +23,7 @@ const runDatabaseMigrations = async (): Promise<void> => {
 
   const auraSocialGraph = await replaceDemoTokensWithAura();
 
-  const demoUsdcBalances = await addDemoUsdcBalances();
+  const removedDemoUsdc = await removeDemoUsdc();
 
   log.info(
     {
@@ -34,7 +34,7 @@ const runDatabaseMigrations = async (): Promise<void> => {
       userVerification,
       officialUserVerification,
       auraSocialGraph,
-      demoUsdcBalances,
+      removedDemoUsdc,
     },
     'Database migrations completed',
   );

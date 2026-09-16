@@ -262,7 +262,12 @@ messageSchema.pre('validate', function validateParticipants() {
     this.invalidate('recipient', 'A message requires two different users');
   }
 
-  const bountyTerms = [this.bountyAssetCode, this.bountyAmount, this.bountyDurationSeconds];
+  const bountyTerms = [
+    this.contractBountyId,
+    this.bountyAssetCode,
+    this.bountyAmount,
+    this.bountyDurationSeconds,
+  ];
 
   const suppliedBountyTerms = bountyTerms.filter((value) => value !== null && value !== undefined);
 

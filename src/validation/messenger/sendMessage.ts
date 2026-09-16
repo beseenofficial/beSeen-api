@@ -25,8 +25,7 @@ const bountyTermsSchema = z
   .object({
     contractBountyId: z
       .string()
-      .refine(isPositiveU64String, 'Contract bounty ID must be a positive u64 integer')
-      .optional(),
+      .refine(isPositiveU64String, 'Contract bounty ID must be a positive u64 integer'),
     assetCode: z.literal('USDC'),
     amount: z
       .string()

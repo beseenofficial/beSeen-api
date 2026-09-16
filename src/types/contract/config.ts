@@ -3,6 +3,7 @@ interface ContractSyncConfig {
   contractId: string;
   sourceAccount: string;
   startLedger: number;
+  eventLedgerBatchSize: number;
 }
 
 interface ContractSettlementConfig extends ContractSyncConfig {

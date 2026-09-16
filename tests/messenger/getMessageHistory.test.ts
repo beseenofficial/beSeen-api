@@ -1,10 +1,9 @@
 import { Types } from 'mongoose';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import User from '../../src/models/User';
 import Message from '../../src/models/Message';
 import Conversation from '../../src/models/Conversation';
 import MessageBounty from '../../src/models/MessageBounty';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import getMessageHistory from '../../src/utils/messenger/getMessageHistory';
 import getConversationAccess from '../../src/utils/messenger/getConversationAccess';
 import expireOfferedMessageBounties from '../../src/utils/messenger/expireOfferedMessageBounties';
@@ -84,6 +83,7 @@ describe('getMessageHistory', () => {
 
     const sent = createMessage(3, senderId, recipientId);
     sent.bountyAssetCode = 'USDC';
+    sent.contractBountyId = '42';
     sent.bountyAmount = '10';
     sent.bountyDurationSeconds = 3_600;
     const received = createMessage(2, recipientId, senderId);
@@ -91,12 +91,14 @@ describe('getMessageHistory', () => {
     const extra = createMessage(1, senderId, recipientId);
 
     const bounty = new MessageBounty({
+      contractBountyId: '42',
       message: sent._id,
       conversation: conversationId,
       sponsor: senderId,
       beneficiary: recipientId,
       assetCode: 'USDC',
       amount: '10',
+      amountUnits: '100000000',
       durationSeconds: 3_600,
       expiresAt: new Date('2026-08-07T13:00:00.000Z'),
     });
@@ -127,9 +129,15 @@ describe('getMessageHistory', () => {
             },
             delivery: { seenByRecipient: false },
             manifest: {
-              bountyTerms: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 },
+              bountyTerms: {
+                contractBountyId: '42',
+                assetCode: 'USDC',
+                amount: '10',
+                durationSeconds: 3_600,
+              },
             },
             bounty: {
+              contractBountyId: '42',
               assetCode: 'USDC',
               amount: '10',
               status: 'offered',

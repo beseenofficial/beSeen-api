@@ -46,7 +46,7 @@ describe('upsertContractBounty registration verification', () => {
         _id: new Types.ObjectId(),
         sponsor: sponsorId,
         beneficiary: beneficiaryId,
-        amountUnits: 20_000_000,
+        amountUnits: '20000000',
       }) as never,
     );
     vi.spyOn(User, 'findById')
@@ -69,7 +69,7 @@ describe('upsertContractBounty registration verification', () => {
         _id: registrationId,
         sponsor: sponsorId,
         beneficiary: beneficiaryId,
-        amountUnits: 20_000_000,
+        amountUnits: '20000000',
       }) as never,
     );
     vi.spyOn(User, 'findById')

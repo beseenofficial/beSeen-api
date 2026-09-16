@@ -16,14 +16,13 @@ describe('getCurrentUser', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns the private demo USDC balance as an exact decimal string', async () => {
+  it('returns the current user with the on-chain Aura price', async () => {
     const userId = new Types.ObjectId();
 
     const user = new User({
       _id: userId,
       walletAddress: 'GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR',
       username: 'alice',
-      demoUsdcBalanceUnits: 105_000_001,
     });
 
     user.createdAt = new Date('2026-08-28T00:00:00.000Z');
@@ -37,7 +36,6 @@ describe('getCurrentUser', () => {
       user: {
         id: userId.toString(),
         auraPrice: '10000000',
-        demoUsdcBalance: '10.5000001',
       },
     });
     expect(getContractAuraPricesMock).toHaveBeenCalledWith([user.walletAddress]);

@@ -5,7 +5,7 @@ import type { ContractBountySettlementStatus } from '../contract/bounty';
 
 interface SerializedMessageBounty {
   id: string;
-  contractBountyId: string | null;
+  contractBountyId: string;
   assetCode: string;
   amount: string;
   durationSeconds: number;
@@ -28,16 +28,4 @@ interface ResolveReplyBountyInput {
   session: ClientSession;
 }
 
-type ClaimMessageBountyFailureReason =
-  'account_unavailable' | 'bounty_not_found' | 'bounty_not_claimable' | 'bounty_expired';
-
-type ClaimMessageBountyResult =
-  | { ok: true; bounty: SerializedMessageBounty; claimedNow: boolean }
-  | { ok: false; reason: ClaimMessageBountyFailureReason };
-
-export type {
-  ClaimMessageBountyFailureReason,
-  ClaimMessageBountyResult,
-  ResolveReplyBountyInput,
-  SerializedMessageBounty,
-};
+export type { ResolveReplyBountyInput, SerializedMessageBounty };

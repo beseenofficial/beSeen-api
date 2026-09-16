@@ -33,7 +33,6 @@ interface UserActivityHeartbeat {
 
 interface CurrentUserProfile extends AuthenticatedUser {
   auraPrice: string | null;
-  demoUsdcBalance: string;
 }
 
 interface FollowCountRecord {

@@ -197,89 +197,7 @@ describe('sendMessage', () => {
     );
   });
 
-  it('creates an optional signed demo bounty in the same transaction as its message', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(createdAt);
-    const requestBody = {
-      ...body(),
-      bounty: { assetCode: 'USDC', amount: '10', durationSeconds: 3_600 },
-    };
-    setupNewMessageReads();
-    verifySignatureMock.mockReturnValue(true);
-    const balanceSpy = vi
-      .spyOn(User, 'findOneAndUpdate')
-      .mockReturnValue(execQuery({ _id: senderId, demoUsdcBalanceUnits: 100_000_000 }) as never);
-    vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
-      execQuery({ nextSequence: 1 }) as never,
-    );
-    vi.spyOn(Message, 'create').mockImplementation(async (documents) => {
-      const input = documents[0] as Record<string, unknown>;
-
-      return [
-        new Message({
-          ...input,
-          _id: new Types.ObjectId('000000000000000000000004'),
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      ] as never;
-    });
-    vi.spyOn(MessageBounty, 'create').mockImplementation(async (documents) => {
-      const input = documents[0] as Record<string, unknown>;
-
-      return [
-        new MessageBounty({
-          ...input,
-          _id: new Types.ObjectId('000000000000000000000005'),
-          createdAt,
-          updatedAt: createdAt,
-        }),
-      ] as never;
-    });
-
-    const result = await sendMessage(senderId.toString(), conversationId.toString(), requestBody);
-
-    expect(result).toMatchObject({
-      ok: true,
-      created: true,
-      message: {
-        bounty: {
-          assetCode: 'USDC',
-          amount: '10',
-          durationSeconds: 3_600,
-          status: 'offered',
-          expiresAt: new Date('2026-08-07T13:00:00.000Z'),
-        },
-      },
-    });
-    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Asset Code: USDC');
-    expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Amount: 10');
-    expect(MessageBounty.create).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          sponsor: senderId,
-          beneficiary: recipientId,
-          assetCode: 'USDC',
-          amount: '10',
-          amountUnits: 100_000_000,
-          fundingStatus: 'reserved',
-          durationSeconds: 3_600,
-          status: 'offered',
-        }),
-      ],
-      { session },
-    );
-    expect(balanceSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        _id: senderId,
-        demoUsdcBalanceUnits: { $gte: 100_000_000 },
-      }),
-      { $inc: { demoUsdcBalanceUnits: -100_000_000 } },
-      { returnDocument: 'after', runValidators: true, session },
-    );
-  });
-
-  it('registers a client-locked contract bounty without debiting the demo balance', async () => {
+  it('registers a client-locked contract bounty with exact USDC base units', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(createdAt);
     const requestBody = {
@@ -293,7 +211,6 @@ describe('sendMessage', () => {
     };
     setupNewMessageReads();
     verifySignatureMock.mockReturnValue(true);
-    const balanceSpy = vi.spyOn(User, 'findOneAndUpdate');
     vi.spyOn(Conversation, 'findOneAndUpdate').mockReturnValue(
       execQuery({ nextSequence: 1 }) as never,
     );
@@ -331,37 +248,18 @@ describe('sendMessage', () => {
         },
       },
     });
-    expect(balanceSpy).not.toHaveBeenCalled();
     expect(verifySignatureMock.mock.calls[0]?.[1]).toContain('Bounty Contract ID: 42');
     expect(MessageBounty.create).toHaveBeenCalledWith(
       [
         expect.objectContaining({
           contractBountyId: '42',
+          amountUnits: '100000000',
           fundingStatus: 'contract_locked',
           settlementStatus: 'pending',
         }),
       ],
       { session },
     );
-  });
-
-  it('rejects a bounty before allocating a message sequence when the balance is insufficient', async () => {
-    const requestBody = {
-      ...body(),
-      bounty: { assetCode: 'USDC' as const, amount: '20.0000001', durationSeconds: 3_600 },
-    };
-    setupNewMessageReads();
-    verifySignatureMock.mockReturnValue(true);
-    vi.spyOn(User, 'findOneAndUpdate').mockReturnValue(execQuery(null) as never);
-    const sequenceSpy = vi.spyOn(Conversation, 'findOneAndUpdate');
-
-    const messageSpy = vi.spyOn(Message, 'create');
-
-    await expect(
-      sendMessage(senderId.toString(), conversationId.toString(), requestBody),
-    ).resolves.toEqual({ ok: false, reason: 'insufficient_demo_usdc_balance' });
-    expect(sequenceSpy).not.toHaveBeenCalled();
-    expect(messageSpy).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid derived-key signature before allocating a sequence', async () => {

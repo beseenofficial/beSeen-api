@@ -33,6 +33,12 @@ const envSchema = z
       .regex(/^G[A-Z2-7]{55}$/)
       .optional(),
     BESEEN_CONTRACT_START_LEDGER: z.coerce.number().int().nonnegative().optional(),
+    BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(1_000_000)
+      .default(10_000),
     BESEEN_VERIFIER_SECRET: z
       .string()
       .regex(/^S[A-Z2-7]{55}$/)

@@ -1,25 +1,20 @@
 import stellarSdk from '../stellarSdk';
 import AuraToken from '../../../models/AuraToken';
-import getContractSyncConfig from '../contractConfig';
+import fetchContractEvents from './fetchContractEvents';
 import { decodeAuraPurchasedEvent } from '../contractAuraCodec';
 import confirmAuraPurchase from '../../aura/confirmAuraPurchase';
 import ContractSyncState from '../../../models/ContractSyncState';
+import { CONTRACT_AURA_SYNC_STATE_ID } from '../../../constant/contract';
 import type { ContractEventSyncResult } from '../../../types/contract/event';
-import { CONTRACT_AURA_SYNC_STATE_ID, CONTRACT_EVENT_PAGE_SIZE } from '../../../constant/contract';
 
 const syncAuraPurchaseEvents = async (): Promise<ContractEventSyncResult> => {
-  const config = getContractSyncConfig();
-
-  if (!config) {
-    throw new Error('BeSeen contract synchronization is not configured');
-  }
-
   const state = await ContractSyncState.findByIdAndUpdate(
     CONTRACT_AURA_SYNC_STATE_ID,
     {
       $setOnInsert: {
         eventCursor: null,
         auraEventCursor: null,
+        lastProcessedLedger: null,
         lastReconciledBountyId: '0',
       },
     },
@@ -30,24 +25,12 @@ const syncAuraPurchaseEvents = async (): Promise<ContractEventSyncResult> => {
     throw new Error('Contract synchronization state could not be created');
   }
 
-  const rpcServer = new stellarSdk.rpc.Server(config.rpcUrl, {
-    allowHttp: new URL(config.rpcUrl).protocol === 'http:',
-  });
-
   const topic = stellarSdk.xdr.ScVal.scvSymbol('buy_aura').toXDR('base64');
 
-  const pagination = state.auraEventCursor
-    ? { cursor: state.auraEventCursor }
-    : { startLedger: config.startLedger };
-
-  const response = await rpcServer.getEvents({
-    filters: [{ type: 'contract', contractIds: [config.contractId], topics: [[topic]] }],
-    ...pagination,
-    limit: CONTRACT_EVENT_PAGE_SIZE,
-  });
+  const batch = await fetchContractEvents(topic, state.lastProcessedLedger ?? null);
 
   let processed = 0;
-  for (const event of response.events) {
+  for (const event of batch.events) {
     if (!event.inSuccessfulContractCall) {
       continue;
     }
@@ -79,10 +62,13 @@ const syncAuraPurchaseEvents = async (): Promise<ContractEventSyncResult> => {
     }
   }
 
-  state.auraEventCursor = response.cursor;
-  await state.save();
+  if (batch.lastProcessedLedger !== null) {
+    state.lastProcessedLedger = batch.lastProcessedLedger;
+    state.auraEventCursor = null;
+    await state.save();
+  }
 
-  return { processed, cursor: response.cursor };
+  return { processed, lastProcessedLedger: batch.lastProcessedLedger };
 };
 
 export default syncAuraPurchaseEvents;

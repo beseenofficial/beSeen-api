@@ -39,7 +39,6 @@ describe('GET /v1/users/me', () => {
         bio: 'Private social, made simple',
         auraPrice: '10000000',
         verification: { isVerified: false, grantedAt: null, expiresAt: null },
-        demoUsdcBalance: '20',
         createdAt: new Date('2026-07-01T12:00:00.000Z'),
       },
     });
@@ -56,7 +55,6 @@ describe('GET /v1/users/me', () => {
       bio: 'Private social, made simple',
       auraPrice: '10000000',
       verification: { isVerified: false, grantedAt: null, expiresAt: null },
-      demoUsdcBalance: '20',
       createdAt: '2026-07-01T12:00:00.000Z',
     });
     expect(AuthSession.exists).toHaveBeenCalledWith(

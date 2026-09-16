@@ -4,6 +4,7 @@ interface IContractSyncState {
   _id: string;
   eventCursor: string | null;
   auraEventCursor: string | null;
+  lastProcessedLedger: number | null;
   lastReconciledBountyId: string;
   createdAt: Date;
   updatedAt: Date;

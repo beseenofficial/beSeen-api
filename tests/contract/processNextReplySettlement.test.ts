@@ -48,7 +48,7 @@ describe('processNextReplySettlement', () => {
         contractBountyId: '42',
         sponsor: sponsorId,
         beneficiary: beneficiaryId,
-        amountUnits: 100_000_000,
+        amountUnits: '100000000',
         claimableAt: now,
       }) as never,
     );
@@ -104,7 +104,7 @@ describe('processNextReplySettlement', () => {
         contractBountyId: '42',
         sponsor: sponsorId,
         beneficiary: beneficiaryId,
-        amountUnits: 100_000_000,
+        amountUnits: '100000000',
         claimableAt: now,
       }) as never,
     );

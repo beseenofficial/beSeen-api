@@ -16,6 +16,7 @@ const getContractSyncConfig = (): ContractSyncConfig | null => {
     contractId: env.BESEEN_CONTRACT_ID,
     sourceAccount: env.BESEEN_RPC_SOURCE_ACCOUNT,
     startLedger: env.BESEEN_CONTRACT_START_LEDGER,
+    eventLedgerBatchSize: env.BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE,
   };
 };
 

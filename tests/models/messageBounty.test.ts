@@ -15,33 +15,32 @@ const bountyInput = () => ({
   beneficiary,
   assetCode: 'USDC',
   amount: '10.5',
+  amountUnits: '105000000',
   durationSeconds: 3_600,
   expiresAt: new Date('2026-08-07T13:00:00.000Z'),
 });
 
 describe('MessageBounty model', () => {
-  it('preserves old bounties as legacy and validates newly reserved demo funds', async () => {
+  it('requires contract funding and exact base units', async () => {
     const bounty = new MessageBounty(bountyInput());
 
     await expect(bounty.validate()).resolves.toBeUndefined();
     expect(bounty.status).toBe('offered');
     expect(bounty.contractBountyId).toBe('1');
-    expect(bounty.amountUnits).toBeNull();
-    expect(bounty.fundingStatus).toBe('legacy');
+    expect(bounty.amountUnits).toBe('105000000');
+    expect(bounty.fundingStatus).toBe('contract_locked');
+    expect(bounty.settlementStatus).toBe('pending');
     expect(bounty.replyMessage).toBeNull();
     expect(bounty.claimableAt).toBeNull();
     expect(bounty.claimedAt).toBeNull();
 
     await expect(
-      new MessageBounty({
-        ...bountyInput(),
-        amountUnits: 105_000_000,
-        fundingStatus: 'reserved',
-      }).validate(),
-    ).resolves.toBeUndefined();
+      new MessageBounty({ ...bountyInput(), contractBountyId: undefined }).validate(),
+    ).rejects.toBeDefined();
+
     await expect(
-      new MessageBounty({ ...bountyInput(), fundingStatus: 'reserved' }).validate(),
-    ).rejects.toThrow('Funded bounties require exact amount units');
+      new MessageBounty({ ...bountyInput(), amountUnits: undefined }).validate(),
+    ).rejects.toBeDefined();
   });
 
   it('defines one bounty per message and expiry query indexes', () => {

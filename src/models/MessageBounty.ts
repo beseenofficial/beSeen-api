@@ -14,14 +14,14 @@ import {
 } from '../constant/messenger';
 
 interface IMessageBounty {
-  contractBountyId: string | null;
+  contractBountyId: string;
   message: Types.ObjectId;
   conversation: Types.ObjectId;
   sponsor: Types.ObjectId;
   beneficiary: Types.ObjectId;
   assetCode: string;
   amount: string;
-  amountUnits: number | null;
+  amountUnits: string;
   fundingStatus: MessengerBountyFundingStatus;
   settlementStatus: ContractBountySettlementStatus;
   settlementAttempts: number;
@@ -44,10 +44,10 @@ const messageBountySchema = new Schema<IMessageBounty>(
   {
     contractBountyId: {
       type: String,
-      default: null,
+      required: true,
       immutable: true,
       validate: {
-        validator: (value: string | null) => value === null || isPositiveU64String(value),
+        validator: isPositiveU64String,
         message: 'Contract bounty ID must be a positive u64 integer',
       },
     },
@@ -92,25 +92,21 @@ const messageBountySchema = new Schema<IMessageBounty>(
       },
     },
     amountUnits: {
-      type: Number,
-      default: null,
+      type: String,
+      required: true,
       immutable: true,
-      min: 1,
-      validate: {
-        validator: (value: number | null) => value === null || Number.isSafeInteger(value),
-        message: 'Bounty amount units must be a safe integer',
-      },
+      match: [/^[1-9]\d*$/, 'Bounty amount units must be a positive integer string'],
     },
     fundingStatus: {
       type: String,
       enum: MESSENGER_BOUNTY_FUNDING_STATUSES,
-      default: 'legacy',
+      default: 'contract_locked',
       required: true,
     },
     settlementStatus: {
       type: String,
       enum: CONTRACT_BOUNTY_SETTLEMENT_STATUSES,
-      default: 'not_applicable',
+      default: 'pending',
       required: true,
     },
     settlementAttempts: {
@@ -189,32 +185,14 @@ messageBountySchema.pre('validate', function validateBountyParticipants() {
     this.invalidate('beneficiary', 'A bounty requires different sponsor and beneficiary users');
   }
 
-  if (this.fundingStatus !== 'legacy' && this.amountUnits === null) {
-    this.invalidate('amountUnits', 'Funded bounties require exact amount units');
-  }
-
   const validFundingStatus =
-    (this.status === 'claimed' &&
-      ['legacy', 'paid', 'contract_settled'].includes(this.fundingStatus)) ||
+    (this.status === 'claimed' && this.fundingStatus === 'contract_settled') ||
     (this.status === 'expired' &&
-      ['legacy', 'refunded', 'contract_locked', 'contract_refunded'].includes(
-        this.fundingStatus,
-      )) ||
-    (['offered', 'claimable'].includes(this.status) &&
-      ['legacy', 'reserved', 'contract_locked'].includes(this.fundingStatus));
+      ['contract_locked', 'contract_refunded'].includes(this.fundingStatus)) ||
+    (['offered', 'claimable'].includes(this.status) && this.fundingStatus === 'contract_locked');
 
   if (!validFundingStatus) {
     this.invalidate('fundingStatus', 'Bounty funding status does not match its lifecycle status');
-  }
-
-  const usesContract = this.contractBountyId !== null;
-
-  if (usesContract && this.fundingStatus.startsWith('contract_')) {
-    if (this.settlementStatus === 'not_applicable') {
-      this.invalidate('settlementStatus', 'Contract bounty settlement must be tracked');
-    }
-  } else if (this.settlementStatus !== 'not_applicable') {
-    this.invalidate('settlementStatus', 'Only contract bounties can have settlement state');
   }
 });
 

@@ -8,7 +8,6 @@ const CONTRACT_AURA_SYNC_STATE_ID = 'beseen-contract-auras';
 const CONTRACT_BOUNTY_SOURCES = ['event', 'reconciliation'] as const;
 const CONTRACT_BOUNTY_STATUSES = ['locked', 'settled', 'refunded'] as const;
 const CONTRACT_BOUNTY_SETTLEMENT_STATUSES = [
-  'not_applicable',
   'pending',
   'processing',
   'confirmed',

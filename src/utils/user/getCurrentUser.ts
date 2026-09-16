@@ -1,7 +1,6 @@
 import User from '../../models/User';
 import getUserVerification from './getUserVerification';
 import type { GetCurrentUserResult } from '../../types/user';
-import { formatDemoUsdcUnits } from '../messenger/demoUsdcAmount';
 import getContractAuraPrices from '../contract/getContractAuraPrices';
 
 const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => {
@@ -21,7 +20,6 @@ const getCurrentUser = async (userId: string): Promise<GetCurrentUserResult> => 
       bio: user.bio,
       auraPrice: auraPriceByWalletAddress.get(user.walletAddress) ?? null,
       verification: getUserVerification(user),
-      demoUsdcBalance: formatDemoUsdcUnits(user.demoUsdcBalanceUnits),
       createdAt: user.createdAt,
     },
   };
