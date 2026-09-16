@@ -142,19 +142,19 @@ Discover cards, public profiles, and the current-user profile include `auraPrice
 
 ## Message bounties
 
-An encrypted direct message can include signed bounty terms: asset code, canonical decimal amount, and response window. These terms are part of the immutable message manifest, so they cannot be detached from or changed independently of the message that created them.
+An encrypted direct message can include signed contract bounty terms: the contract-generated bounty ID, asset code, canonical decimal amount, and response window. These terms are part of the immutable message manifest, so they cannot be detached from or changed independently of the message that created them. The client must successfully call and sign `lock_bounty` before it signs or submits the message; off-chain demo balances and bounties without a contract ID are not accepted.
 
 The bounty lifecycle is transactional:
 
 ```text
-offered ── valid direct reply ──► claimable ── beneficiary claim ──► claimed
+offered ── valid direct reply ──► claimable ── server settlement ──► claimed
    │
    └── response window elapsed ──► expired
 ```
 
-The first valid reply to the referenced message queues its contract bounty for settlement. A leased retry worker verifies the on-chain sender, recipient, amount, status, and deadline, then signs `settle_replies` with the configured verifier. The bounty becomes `claimed` only after the transaction succeeds (or the worker confirms that it was already settled), so retries are idempotent and a failed submission cannot move database state ahead of the contract. The legacy demo-balance claim path cannot finalize contract-funded bounties.
+The first valid reply to the referenced message queues its contract bounty for settlement. A leased retry worker verifies the on-chain sender, recipient, amount, status, and deadline, then signs `settle_replies` with the configured verifier. The bounty becomes `claimed` only after the transaction succeeds (or the worker confirms that it was already settled), so retries are idempotent and a failed submission cannot move database state ahead of the contract. There is no off-chain balance, reserve, refund, or beneficiary claim endpoint. An expired on-chain bounty must be refunded by its sender through the contract's `claim_expired_bounty` function.
 
-The API mirrors BeSeen contract bounties in a dedicated collection without replacing MongoDB `_id` values. Successful `lock_bnty` events are the primary ingestion path and `contractBountyId` stores the contract-generated global ID. Only IDs registered by the official message API are mirrored; unrelated direct interactions with the public contract are ignored. A persisted event cursor makes event replay idempotent. Every minute, reconciliation calls `get_bounty` for the next global contract ID and separately recovers registered-but-unmirrored IDs whose event arrived before their API registration or was missed.
+The API mirrors BeSeen contract bounties in a dedicated collection without replacing MongoDB `_id` values. Successful `lock_bnty` events are the primary ingestion path and `contractBountyId` stores the contract-generated global ID. Only IDs registered by the official message API are mirrored; unrelated direct interactions with the public contract are ignored. A persisted per-stream ledger checkpoint makes event replay idempotent and lets synchronization resume after a restart. Every minute, reconciliation calls `get_bounty` for the next global contract ID and separately recovers registered-but-unmirrored IDs whose event arrived before their API registration or was missed.
 
 ## Discovery ranking
 
@@ -238,7 +238,7 @@ The API is versioned under `/v1` and grouped into four domains:
 - `/v1/auth` — client protocol configuration, registration, signed login, refresh, and logout
 - `/v1/users` — profiles, public keys, discovery, activity, Aura purchase registration, and follower data
 - `/v1/broadcasts` — encrypted drafts, audience snapshots, wrapped-key batches, publication, and feed
-- `/v1/messenger` — conversations, encrypted history, messages, read state, and bounty claims
+- `/v1/messenger` — conversations, encrypted history, messages, read state, and contract bounty settlement state
 
 When the service is running, the complete request and response schemas are available through:
 
@@ -265,7 +265,7 @@ The fastest way to run the API and its required single-node MongoDB replica set 
 Copy-Item .env.example .env
 ```
 
-Set the BLUX, Cloudflare R2, access-token, and BeSeen contract credentials in `.env`. Contract synchronization requires `STELLAR_RPC_URL`, `BESEEN_CONTRACT_ID`, `BESEEN_RPC_SOURCE_ACCOUNT`, and the contract deployment ledger in `BESEEN_CONTRACT_START_LEDGER`. Reply settlement additionally requires `BESEEN_VERIFIER_SECRET`; its public key must equal `BESEEN_RPC_SOURCE_ACCOUNT`. Keep this secret server-side and never send it to a client.
+Set the BLUX, Cloudflare R2, access-token, and BeSeen contract credentials in `.env`. Contract synchronization requires `STELLAR_RPC_URL`, `BESEEN_CONTRACT_ID`, `BESEEN_RPC_SOURCE_ACCOUNT`, and the exact contract deployment ledger in `BESEEN_CONTRACT_START_LEDGER`. Event synchronization advances in bounded ledger ranges configured by `BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE` (default `10000`) and persists the last successfully processed ledger separately for the bounty and Aura streams, so a restart resumes from the next ledger instead of replaying from deployment. If the configured or saved ledger has already fallen outside the RPC provider's retention window, synchronization logs a warning and resumes at the provider's oldest available ledger; use an archival event source when the missing historical events must be recovered. Reply settlement additionally requires `BESEEN_VERIFIER_SECRET`; its public key must equal `BESEEN_RPC_SOURCE_ACCOUNT`. Keep this secret server-side and never send it to a client.
 
 Then run:
 
