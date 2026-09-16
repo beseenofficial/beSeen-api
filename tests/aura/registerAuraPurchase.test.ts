@@ -85,6 +85,48 @@ describe('registerAuraPurchase', () => {
     expect(getContractAuraMock).toHaveBeenCalledWith(42n);
   });
 
+  it('runs user lookups sequentially inside the MongoDB transaction session', async () => {
+    let resolveBuyerLookup: ((value: typeof buyer) => void) | undefined;
+
+    const buyerLookup = new Promise<typeof buyer>((resolve) => {
+      resolveBuyerLookup = resolve;
+    });
+
+    const findUserSpy = vi
+      .spyOn(User, 'findOne')
+      .mockReturnValueOnce({
+        session: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockReturnValue(buyerLookup),
+      } as never)
+      .mockReturnValueOnce(sessionQuery(subject) as never);
+
+    const existing = new AuraToken({
+      contractTokenId: '42',
+      buyer: buyer._id,
+      subject: subject._id,
+      buyerAddress,
+      subjectAddress,
+      purchaseTransactionHash: body.transactionHash,
+    });
+
+    vi.spyOn(AuraToken, 'findOne')
+      .mockReturnValueOnce(sessionQuery(existing) as never)
+      .mockReturnValueOnce({ exec: vi.fn().mockResolvedValue(existing) } as never);
+
+    const registration = registerAuraPurchase(buyer._id.toString(), subject.username, body);
+
+    await vi.waitFor(() => expect(findUserSpy).toHaveBeenCalledOnce());
+
+    if (!resolveBuyerLookup) {
+      throw new Error('Buyer lookup resolver was not initialized');
+    }
+
+    resolveBuyerLookup(buyer);
+
+    await expect(registration).resolves.toMatchObject({ ok: true, created: false });
+    expect(findUserSpy).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects client wallet addresses that do not match authenticated users', async () => {
     vi.spyOn(User, 'findOne')
       .mockReturnValueOnce(sessionQuery(buyer) as never)

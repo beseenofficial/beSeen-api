@@ -16,14 +16,21 @@ const registerPending = async (
   body: RegisterAuraPurchaseBody,
   session: ClientSession,
 ): Promise<RegisteredPurchase | RegisterAuraPurchaseResult> => {
-  const [buyer, subject] = await Promise.all([
-    User.findOne({ _id: authenticatedBuyerId, status: 'active', deletedAt: null })
-      .session(session)
-      .exec(),
-    User.findOne({ username: subjectUsername, status: 'active', deletedAt: null })
-      .session(session)
-      .exec(),
-  ]);
+  const buyer = await User.findOne({
+    _id: authenticatedBuyerId,
+    status: 'active',
+    deletedAt: null,
+  })
+    .session(session)
+    .exec();
+
+  const subject = await User.findOne({
+    username: subjectUsername,
+    status: 'active',
+    deletedAt: null,
+  })
+    .session(session)
+    .exec();
 
   if (!buyer) {
     return { ok: false, reason: 'buyer_unavailable' };

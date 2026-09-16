@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  info: vi.fn(),
   warn: vi.fn(),
   getHealth: vi.fn(),
   getEvents: vi.fn(),
   eventLedgerBatchSize: 10_000,
 }));
 
-vi.mock('../../src/logger', () => ({ default: { warn: mocks.warn } }));
+vi.mock('../../src/logger', () => ({
+  default: { info: mocks.info, warn: mocks.warn },
+}));
 vi.mock('../../src/utils/contract/contractConfig', () => ({
   default: () => ({
     rpcUrl: 'https://rpc.example.com',
@@ -39,7 +42,7 @@ describe('contract event ledger batching', () => {
   });
 
   it('starts at the configured deployment ledger and advances one bounded range', async () => {
-    await expect(fetchContractEvents('topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 10_099,
     });
@@ -55,10 +58,19 @@ describe('contract event ledger batching', () => {
       endLedger: 10_100,
       limit: 100,
     });
+    expect(mocks.info).toHaveBeenCalledWith(
+      {
+        stream: 'test-stream',
+        startLedger: 100,
+        endLedger: 10_099,
+        latestLedger: 25_000,
+      },
+      'Checking contract event ledger range',
+    );
   });
 
   it('resumes from the ledger after the persisted checkpoint', async () => {
-    await expect(fetchContractEvents('topic', 12_345)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', 'topic', 12_345)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 22_345,
     });
@@ -70,7 +82,7 @@ describe('contract event ledger batching', () => {
   it('uses the configured ledger batch size', async () => {
     mocks.eventLedgerBatchSize = 2_500;
 
-    await expect(fetchContractEvents('topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 2_599,
     });
@@ -82,7 +94,7 @@ describe('contract event ledger batching', () => {
   it('clamps an unavailable historical checkpoint to the RPC retention window', async () => {
     mocks.getHealth.mockResolvedValue({ oldestLedger: 5_000, latestLedger: 25_000 });
 
-    await expect(fetchContractEvents('topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 14_999,
     });
@@ -100,7 +112,7 @@ describe('contract event ledger batching', () => {
       })
       .mockResolvedValueOnce({ events: [], cursor: 'unused' });
 
-    await expect(fetchContractEvents('topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 5_099,
     });

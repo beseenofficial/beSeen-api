@@ -68,7 +68,7 @@ const syncBountyLockEvents = async (): Promise<ContractEventSyncResult> => {
 
   const topic = stellarSdk.xdr.ScVal.scvSymbol('lock_bnty').toXDR('base64');
 
-  const batch = await fetchContractEvents(topic, state.lastProcessedLedger ?? null);
+  const batch = await fetchContractEvents('bounty-locks', topic, state.lastProcessedLedger ?? null);
 
   let processed = 0;
 

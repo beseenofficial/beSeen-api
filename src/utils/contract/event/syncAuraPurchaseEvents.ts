@@ -27,7 +27,11 @@ const syncAuraPurchaseEvents = async (): Promise<ContractEventSyncResult> => {
 
   const topic = stellarSdk.xdr.ScVal.scvSymbol('buy_aura').toXDR('base64');
 
-  const batch = await fetchContractEvents(topic, state.lastProcessedLedger ?? null);
+  const batch = await fetchContractEvents(
+    'aura-purchases',
+    topic,
+    state.lastProcessedLedger ?? null,
+  );
 
   let processed = 0;
   for (const event of batch.events) {

@@ -3,7 +3,11 @@ import stellarSdk from '../stellarSdk';
 import getContractSyncConfig from '../contractConfig';
 import { CONTRACT_EVENT_PAGE_SIZE } from '../../../constant/contract';
 
-const fetchContractEvents = async (topic: string, lastProcessedLedger: number | null) => {
+const fetchContractEvents = async (
+  stream: string,
+  topic: string,
+  lastProcessedLedger: number | null,
+) => {
   const config = getContractSyncConfig();
 
   if (!config) {
@@ -41,6 +45,16 @@ const fetchContractEvents = async (topic: string, lastProcessedLedger: number | 
   let response;
 
   while (true) {
+    log.info(
+      {
+        stream,
+        startLedger,
+        endLedger: endLedger - 1,
+        latestLedger: health.latestLedger,
+      },
+      'Checking contract event ledger range',
+    );
+
     response = await rpcServer.getEvents({
       filters: [{ type: 'contract', contractIds: [config.contractId], topics: [[topic]] }],
       startLedger,
