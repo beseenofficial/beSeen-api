@@ -1,7 +1,5 @@
 import log from '../../logger';
-import syncBountyLockEvents from './event/syncBountyLockEvents';
-import syncAuraPurchaseEvents from './event/syncAuraPurchaseEvents';
-import syncBountyEarningEvents from './event/syncBountyEarningEvents';
+import syncContractEvents from './event/syncContractEvents';
 import processNextReplySettlement from './processNextReplySettlement';
 import reconcileNextContractBounty from './reconcileNextContractBounty';
 import reconcileRegisteredAuraPurchases from './reconcileRegisteredAuraPurchases';
@@ -28,14 +26,10 @@ const runBountyEventSync = async (): Promise<void> => {
   eventSyncRunning = true;
 
   try {
-    const [bounties, auras, earnings] = await Promise.all([
-      syncBountyLockEvents(),
-      syncAuraPurchaseEvents(),
-      syncBountyEarningEvents(),
-    ]);
+    const events = await syncContractEvents();
 
-    if (bounties.processed > 0 || auras.processed > 0 || earnings.processed > 0) {
-      log.info({ bounties, auras, earnings }, 'Contract events synchronized');
+    if (events.processed > 0) {
+      log.info({ events }, 'Contract events synchronized');
     }
   } catch (error: unknown) {
     log.error({ error }, 'Contract bounty event synchronization failed');

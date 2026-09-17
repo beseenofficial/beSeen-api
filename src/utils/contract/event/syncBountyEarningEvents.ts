@@ -1,9 +1,6 @@
 import stellarSdk from '../stellarSdk';
-import fetchContractEvents from './fetchContractEvents';
-import ContractSyncState from '../../../models/ContractSyncState';
 import recordBountyEarning from '../../earning/recordBountyEarning';
-import { CONTRACT_BOUNTY_EARNING_SYNC_STATE_ID } from '../../../constant/contract';
-import type { ContractEventSyncResult } from '../../../types/contract/event';
+import type { ContractEvent } from '../../../types/contract/event';
 import type { SettledBountyEvent } from '../../earning/recordBountyEarning';
 
 const asUnsignedInteger = (value: unknown, field: string, positive = false): string => {
@@ -46,58 +43,15 @@ const decodeBountySettledEvent = (value: unknown): SettledBountyEvent => {
   };
 };
 
-const syncBountyEarningEvents = async (): Promise<ContractEventSyncResult> => {
-  const state = await ContractSyncState.findByIdAndUpdate(
-    CONTRACT_BOUNTY_EARNING_SYNC_STATE_ID,
-    {
-      $setOnInsert: {
-        eventCursor: null,
-        auraEventCursor: null,
-        lastProcessedLedger: null,
-        lastReconciledBountyId: '0',
-      },
-    },
-    { upsert: true, returnDocument: 'after', runValidators: true },
-  ).exec();
+const handleBountyEarningEvent = async (event: ContractEvent): Promise<boolean> => {
+  const settled = decodeBountySettledEvent(stellarSdk.scValToNative(event.value));
 
-  if (!state) {
-    throw new Error('Bounty earning synchronization state could not be created');
-  }
-
-  const topic = stellarSdk.xdr.ScVal.scvSymbol('pay_bnty').toXDR('base64');
-  const batch = await fetchContractEvents(
-    'bounty-earnings',
-    topic,
-    state.lastProcessedLedger ?? null,
-  );
-
-  let processed = 0;
-
-  for (const event of batch.events) {
-    if (!event.inSuccessfulContractCall) {
-      continue;
-    }
-
-    const settled = decodeBountySettledEvent(stellarSdk.scValToNative(event.value));
-    const recorded = await recordBountyEarning(settled, {
-      eventId: event.id,
-      ledger: event.ledger,
-      txHash: event.txHash,
-    });
-
-    if (recorded) {
-      processed += 1;
-    }
-  }
-
-  if (batch.lastProcessedLedger !== null) {
-    state.lastProcessedLedger = batch.lastProcessedLedger;
-    state.eventCursor = null;
-    await state.save();
-  }
-
-  return { processed, lastProcessedLedger: batch.lastProcessedLedger };
+  return recordBountyEarning(settled, {
+    eventId: event.id,
+    ledger: event.ledger,
+    txHash: event.txHash,
+  });
 };
 
-export { decodeBountySettledEvent };
-export default syncBountyEarningEvents;
+export { decodeBountySettledEvent, handleBountyEarningEvent };
+export default handleBountyEarningEvent;

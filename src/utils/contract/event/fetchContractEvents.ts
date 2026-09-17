@@ -5,7 +5,7 @@ import { CONTRACT_EVENT_PAGE_SIZE } from '../../../constant/contract';
 
 const fetchContractEvents = async (
   stream: string,
-  topic: string,
+  topics: string | readonly string[],
   lastProcessedLedger: number | null,
 ) => {
   const config = getContractSyncConfig();
@@ -56,7 +56,13 @@ const fetchContractEvents = async (
     );
 
     response = await rpcServer.getEvents({
-      filters: [{ type: 'contract', contractIds: [config.contractId], topics: [[topic]] }],
+      filters: [
+        {
+          type: 'contract',
+          contractIds: [config.contractId],
+          topics: (typeof topics === 'string' ? [topics] : topics).map((topic) => [topic]),
+        },
+      ],
       startLedger,
       endLedger,
       limit: CONTRACT_EVENT_PAGE_SIZE,
