@@ -28,4 +28,9 @@ interface ResolveReplyBountyInput {
   session: ClientSession;
 }
 
-export type { ResolveReplyBountyInput, SerializedMessageBounty };
+interface AvailableBountySummary {
+  unclaimedCount: number;
+  updatedAt: Date;
+}
+
+export type { AvailableBountySummary, ResolveReplyBountyInput, SerializedMessageBounty };

@@ -7,6 +7,7 @@ import addUserVerification from './20260828AddUserVerification';
 import verifyOfficialBeseenUser from './20260828VerifyOfficialBeseenUser';
 import replaceDemoTokensWithAura from './20260915ReplaceDemoTokensWithAura';
 import addPublicProfileMessageStats from './20260828AddPublicProfileMessageStats';
+import addAvailableBountySummaryIndex from './20260919AddAvailableBountySummaryIndex';
 
 const runDatabaseMigrations = async (): Promise<void> => {
   const discover = await addDiscoverRanking();
@@ -25,6 +26,8 @@ const runDatabaseMigrations = async (): Promise<void> => {
 
   const removedDemoUsdc = await removeDemoUsdc();
 
+  const availableBountySummary = await addAvailableBountySummaryIndex();
+
   log.info(
     {
       discover,
@@ -35,6 +38,7 @@ const runDatabaseMigrations = async (): Promise<void> => {
       officialUserVerification,
       auraSocialGraph,
       removedDemoUsdc,
+      availableBountySummary,
     },
     'Database migrations completed',
   );

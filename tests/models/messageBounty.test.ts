@@ -58,6 +58,12 @@ describe('MessageBounty model', () => {
           { status: 1, expiresAt: 1 },
           expect.objectContaining({ name: 'message_bounties_status_expiry' }),
         ],
+        [
+          { beneficiary: 1, status: 1, expiresAt: 1 },
+          expect.objectContaining({
+            name: 'message_bounties_beneficiary_status_expiry',
+          }),
+        ],
       ]),
     );
   });

@@ -23,6 +23,7 @@ describe('OpenAPI contract', () => {
         '/v1/users/{username}/follow-counts',
         '/v1/users/{username}/keys',
         '/v1/users/{username}',
+        '/v1/messenger/bounties/summary',
         '/v1/messenger/conversations',
         '/v1/messenger/conversations/{conversationId}',
         '/v1/messenger/conversations/{conversationId}/context',

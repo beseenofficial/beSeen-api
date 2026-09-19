@@ -676,6 +676,28 @@ const openApiPaths = {
       },
     },
   },
+  '/v1/messenger/bounties/summary': {
+    get: {
+      tags: ['Messenger'],
+      summary: 'Get the authenticated user available-bounty count',
+      description:
+        'Counts unique, unexpired incoming bounties whose current status is offered or claimable. The user is derived exclusively from the authenticated Bearer session.',
+      operationId: 'getMessengerBountySummary',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': jsonResponse('Available bounty summary retrieved.', {
+          type: 'object',
+          additionalProperties: false,
+          required: ['unclaimedCount', 'updatedAt'],
+          properties: {
+            unclaimedCount: { type: 'integer', minimum: 0 },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        }),
+        '401': unauthorized,
+      },
+    },
+  },
   '/v1/messenger/conversations': {
     get: {
       tags: ['Messenger'],

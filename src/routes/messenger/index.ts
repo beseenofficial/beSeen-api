@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import sendMessageRoute from './sendMessage';
+import getBountySummaryRoute from './getBountySummary';
 import getConversationRoute from './getConversation';
 import authenticate from '../../middleware/authenticate';
 import getMessageHistoryRoute from './getMessageHistory';
@@ -11,6 +12,7 @@ import messengerMutationRateLimit from '../../middleware/messengerMutationRateLi
 
 const messengerRoutes = Router();
 
+messengerRoutes.get('/bounties/summary', authenticate, getBountySummaryRoute);
 messengerRoutes.get('/conversations', authenticate, listConversationsRoute);
 messengerRoutes.get(
   '/conversations/:conversationId/context',
