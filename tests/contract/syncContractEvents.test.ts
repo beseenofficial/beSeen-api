@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   handleBounty: vi.fn(),
   handleAura: vi.fn(),
   handleEarning: vi.fn(),
+  handleWithdrawal: vi.fn(),
   stateSave: vi.fn(),
   states: [] as Array<{
     lastProcessedLedger: number | null;
@@ -54,6 +55,9 @@ vi.mock('../../src/utils/contract/event/syncAuraPurchaseEvents', () => ({
 vi.mock('../../src/utils/contract/event/syncBountyEarningEvents', () => ({
   handleBountyEarningEvent: mocks.handleEarning,
 }));
+vi.mock('../../src/utils/contract/event/syncWithdrawalEvents', () => ({
+  handleWithdrawalEvent: mocks.handleWithdrawal,
+}));
 
 import syncContractEvents from '../../src/utils/contract/event/syncContractEvents';
 
@@ -69,7 +73,7 @@ const event = (id: string, topic: string) => ({
 describe('unified contract event synchronization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.states = [90, 95, 100].map((lastProcessedLedger) => ({
+    mocks.states = [90, 95, 100, 100].map((lastProcessedLedger) => ({
       lastProcessedLedger,
       eventCursor: 'legacy-cursor',
       auraEventCursor: 'legacy-aura-cursor',
@@ -81,11 +85,13 @@ describe('unified contract event synchronization', () => {
         event('bounty-event', 'lock_bnty-topic'),
         event('aura-event', 'buy_aura-topic'),
         event('earning-event', 'pay_bnty-topic'),
+        event('withdrawal-event', 'withdraw-topic'),
       ],
     });
     mocks.handleBounty.mockResolvedValue(true);
     mocks.handleAura.mockResolvedValue(true);
     mocks.handleEarning.mockResolvedValue(true);
+    mocks.handleWithdrawal.mockResolvedValue(true);
   });
 
   it('fetches every registered topic once and dispatches each event to its handler', async () => {
@@ -93,7 +99,8 @@ describe('unified contract event synchronization', () => {
       bounties: 1,
       auras: 1,
       earnings: 1,
-      processed: 3,
+      withdrawals: 1,
+      processed: 4,
       lastProcessedLedger: 150,
     });
 
@@ -103,7 +110,7 @@ describe('unified contract event synchronization', () => {
         {
           type: 'contract',
           contractIds: ['CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM'],
-          topics: [['lock_bnty-topic'], ['buy_aura-topic'], ['pay_bnty-topic']],
+          topics: [['lock_bnty-topic'], ['buy_aura-topic'], ['pay_bnty-topic'], ['withdraw-topic']],
         },
       ],
       startLedger: 91,
@@ -117,7 +124,10 @@ describe('unified contract event synchronization', () => {
     expect(mocks.handleEarning).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'earning-event' }),
     );
-    expect(mocks.stateSave).toHaveBeenCalledTimes(3);
+    expect(mocks.handleWithdrawal).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'withdrawal-event' }),
+    );
+    expect(mocks.stateSave).toHaveBeenCalledTimes(4);
   });
 
   it('does not advance checkpoints when a handler fails', async () => {

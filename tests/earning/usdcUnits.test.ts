@@ -7,4 +7,9 @@ describe('formatUsdcUnits', () => {
     expect(formatUsdcUnits('47500001')).toBe('4.7500001');
     expect(formatUsdcUnits('0')).toBe('0');
   });
+
+  it('formats negative withdrawals', () => {
+    expect(formatUsdcUnits('-5000000')).toBe('-0.5');
+    expect(formatUsdcUnits('-12500000')).toBe('-1.25');
+  });
 });

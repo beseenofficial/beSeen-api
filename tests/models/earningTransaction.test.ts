@@ -6,6 +6,7 @@ const earningInput = () => ({
   user: new Types.ObjectId(),
   messageBounty: new Types.ObjectId(),
   contractBountyId: '42',
+  contractAuraTokenId: null,
   type: 'bounty_reply' as const,
   assetCode: 'USDC' as const,
   grossAmountUnits: '50000000',
@@ -30,5 +31,19 @@ describe('EarningTransaction model', () => {
         transactionHash: 'invalid',
       }).validate(),
     ).rejects.toThrow();
+  });
+
+  it('accepts a negative withdrawal transaction', async () => {
+    await expect(
+      new EarningTransaction({
+        ...earningInput(),
+        messageBounty: null,
+        contractBountyId: null,
+        type: 'withdrawal',
+        grossAmountUnits: '12500000',
+        feeAmountUnits: '0',
+        netAmountUnits: '-12500000',
+      }).validate(),
+    ).resolves.toBeUndefined();
   });
 });

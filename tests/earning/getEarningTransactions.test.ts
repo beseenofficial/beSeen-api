@@ -45,6 +45,7 @@ describe('getEarningTransactions', () => {
           type: 'bounty_reply',
           reason: 'Bounty reply reward',
           contractBountyId: '42',
+          contractAuraTokenId: null,
           assetCode: 'USDC',
           amount: '4.75',
           transactionHash: 'a'.repeat(64),
