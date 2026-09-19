@@ -1,16 +1,9 @@
 import { Types } from 'mongoose';
-import EarningTransaction from '../../models/EarningTransaction';
-import formatUsdcUnits from './usdcUnits';
-import type { EarningsQuery } from '../../validation/user/earnings';
-import type { SerializedEarningTransaction } from '../../types/earning';
 
-interface EarningTransactionPage {
-  assetCode: 'USDC';
-  totalAmount: string;
-  items: SerializedEarningTransaction[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
+import formatUsdcUnits from './usdcUnits';
+import EarningTransaction from '../../models/EarningTransaction';
+import type { EarningsQuery } from '../../validation/user/earnings';
+import type { EarningTransactionPage } from '../../types/earning';
 
 const getEarningTransactions = async (
   userId: string,
@@ -35,23 +28,32 @@ const getEarningTransactions = async (
 
   const totalUnits = totals[0]?.totalUnits.toString() ?? '0';
 
-  if (!/^\d+$/.test(totalUnits)) {
+  if (!/^-?\d+$/.test(totalUnits)) {
     throw new Error('Stored earning total is not an integer');
   }
 
   const hasMore = rows.length > query.limit;
   const pageRows = hasMore ? rows.slice(0, query.limit) : rows;
 
-  const items = pageRows.map((row) => ({
-    id: row._id.toString(),
-    type: row.type,
-    reason: 'Bounty reply reward' as const,
-    contractBountyId: row.contractBountyId,
-    assetCode: row.assetCode,
-    amount: formatUsdcUnits(row.netAmountUnits),
-    transactionHash: row.transactionHash,
-    earnedAt: row.earnedAt,
-  }));
+  const items = pageRows.map((row) => {
+    const reasons = {
+      bounty_reply: 'Bounty reply reward',
+      aura_purchase: 'Aura purchase earning',
+      withdrawal: 'Earnings withdrawal',
+    } as const;
+
+    return {
+      id: row._id.toString(),
+      type: row.type,
+      reason: reasons[row.type],
+      contractBountyId: row.contractBountyId ?? null,
+      contractAuraTokenId: row.contractAuraTokenId ?? null,
+      assetCode: row.assetCode,
+      amount: formatUsdcUnits(row.netAmountUnits),
+      transactionHash: row.transactionHash,
+      earnedAt: row.earnedAt,
+    };
+  });
 
   return {
     assetCode: 'USDC',

@@ -1,34 +1,34 @@
 import stellarSdk from '../stellarSdk';
 import fetchContractEvents from './fetchContractEvents';
+import { handleWithdrawalEvent } from './syncWithdrawalEvents';
+import { handleBountyLockEvent } from './syncBountyLockEvents';
 import ContractSyncState from '../../../models/ContractSyncState';
 import { handleAuraPurchaseEvent } from './syncAuraPurchaseEvents';
-import { handleBountyLockEvent } from './syncBountyLockEvents';
 import { handleBountyEarningEvent } from './syncBountyEarningEvents';
-import type { ContractEventHandler, ContractEventsSyncResult } from '../../../types/contract/event';
+import type {
+  ContractEventDefinition,
+  ContractEventKind,
+  ContractEventsSyncResult,
+} from '../../../types/contract/event';
 import {
   CONTRACT_AURA_SYNC_STATE_ID,
   CONTRACT_BOUNTY_EARNING_SYNC_STATE_ID,
   CONTRACT_BOUNTY_SYNC_STATE_ID,
+  CONTRACT_FINANCIAL_SYNC_STATE_ID,
 } from '../../../constant/contract';
 
-type EventKind = 'bounties' | 'auras' | 'earnings';
-
-interface EventDefinition {
-  kind: EventKind;
-  symbol: string;
-  handle: ContractEventHandler;
-}
-
-const EVENT_DEFINITIONS: readonly EventDefinition[] = [
+const EVENT_DEFINITIONS: readonly ContractEventDefinition[] = [
   { kind: 'bounties', symbol: 'lock_bnty', handle: handleBountyLockEvent },
   { kind: 'auras', symbol: 'buy_aura', handle: handleAuraPurchaseEvent },
   { kind: 'earnings', symbol: 'pay_bnty', handle: handleBountyEarningEvent },
+  { kind: 'withdrawals', symbol: 'withdraw', handle: handleWithdrawalEvent },
 ];
 
 const SYNC_STATE_IDS = [
   CONTRACT_BOUNTY_SYNC_STATE_ID,
   CONTRACT_AURA_SYNC_STATE_ID,
   CONTRACT_BOUNTY_EARNING_SYNC_STATE_ID,
+  CONTRACT_FINANCIAL_SYNC_STATE_ID,
 ] as const;
 
 const getSyncStates = async () => {
@@ -83,10 +83,11 @@ const syncContractEvents = async (): Promise<ContractEventsSyncResult> => {
     lastProcessedLedger,
   );
 
-  const processed: Record<EventKind, number> = {
+  const processed: Record<ContractEventKind, number> = {
     bounties: 0,
     auras: 0,
     earnings: 0,
+    withdrawals: 0,
   };
 
   for (const event of batch.events) {
@@ -119,7 +120,7 @@ const syncContractEvents = async (): Promise<ContractEventsSyncResult> => {
 
   return {
     ...processed,
-    processed: processed.bounties + processed.auras + processed.earnings,
+    processed: processed.bounties + processed.auras + processed.earnings + processed.withdrawals,
     lastProcessedLedger: batch.lastProcessedLedger,
   };
 };

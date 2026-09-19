@@ -18,4 +18,9 @@ interface ObservedAuraPurchase extends ContractAuraData {
   eventLedger?: number;
 }
 
-export type { AuraPriceParams, ContractAuraData, ObservedAuraPurchase };
+type DecodedAuraPurchasedEvent = ObservedAuraPurchase & {
+  price: string;
+  fee: string;
+};
+
+export type { AuraPriceParams, ContractAuraData, DecodedAuraPurchasedEvent, ObservedAuraPurchase };

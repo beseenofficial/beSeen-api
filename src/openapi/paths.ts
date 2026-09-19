@@ -336,7 +336,7 @@ const openApiPaths = {
       tags: ['Earnings'],
       summary: 'List confirmed bounty reply earnings',
       description:
-        'Returns the authenticated user\'s confirmed bounty reply rewards. Amount is the net USDC amount after the on-chain bounty fee.',
+        "Returns the authenticated user's confirmed bounty reply rewards. Amount is the net USDC amount after the on-chain bounty fee.",
       operationId: 'getCurrentUserEarnings',
       security: [{ bearerAuth: [] }],
       parameters: [
@@ -365,7 +365,8 @@ const openApiPaths = {
                 assetCode: { type: 'string', const: 'USDC' },
                 totalAmount: {
                   type: 'string',
-                  description: 'All-time net bounty reply earnings in USDC.',
+                  description:
+                    'Net tracked contract activity in USDC: bounty and Aura earnings minus withdrawals.',
                 },
                 items: {
                   type: 'array',
@@ -377,6 +378,7 @@ const openApiPaths = {
                       'type',
                       'reason',
                       'contractBountyId',
+                      'contractAuraTokenId',
                       'assetCode',
                       'amount',
                       'transactionHash',
@@ -384,13 +386,31 @@ const openApiPaths = {
                     ],
                     properties: {
                       id: { type: 'string' },
-                      type: { type: 'string', const: 'bounty_reply' },
-                      reason: { type: 'string', const: 'Bounty reply reward' },
-                      contractBountyId: { type: 'string', pattern: '^[1-9][0-9]*$' },
+                      type: {
+                        type: 'string',
+                        enum: ['bounty_reply', 'aura_purchase', 'withdrawal'],
+                      },
+                      reason: {
+                        type: 'string',
+                        enum: [
+                          'Bounty reply reward',
+                          'Aura purchase earning',
+                          'Earnings withdrawal',
+                        ],
+                      },
+                      contractBountyId: {
+                        type: ['string', 'null'],
+                        pattern: '^[1-9][0-9]*$',
+                      },
+                      contractAuraTokenId: {
+                        type: ['string', 'null'],
+                        pattern: '^[1-9][0-9]*$',
+                      },
                       assetCode: { type: 'string', const: 'USDC' },
                       amount: {
                         type: 'string',
-                        description: 'Net USDC amount after the bounty fee.',
+                        description:
+                          'Signed net USDC amount. Earnings are positive and withdrawals are negative.',
                       },
                       transactionHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
                       earnedAt: { type: 'string', format: 'date-time' },

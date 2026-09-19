@@ -1,4 +1,4 @@
-import type { ContractAuraData, ObservedAuraPurchase } from '../../types/contract/aura';
+import type { ContractAuraData, DecodedAuraPurchasedEvent } from '../../types/contract/aura';
 
 const U64_MAX = (1n << 64n) - 1n;
 
@@ -64,7 +64,7 @@ const decodeContractAuraPrice = (value: unknown): string => {
   return price;
 };
 
-const decodeAuraPurchasedEvent = (value: unknown): ObservedAuraPurchase => {
+const decodeAuraPurchasedEvent = (value: unknown): DecodedAuraPurchasedEvent => {
   if (!isRecord(value)) {
     throw new TypeError('Aura purchase event value must be a record');
   }

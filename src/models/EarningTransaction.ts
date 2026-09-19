@@ -3,6 +3,7 @@ import type { IEarningTransaction } from '../types/earning';
 
 const POSITIVE_INTEGER_PATTERN = /^[1-9]\d*$/;
 const NON_NEGATIVE_INTEGER_PATTERN = /^(?:0|[1-9]\d*)$/;
+const SIGNED_INTEGER_PATTERN = /^(?:0|-?[1-9]\d*)$/;
 const TRANSACTION_HASH_PATTERN = /^[a-f\d]{64}$/;
 
 const earningTransactionSchema = new Schema<IEarningTransaction>(
@@ -16,18 +17,24 @@ const earningTransactionSchema = new Schema<IEarningTransaction>(
     messageBounty: {
       type: Schema.Types.ObjectId,
       ref: 'MessageBounty',
-      required: true,
+      default: null,
       immutable: true,
     },
     contractBountyId: {
       type: String,
-      required: true,
+      default: null,
       immutable: true,
       match: [POSITIVE_INTEGER_PATTERN, 'Contract bounty ID must be a positive integer'],
     },
+    contractAuraTokenId: {
+      type: String,
+      default: null,
+      immutable: true,
+      match: [POSITIVE_INTEGER_PATTERN, 'Contract Aura token ID must be a positive integer'],
+    },
     type: {
       type: String,
-      enum: ['bounty_reply'],
+      enum: ['bounty_reply', 'aura_purchase', 'withdrawal'],
       required: true,
       immutable: true,
     },
@@ -53,7 +60,7 @@ const earningTransactionSchema = new Schema<IEarningTransaction>(
       type: String,
       required: true,
       immutable: true,
-      match: [NON_NEGATIVE_INTEGER_PATTERN, 'Net earning amount must be a non-negative integer'],
+      match: [SIGNED_INTEGER_PATTERN, 'Net transaction amount must be an integer'],
     },
     transactionHash: {
       type: String,
@@ -88,7 +95,19 @@ const earningTransactionSchema = new Schema<IEarningTransaction>(
 
 earningTransactionSchema.index(
   { type: 1, contractBountyId: 1 },
-  { unique: true, name: 'earning_transactions_bounty_unique' },
+  {
+    unique: true,
+    name: 'earning_transactions_bounty_unique',
+    partialFilterExpression: { type: 'bounty_reply', contractBountyId: { $type: 'string' } },
+  },
+);
+earningTransactionSchema.index(
+  { type: 1, contractAuraTokenId: 1 },
+  {
+    unique: true,
+    name: 'earning_transactions_aura_unique',
+    partialFilterExpression: { type: 'aura_purchase', contractAuraTokenId: { $type: 'string' } },
+  },
 );
 earningTransactionSchema.index(
   { user: 1, earnedAt: -1, _id: -1 },
