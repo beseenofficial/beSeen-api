@@ -1,138 +1,143 @@
-import 'dotenv/config';
-import { z } from 'zod';
+import { createEnv, defineConfig } from "envyra";
 
-const DEVELOPMENT_ACCESS_TOKEN_SECRET = 'development-only-change-this-access-token-secret';
+const schema =  defineConfig({
+  NODE_ENV: {
+    type: "enum",
+    values: ["development", "test", "production"],
+    default: "development",
+    description: "Application runtime environment.",
+  },
+  PORT: {
+    type: "number",
+    default: 5000,
+    description: "HTTP port the server listens on.",
+  },
+  DB_URI: {
+    default: "mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true",
+    description: "MongoDB connection string.",
+  },
+  DB_NAME: {
+    default: "beseen",
+    description: "MongoDB database name.",
+  },
+  STELLAR_NETWORK: {
+    type: "enum",
+    values: ["public", "testnet"],
+    default: "testnet",
+    description: "Stellar network to operate on.",
+  },
+  STELLAR_RPC_URL: {
+    type: "url",
+    default: "https://soroban-testnet.stellar.org",
+    description: "Soroban RPC endpoint URL.",
+  },
+  BESEEN_CONTRACT_ID: {
+    description: "BeSeen Soroban contract ID (starts with C).",
+    example: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+  },
+  BESEEN_RPC_SOURCE_ACCOUNT: {
+    description: "Stellar source account public key used for RPC simulation (starts with G).",
+    example: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL7NV",
+  },
+  BESEEN_CONTRACT_START_LEDGER: {
+    type: "number",
+    description: "Ledger where this contract deployment was created — replace the example with the exact ledger.",
+    example: "0",
+  },
+  BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE: {
+    type: "number",
+    default: 50_000,
+    description: "How many ledgers of contract events are fetched per batch.",
+  },
+  BESEEN_VERIFIER_SECRET: {
+    secret: true,
+    description: "Stellar secret key of the verifier account (starts with S).",
+    example: "SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+  },
+  AUTH_DOMAIN: {
+    default: "beseen.fi",
+    description: "Domain used for authentication and token claims.",
+  },
+  BLUX_BASE_URL: {
+    type: "url",
+    default: "https://api.blux.cc",
+    description: "Base URL of the Blux API.",
+  },
+  BLUX_APP_ID: {
+    description: "Blux application ID.",
+    example: "replace-with-your-blux-app-id",
+  },
+  BLUX_APP_SECRET: {
+    secret: true,
+    description: "Blux application secret.",
+    example: "replace-with-your-blux-app-secret",
+  },
+  BLUX_VERIFICATION_TIMEOUT_MS: {
+    type: "number",
+    default: 5_000,
+    description: "Timeout for Blux verification requests in milliseconds.",
+  },
+  R2_ENDPOINT: {
+    type: "url",
+    description: "Cloudflare R2 S3-compatible endpoint URL.",
+    example: "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com",
+  },
+  R2_ACCESS_KEY_ID: {
+    description: "Cloudflare R2 access key ID.",
+    example: "replace-with-a-new-r2-access-key-id",
+  },
+  R2_SECRET_ACCESS_KEY: {
+    secret: true,
+    description: "Cloudflare R2 secret access key.",
+    example: "replace-with-a-new-r2-secret-access-key",
+  },
+  R2_BUCKET_NAME: {
+    default: "beseen-avatars",
+    description: "R2 bucket used for avatar storage.",
+  },
+  R2_PUBLIC_BASE_URL: {
+    type: "url",
+    default: "https://images.beseen.fi",
+    description: "Public base URL that serves the R2 bucket content.",
+  },
+  R2_MAX_AVATAR_BYTES: {
+    type: "number",
+    default: 5_242_880,
+    description: "Maximum allowed avatar upload size in bytes.",
+  },
+  ACCESS_TOKEN_SECRET: {
+    secret: true,
+    description: "Secret used to sign access tokens.",
+    example: "replace-with-at-least-32-random-characters",
+  },
+  ACCESS_TOKEN_TTL_SECONDS: {
+    type: "number",
+    default: 900,
+    description: "Access token lifetime in seconds.",
+  },
+  REFRESH_TOKEN_TTL_SECONDS: {
+    type: "number",
+    default: 2_592_000,
+    description: "Refresh token lifetime in seconds.",
+  },
+  BROADCAST_DRAFT_TTL_SECONDS: {
+    type: "number",
+    default: 604_800,
+    description: "How long broadcast drafts are kept, in seconds.",
+  },
+  BROADCAST_CLEANUP_INTERVAL_SECONDS: {
+    type: "number",
+    default: 300,
+    description: "Interval between broadcast cleanup runs, in seconds.",
+  },
+  LOG_LEVEL: {
+    type: "enum",
+    values: ["fatal", "error", "warn", "info", "debug", "trace", "silent"],
+    default: "info",
+    description: "Logging verbosity.",
+  },
+});
 
-const DEVELOPMENT_BLUX_APP_ID = 'development-blux-app-id';
+const env = createEnv(schema, {source: "file"});
 
-const DEVELOPMENT_BLUX_APP_SECRET = 'development-blux-app-secret';
-
-const DEVELOPMENT_R2_ACCESS_KEY_ID = 'development-r2-access-key-id';
-
-const DEVELOPMENT_R2_SECRET_ACCESS_KEY = 'development-r2-secret-access-key';
-
-const DEVELOPMENT_R2_PUBLIC_BASE_URL = 'https://avatars.example.invalid';
-
-const envSchema = z
-  .object({
-    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-    PORT: z.coerce.number().int().positive().max(65_535).default(5000),
-    DB_URI: z
-      .string()
-      .min(1)
-      .default('mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true'),
-    DB_NAME: z.string().min(1).default('beseen'),
-    STELLAR_NETWORK: z.enum(['public', 'testnet']).default('testnet'),
-    STELLAR_RPC_URL: z.url().optional(),
-    BESEEN_CONTRACT_ID: z
-      .string()
-      .regex(/^C[A-Z2-7]{55}$/)
-      .optional(),
-    BESEEN_RPC_SOURCE_ACCOUNT: z
-      .string()
-      .regex(/^G[A-Z2-7]{55}$/)
-      .optional(),
-    BESEEN_CONTRACT_START_LEDGER: z.coerce.number().int().nonnegative().optional(),
-    BESEEN_CONTRACT_EVENT_LEDGER_BATCH_SIZE: z.coerce
-      .number()
-      .int()
-      .positive()
-      .max(1_000_000)
-      .default(10_000),
-    BESEEN_VERIFIER_SECRET: z
-      .string()
-      .regex(/^S[A-Z2-7]{55}$/)
-      .optional(),
-    AUTH_DOMAIN: z.string().min(1).default('beseen.fi'),
-    BLUX_BASE_URL: z.url().default('https://api.blux.cc'),
-    BLUX_APP_ID: z.string().min(1).default(DEVELOPMENT_BLUX_APP_ID),
-    BLUX_APP_SECRET: z.string().min(1).default(DEVELOPMENT_BLUX_APP_SECRET),
-    BLUX_VERIFICATION_TIMEOUT_MS: z.coerce.number().int().min(500).max(15_000).default(5_000),
-    R2_ENDPOINT: z.url().default('https://example.r2.cloudflarestorage.com'),
-    R2_ACCESS_KEY_ID: z.string().min(1).default(DEVELOPMENT_R2_ACCESS_KEY_ID),
-    R2_SECRET_ACCESS_KEY: z.string().min(1).default(DEVELOPMENT_R2_SECRET_ACCESS_KEY),
-    R2_BUCKET_NAME: z.string().min(1).default('beseen-avatars'),
-    R2_PUBLIC_BASE_URL: z.url().default(DEVELOPMENT_R2_PUBLIC_BASE_URL),
-    R2_MAX_AVATAR_BYTES: z.coerce.number().int().min(262_144).max(10_485_760).default(5_242_880),
-    ACCESS_TOKEN_SECRET: z.string().min(32).default(DEVELOPMENT_ACCESS_TOKEN_SECRET),
-    ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(300).max(3_600).default(900),
-    REFRESH_TOKEN_TTL_SECONDS: z.coerce
-      .number()
-      .int()
-      .min(86_400)
-      .max(7_776_000)
-      .default(2_592_000),
-    BROADCAST_DRAFT_TTL_SECONDS: z.coerce.number().int().min(3_600).max(2_592_000).default(604_800),
-    BROADCAST_CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(30).max(3_600).default(300),
-    LOG_LEVEL: z
-      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
-      .default('info'),
-  })
-  .superRefine((value, context) => {
-    const contractSyncValues = [
-      value.STELLAR_RPC_URL,
-      value.BESEEN_CONTRACT_ID,
-      value.BESEEN_RPC_SOURCE_ACCOUNT,
-      value.BESEEN_CONTRACT_START_LEDGER,
-    ];
-
-    if (
-      contractSyncValues.some((item) => item !== undefined) &&
-      contractSyncValues.some((item) => item === undefined)
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['BESEEN_CONTRACT_ID'],
-        message:
-          'STELLAR_RPC_URL, BESEEN_CONTRACT_ID, BESEEN_RPC_SOURCE_ACCOUNT, and BESEEN_CONTRACT_START_LEDGER must be configured together',
-      });
-    }
-
-    if (
-      value.NODE_ENV === 'production' &&
-      value.ACCESS_TOKEN_SECRET === DEVELOPMENT_ACCESS_TOKEN_SECRET
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['ACCESS_TOKEN_SECRET'],
-        message: 'ACCESS_TOKEN_SECRET must be changed in production',
-      });
-    }
-    if (
-      value.NODE_ENV === 'production' &&
-      (value.BLUX_APP_ID === DEVELOPMENT_BLUX_APP_ID ||
-        value.BLUX_APP_SECRET === DEVELOPMENT_BLUX_APP_SECRET)
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['BLUX_APP_SECRET'],
-        message: 'BLUX_APP_ID and BLUX_APP_SECRET must be configured in production',
-      });
-    }
-    if (
-      value.NODE_ENV === 'production' &&
-      (value.R2_ACCESS_KEY_ID === DEVELOPMENT_R2_ACCESS_KEY_ID ||
-        value.R2_SECRET_ACCESS_KEY === DEVELOPMENT_R2_SECRET_ACCESS_KEY ||
-        value.R2_PUBLIC_BASE_URL === DEVELOPMENT_R2_PUBLIC_BASE_URL)
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['R2_SECRET_ACCESS_KEY'],
-        message: 'R2 credentials and public base URL must be configured in production',
-      });
-    }
-  });
-
-const parsedEnv = envSchema.safeParse(process.env);
-
-if (!parsedEnv.success) {
-  const issues = parsedEnv.error.issues
-    .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-    .join(', ');
-
-  throw new Error(`Invalid environment variables: ${issues}`);
-}
-
-export type Environment = z.infer<typeof envSchema>;
-
-export default parsedEnv.data;
+export default env;
