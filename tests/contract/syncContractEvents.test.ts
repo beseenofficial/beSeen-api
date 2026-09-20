@@ -59,14 +59,17 @@ vi.mock('../../src/utils/contract/event/syncWithdrawalEvents', () => ({
   handleWithdrawalEvent: mocks.handleWithdrawal,
 }));
 
-import syncContractEvents from '../../src/utils/contract/event/syncContractEvents';
+import syncContractEvents, {
+  EVENT_DEFINITIONS,
+  topicMatcher,
+} from '../../src/utils/contract/event/syncContractEvents';
 
-const event = (id: string, topic: string) => ({
+const event = (id: string, ...topics: string[]) => ({
   id,
   ledger: 101,
   txHash: 'a'.repeat(64),
   inSuccessfulContractCall: true,
-  topic: [{ toXDR: () => topic }],
+  topic: topics.map((topic) => ({ toXDR: () => topic })),
   value: {},
 });
 
@@ -85,7 +88,7 @@ describe('unified contract event synchronization', () => {
         event('bounty-event', 'lock_bnty-topic'),
         event('aura-event', 'buy_aura-topic'),
         event('earning-event', 'pay_bnty-topic'),
-        event('withdrawal-event', 'withdraw-topic'),
+        event('withdrawal-event', 'withdraw-topic', 'owner-topic'),
       ],
     });
     mocks.handleBounty.mockResolvedValue(true);
@@ -110,7 +113,12 @@ describe('unified contract event synchronization', () => {
         {
           type: 'contract',
           contractIds: ['CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM'],
-          topics: [['lock_bnty-topic'], ['buy_aura-topic'], ['pay_bnty-topic'], ['withdraw-topic']],
+          topics: [
+            ['lock_bnty-topic'],
+            ['buy_aura-topic'],
+            ['pay_bnty-topic'],
+            ['withdraw-topic', '*'],
+          ],
         },
       ],
       startLedger: 91,
@@ -128,6 +136,18 @@ describe('unified contract event synchronization', () => {
       expect.objectContaining({ id: 'withdrawal-event' }),
     );
     expect(mocks.stateSave).toHaveBeenCalledTimes(4);
+  });
+
+  it('adds one wildcard segment per indexed topic so indexed events match', () => {
+    expect(EVENT_DEFINITIONS.map(topicMatcher)).toEqual([
+      ['lock_bnty-topic'],
+      ['buy_aura-topic'],
+      ['pay_bnty-topic'],
+      ['withdraw-topic', '*'],
+    ]);
+    expect(EVENT_DEFINITIONS.find((definition) => definition.symbol === 'withdraw')).toMatchObject({
+      indexedTopics: 1,
+    });
   });
 
   it('does not advance checkpoints when a handler fails', async () => {

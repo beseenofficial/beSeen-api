@@ -42,7 +42,7 @@ describe('contract event ledger batching', () => {
   });
 
   it('starts at the configured deployment ledger and advances one bounded range', async () => {
-    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', [['topic']], null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 10_099,
     });
@@ -69,8 +69,18 @@ describe('contract event ledger batching', () => {
     );
   });
 
+  it('forwards a multi-segment matcher so indexed-topic events still match', async () => {
+    await fetchContractEvents('test-stream', [['symbol-topic', '*']], null);
+
+    expect(mocks.getEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: [expect.objectContaining({ topics: [['symbol-topic', '*']] })],
+      }),
+    );
+  });
+
   it('resumes from the ledger after the persisted checkpoint', async () => {
-    await expect(fetchContractEvents('test-stream', 'topic', 12_345)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', [['topic']], 12_345)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 22_345,
     });
@@ -82,7 +92,7 @@ describe('contract event ledger batching', () => {
   it('uses the configured ledger batch size', async () => {
     mocks.eventLedgerBatchSize = 2_500;
 
-    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', [['topic']], null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 2_599,
     });
@@ -94,7 +104,7 @@ describe('contract event ledger batching', () => {
   it('clamps an unavailable historical checkpoint to the RPC retention window', async () => {
     mocks.getHealth.mockResolvedValue({ oldestLedger: 5_000, latestLedger: 25_000 });
 
-    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', [['topic']], null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 14_999,
     });
@@ -112,7 +122,7 @@ describe('contract event ledger batching', () => {
       })
       .mockResolvedValueOnce({ events: [], cursor: 'unused' });
 
-    await expect(fetchContractEvents('test-stream', 'topic', null)).resolves.toEqual({
+    await expect(fetchContractEvents('test-stream', [['topic']], null)).resolves.toEqual({
       events: [],
       lastProcessedLedger: 5_099,
     });

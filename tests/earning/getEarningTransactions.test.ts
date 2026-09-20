@@ -30,7 +30,7 @@ describe('getEarningTransactions', () => {
     });
 
     vi.spyOn(EarningTransaction, 'find').mockReturnValue(listResult([row]) as never);
-    vi.spyOn(EarningTransaction, 'aggregate').mockReturnValue({
+    const aggregate = vi.spyOn(EarningTransaction, 'aggregate').mockReturnValue({
       exec: vi.fn().mockResolvedValue([{ totalUnits: { toString: () => '47500000' } }]),
     } as never);
 
@@ -54,6 +54,49 @@ describe('getEarningTransactions', () => {
       ],
       nextCursor: null,
       hasMore: false,
+    });
+
+    expect(aggregate).toHaveBeenCalledWith([
+      {
+        $match: {
+          user: new Types.ObjectId('000000000000000000000001'),
+          type: { $in: ['bounty_reply', 'aura_purchase'] },
+        },
+      },
+      { $group: { _id: null, totalUnits: { $sum: { $toDecimal: '$netAmountUnits' } } } },
+    ]);
+  });
+
+  it('lists withdrawals as negative items without subtracting them from the total', async () => {
+    const withdrawal = new EarningTransaction({
+      _id: new Types.ObjectId('000000000000000000000011'),
+      user: new Types.ObjectId('000000000000000000000001'),
+      messageBounty: null,
+      contractBountyId: null,
+      contractAuraTokenId: null,
+      type: 'withdrawal',
+      assetCode: 'USDC',
+      grossAmountUnits: '12500000',
+      feeAmountUnits: '0',
+      netAmountUnits: '-12500000',
+      transactionHash: 'b'.repeat(64),
+      eventId: 'event-2',
+      eventLedger: 102,
+      earnedAt: new Date('2026-09-19T12:01:00.000Z'),
+    });
+
+    vi.spyOn(EarningTransaction, 'find').mockReturnValue(listResult([withdrawal]) as never);
+    vi.spyOn(EarningTransaction, 'aggregate').mockReturnValue({
+      exec: vi.fn().mockResolvedValue([{ totalUnits: { toString: () => '47500000' } }]),
+    } as never);
+
+    const result = await getEarningTransactions('000000000000000000000001', { limit: 25 });
+
+    expect(result.totalAmount).toBe('4.75');
+    expect(result.items[0]).toMatchObject({
+      type: 'withdrawal',
+      reason: 'Earnings withdrawal',
+      amount: '-1.25',
     });
   });
 });

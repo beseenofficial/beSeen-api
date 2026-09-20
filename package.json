@@ -9,6 +9,8 @@
     "start": "node dist/index.js",
     "migrate": "tsx src/migrations/run.ts",
     "migrate:prod": "node dist/migrations/run.js",
+    "sync:rewind": "tsx src/scripts/rewindContractEventSync.ts",
+    "sync:rewind:prod": "node dist/scripts/rewindContractEventSync.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
