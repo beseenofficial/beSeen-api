@@ -27,6 +27,13 @@ type ContractEventKind = 'bounties' | 'auras' | 'earnings' | 'withdrawals';
 interface ContractEventDefinition {
   kind: ContractEventKind;
   symbol: string;
+  /**
+   * Extra topic segments the contract indexes after the event symbol. Stellar
+   * RPC matches a topic filter segment by segment and requires the matcher to
+   * have the same length as the event's topics, so an indexed event needs a
+   * wildcard for each of these.
+   */
+  indexedTopics?: number;
   handle: ContractEventHandler;
 }
 

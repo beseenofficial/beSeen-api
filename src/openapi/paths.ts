@@ -366,7 +366,7 @@ const openApiPaths = {
                 totalAmount: {
                   type: 'string',
                   description:
-                    'Net tracked contract activity in USDC: bounty and Aura earnings minus withdrawals.',
+                    'All-time earned USDC from bounty replies and Aura sales. Withdrawals appear as negative items but are not subtracted here.',
                 },
                 items: {
                   type: 'array',

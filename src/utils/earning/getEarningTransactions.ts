@@ -21,15 +21,20 @@ const getEarningTransactions = async (
       .limit(query.limit + 1)
       .exec(),
     EarningTransaction.aggregate<{ totalUnits: { toString(): string } }>([
-      { $match: { user: new Types.ObjectId(userId) } },
+      {
+        $match: {
+          user: new Types.ObjectId(userId),
+          type: { $in: ['bounty_reply', 'aura_purchase'] },
+        },
+      },
       { $group: { _id: null, totalUnits: { $sum: { $toDecimal: '$netAmountUnits' } } } },
     ]).exec(),
   ]);
 
   const totalUnits = totals[0]?.totalUnits.toString() ?? '0';
 
-  if (!/^-?\d+$/.test(totalUnits)) {
-    throw new Error('Stored earning total is not an integer');
+  if (!/^\d+$/.test(totalUnits)) {
+    throw new Error('Stored earning total is not an unsigned integer');
   }
 
   const hasMore = rows.length > query.limit;

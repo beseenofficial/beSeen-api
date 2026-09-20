@@ -5,7 +5,7 @@ import { CONTRACT_EVENT_PAGE_SIZE } from '../../../constant/contract';
 
 const fetchContractEvents = async (
   stream: string,
-  topics: string | readonly string[],
+  topicMatchers: readonly (readonly string[])[],
   lastProcessedLedger: number | null,
 ) => {
   const config = getContractSyncConfig();
@@ -60,7 +60,7 @@ const fetchContractEvents = async (
         {
           type: 'contract',
           contractIds: [config.contractId],
-          topics: (typeof topics === 'string' ? [topics] : topics).map((topic) => [topic]),
+          topics: topicMatchers.map((matcher) => [...matcher]),
         },
       ],
       startLedger,

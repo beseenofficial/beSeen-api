@@ -21,7 +21,15 @@ const EVENT_DEFINITIONS: readonly ContractEventDefinition[] = [
   { kind: 'bounties', symbol: 'lock_bnty', handle: handleBountyLockEvent },
   { kind: 'auras', symbol: 'buy_aura', handle: handleAuraPurchaseEvent },
   { kind: 'earnings', symbol: 'pay_bnty', handle: handleBountyEarningEvent },
-  { kind: 'withdrawals', symbol: 'withdraw', handle: handleWithdrawalEvent },
+  { kind: 'withdrawals', symbol: 'withdraw', indexedTopics: 1, handle: handleWithdrawalEvent },
+];
+
+const topicSymbol = (definition: ContractEventDefinition): string =>
+  stellarSdk.xdr.ScVal.scvSymbol(definition.symbol).toXDR('base64');
+
+const topicMatcher = (definition: ContractEventDefinition): string[] => [
+  topicSymbol(definition),
+  ...Array.from({ length: definition.indexedTopics ?? 0 }, () => '*'),
 ];
 
 const SYNC_STATE_IDS = [
@@ -71,15 +79,12 @@ const syncContractEvents = async (): Promise<ContractEventsSyncResult> => {
   );
 
   const definitionsByTopic = new Map(
-    EVENT_DEFINITIONS.map((definition) => [
-      stellarSdk.xdr.ScVal.scvSymbol(definition.symbol).toXDR('base64'),
-      definition,
-    ]),
+    EVENT_DEFINITIONS.map((definition) => [topicSymbol(definition), definition]),
   );
 
   const batch = await fetchContractEvents(
     'contract-events',
-    [...definitionsByTopic.keys()],
+    EVENT_DEFINITIONS.map(topicMatcher),
     lastProcessedLedger,
   );
 
@@ -125,5 +130,5 @@ const syncContractEvents = async (): Promise<ContractEventsSyncResult> => {
   };
 };
 
-export { EVENT_DEFINITIONS, getSharedCheckpoint };
+export { EVENT_DEFINITIONS, getSharedCheckpoint, topicMatcher };
 export default syncContractEvents;
