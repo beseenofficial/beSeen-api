@@ -138,6 +138,6 @@ const schema =  defineConfig({
   },
 });
 
-const env = createEnv(schema, {source: "file"});
+const env = createEnv(schema);
 
 export default env;
